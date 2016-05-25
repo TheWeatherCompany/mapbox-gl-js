@@ -36,7 +36,7 @@ util.extend(Worker.prototype, {
         var childLayerIndicies = [];
         for (var i = 0; i < layers.length; i++) {
             var layer = layers[i];
-            if (layer.type === 'fill' || layer.type === 'line' || layer.type === 'circle' || layer.type === 'symbol') {
+            if (layer.type === 'fill' || layer.type === 'line' || layer.type === 'circle' || layer.type === 'symbol' || layer.type === 'building') {
                 if (layer.ref) {
                     childLayerIndicies.push(i);
                 } else {
