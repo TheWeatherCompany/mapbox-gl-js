@@ -98,7 +98,7 @@ var defaultOptions = {
  * });
  */
 var Map = module.exports = function(options) {
-
+    this._options = options;
     options = util.extend({}, defaultOptions, options);
     this._interactive = options.interactive;
     this._failIfMajorPerformanceCaveat = options.failIfMajorPerformanceCaveat;
