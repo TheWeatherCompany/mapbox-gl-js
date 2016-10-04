@@ -2,7 +2,6 @@
 
 var browser = require('../util/browser');
 var drawCollisionDebug = require('./draw_collision_debug');
-var util = require('../util/util');
 var pixelsToTileUnits = require('../source/pixels_to_tile_units');
 
 
@@ -35,6 +34,9 @@ function drawSymbols(painter, source, layer, coords) {
             layer.paint['icon-translate'],
             layer.paint['icon-translate-anchor'],
             layer.layout['icon-rotation-alignment'],
+            // icon-pitch-alignment is not yet implemented
+            // and we simply inherit the rotation alignment
+            layer.layout['icon-rotation-alignment'],
             layer.layout['icon-size'],
             layer.paint['icon-halo-width'],
             layer.paint['icon-halo-color'],
@@ -46,6 +48,7 @@ function drawSymbols(painter, source, layer, coords) {
             layer.paint['text-translate'],
             layer.paint['text-translate-anchor'],
             layer.layout['text-rotation-alignment'],
+            layer.layout['text-pitch-alignment'],
             layer.layout['text-size'],
             layer.paint['text-halo-width'],
             layer.paint['text-halo-color'],
@@ -55,22 +58,22 @@ function drawSymbols(painter, source, layer, coords) {
 
     gl.enable(gl.DEPTH_TEST);
 
-    drawCollisionDebug(painter, source, layer, coords);
+    if (source.map.showCollisionBoxes) {
+        drawCollisionDebug(painter, source, layer, coords);
+    }
 }
 
 function drawLayerSymbols(painter, source, layer, coords, isText,
         translate,
         translateAnchor,
         rotationAlignment,
+        pitchAlignment,
         size,
         haloWidth,
         haloColor,
         haloBlur,
         opacity,
         color) {
-
-    haloColor = util.premultiply(haloColor);
-    color = util.premultiply(color);
 
     for (var j = 0; j < coords.length; j++) {
         var tile = source.getTile(coords[j]);
@@ -87,6 +90,7 @@ function drawLayerSymbols(painter, source, layer, coords, isText,
                 translate,
                 translateAnchor,
                 rotationAlignment,
+                pitchAlignment,
                 size,
                 haloWidth,
                 haloColor,
@@ -100,21 +104,24 @@ function drawSymbol(painter, layer, posMatrix, tile, bucket, bufferGroups, isTex
         translate,
         translateAnchor,
         rotationAlignment,
+        pitchAlignment,
         size,
         haloWidth,
         haloColor,
         haloBlur,
         opacity,
         color) {
+
     var gl = painter.gl;
     var tr = painter.transform;
-    var alignedWithMap = rotationAlignment === 'map';
+    var rotateWithMap = rotationAlignment === 'map';
+    var pitchWithMap = pitchAlignment === 'map';
 
     var defaultSize = isText ? 24 : 1;
     var fontScale = size / defaultSize;
 
     var extrudeScale, s, gammaScale;
-    if (alignedWithMap) {
+    if (pitchWithMap) {
         s = pixelsToTileUnits(tile, 1, painter.transform.zoom) * fontScale;
         gammaScale = 1 / Math.cos(tr._pitch);
         extrudeScale = [s, s];
@@ -129,7 +136,8 @@ function drawSymbol(painter, layer, posMatrix, tile, bucket, bufferGroups, isTex
 
     var program = painter.useProgram(sdf ? 'sdf' : 'icon');
     gl.uniformMatrix4fv(program.u_matrix, false, painter.translatePosMatrix(posMatrix, tile, translate, translateAnchor));
-    gl.uniform1i(program.u_skewed, alignedWithMap);
+    gl.uniform1i(program.u_rotate_with_map, rotateWithMap);
+    gl.uniform1i(program.u_pitch_with_map, pitchWithMap);
     gl.uniform2fv(program.u_extrude_scale, extrudeScale);
 
     gl.activeTexture(gl.TEXTURE0);
@@ -146,7 +154,7 @@ function drawSymbol(painter, layer, posMatrix, tile, bucket, bufferGroups, isTex
     } else {
         var mapMoving = painter.options.rotating || painter.options.zooming;
         var iconScaled = fontScale !== 1 || browser.devicePixelRatio !== painter.spriteAtlas.pixelRatio || iconsNeedLinear;
-        var iconTransformed = alignedWithMap || painter.transform.pitch;
+        var iconTransformed = pitchWithMap || painter.transform.pitch;
         painter.spriteAtlas.bind(gl, sdf || mapMoving || iconScaled || iconTransformed);
         gl.uniform2f(program.u_texsize, painter.spriteAtlas.width / 4, painter.spriteAtlas.height / 4);
     }
@@ -176,8 +184,8 @@ function drawSymbol(painter, layer, posMatrix, tile, bucket, bufferGroups, isTex
 
             for (var j = 0; j < bufferGroups.length; j++) {
                 group = bufferGroups[j];
-                group.vaos[layer.id].bind(gl, program, group.layout.vertex, group.layout.element);
-                gl.drawElements(gl.TRIANGLES, group.layout.element.length * 3, gl.UNSIGNED_SHORT, 0);
+                group.vaos[layer.id].bind(gl, program, group.layoutVertexBuffer, group.elementBuffer);
+                gl.drawElements(gl.TRIANGLES, group.elementBuffer.length * 3, gl.UNSIGNED_SHORT, 0);
             }
         }
 
@@ -185,19 +193,22 @@ function drawSymbol(painter, layer, posMatrix, tile, bucket, bufferGroups, isTex
         gl.uniform4fv(program.u_color, color);
         gl.uniform1f(program.u_opacity, opacity);
         gl.uniform1f(program.u_buffer, (256 - 64) / 256);
+        gl.uniform1f(program.u_pitch, tr.pitch / 360 * 2 * Math.PI);
+        gl.uniform1f(program.u_bearing, tr.bearing / 360 * 2 * Math.PI);
+        gl.uniform1f(program.u_aspect_ratio, tr.width / tr.height);
 
         for (var i = 0; i < bufferGroups.length; i++) {
             group = bufferGroups[i];
-            group.vaos[layer.id].bind(gl, program, group.layout.vertex, group.layout.element);
-            gl.drawElements(gl.TRIANGLES, group.layout.element.length * 3, gl.UNSIGNED_SHORT, 0);
+            group.vaos[layer.id].bind(gl, program, group.layoutVertexBuffer, group.elementBuffer);
+            gl.drawElements(gl.TRIANGLES, group.elementBuffer.length * 3, gl.UNSIGNED_SHORT, 0);
         }
 
     } else {
         gl.uniform1f(program.u_opacity, opacity);
         for (var k = 0; k < bufferGroups.length; k++) {
             group = bufferGroups[k];
-            group.vaos[layer.id].bind(gl, program, group.layout.vertex, group.layout.element);
-            gl.drawElements(gl.TRIANGLES, group.layout.element.length * 3, gl.UNSIGNED_SHORT, 0);
+            group.vaos[layer.id].bind(gl, program, group.layoutVertexBuffer, group.elementBuffer);
+            gl.drawElements(gl.TRIANGLES, group.elementBuffer.length * 3, gl.UNSIGNED_SHORT, 0);
         }
     }
 }

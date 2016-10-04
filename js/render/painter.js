@@ -3,7 +3,7 @@
 var browser = require('../util/browser');
 var mat4 = require('gl-matrix').mat4;
 var FrameHistory = require('./frame_history');
-var TilePyramid = require('../source/tile_pyramid');
+var SourceCache = require('../source/source_cache');
 var EXTENT = require('../data/bucket').EXTENT;
 var pixelsToTileUnits = require('../source/pixels_to_tile_units');
 var util = require('../util/util');
@@ -11,6 +11,7 @@ var StructArrayType = require('../util/struct_array');
 var Buffer = require('../data/buffer');
 var VertexArrayObject = require('./vertex_array_object');
 var RasterBoundsArray = require('./draw_raster').RasterBoundsArray;
+var createUniformPragmas = require('./create_uniform_pragmas');
 
 module.exports = Painter;
 
@@ -33,7 +34,7 @@ function Painter(gl, transform) {
 
     // Within each layer there are multiple distinct z-planes that can be drawn to.
     // This is implemented using the WebGL depth buffer.
-    this.numSublayers = TilePyramid.maxUnderzooming + TilePyramid.maxOverzooming + 1;
+    this.numSublayers = SourceCache.maxUnderzooming + SourceCache.maxOverzooming + 1;
     this.depthEpsilon = 1 / Math.pow(2, 16);
 
     this.lineWidthRange = gl.getParameter(gl.ALIASED_LINE_WIDTH_RANGE);
@@ -150,7 +151,11 @@ Painter.prototype._renderTileClippingMasks = function(coords) {
 
         gl.stencilFunc(gl.ALWAYS, id, 0xF8);
 
-        var program = this.useProgram('fill');
+        var pragmas = createUniformPragmas([
+            {name: 'u_color', components: 4},
+            {name: 'u_opacity', components: 1}
+        ]);
+        var program = this.useProgram('fill', [], pragmas, pragmas);
         gl.uniformMatrix4fv(program.u_matrix, false, coord.posMatrix);
 
         // Draw the clipping mask

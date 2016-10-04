@@ -6,6 +6,8 @@ var Bucket = require('../data/bucket');
 var CollisionBoxArray = require('../symbol/collision_box');
 var DictionaryCoder = require('../util/dictionary_coder');
 var util = require('../util/util');
+var SymbolInstancesArray = require('../symbol/symbol_instances');
+var SymbolQuadsArray = require('../symbol/symbol_quads');
 
 module.exports = WorkerTile;
 
@@ -21,17 +23,17 @@ function WorkerTile(params) {
     this.showCollisionBoxes = params.showCollisionBoxes;
 }
 
-WorkerTile.prototype.parse = function(data, layerFamilies, actor, rawTileData, callback) {
+WorkerTile.prototype.parse = function(data, layerFamilies, actor, callback) {
 
     this.status = 'parsing';
     this.data = data;
 
     this.collisionBoxArray = new CollisionBoxArray();
+    this.symbolInstancesArray = new SymbolInstancesArray();
+    this.symbolQuadsArray = new SymbolQuadsArray();
     var collisionTile = new CollisionTile(this.angle, this.pitch, this.collisionBoxArray);
     var featureIndex = new FeatureIndex(this.coord, this.overscaling, collisionTile, data.layers);
     var sourceLayerCoder = new DictionaryCoder(data.layers ? Object.keys(data.layers).sort() : ['_geojsonTileLayer']);
-
-    var stats = { _total: 0 };
 
     var tile = this;
     var bucketsById = {};
@@ -61,6 +63,8 @@ WorkerTile.prototype.parse = function(data, layerFamilies, actor, rawTileData, c
             overscaling: this.overscaling,
             showCollisionBoxes: this.showCollisionBoxes,
             collisionBoxArray: this.collisionBoxArray,
+            symbolQuadsArray: this.symbolQuadsArray,
+            symbolInstancesArray: this.symbolInstancesArray,
             sourceLayerIndex: sourceLayerCoder.encode(layer.sourceLayer || '_geojsonTileLayer')
         });
         bucket.createFilter();
@@ -178,9 +182,7 @@ WorkerTile.prototype.parse = function(data, layerFamilies, actor, rawTileData, c
     }
 
     function parseBucket(tile, bucket) {
-        var now = Date.now();
-        bucket.populateBuffers(collisionTile, stacks, icons);
-        var time = Date.now() - now;
+        bucket.populateArrays(collisionTile, stacks, icons);
 
 
         if (bucket.type !== 'symbol') {
@@ -191,9 +193,6 @@ WorkerTile.prototype.parse = function(data, layerFamilies, actor, rawTileData, c
         }
 
         bucket.features = null;
-
-        stats._total += time;
-        stats[bucket.id] = (stats[bucket.id] || 0) + time;
     }
 
     function done() {
@@ -207,18 +206,20 @@ WorkerTile.prototype.parse = function(data, layerFamilies, actor, rawTileData, c
         var featureIndex_ = featureIndex.serialize();
         var collisionTile_ = collisionTile.serialize();
         var collisionBoxArray = tile.collisionBoxArray.serialize();
-        var transferables = [rawTileData].concat(featureIndex_.transferables).concat(collisionTile_.transferables);
-
-        var nonEmptyBuckets = buckets.filter(isBucketEmpty);
+        var symbolInstancesArray = tile.symbolInstancesArray.serialize();
+        var symbolQuadsArray = tile.symbolQuadsArray.serialize();
+        var nonEmptyBuckets = buckets.filter(isBucketNonEmpty);
 
         callback(null, {
             buckets: nonEmptyBuckets.map(serializeBucket),
-            bucketStats: stats, // TODO put this in a separate message?
             featureIndex: featureIndex_.data,
             collisionTile: collisionTile_.data,
             collisionBoxArray: collisionBoxArray,
-            rawTileData: rawTileData
-        }, getTransferables(nonEmptyBuckets).concat(transferables));
+            symbolInstancesArray: symbolInstancesArray,
+            symbolQuadsArray: symbolQuadsArray
+        }, getTransferables(nonEmptyBuckets)
+            .concat(featureIndex_.transferables)
+            .concat(collisionTile_.transferables));
     }
 };
 
@@ -238,8 +239,7 @@ WorkerTile.prototype.redoPlacement = function(angle, pitch, showCollisionBoxes) 
     }
 
     var collisionTile_ = collisionTile.serialize();
-
-    var nonEmptyBuckets = buckets.filter(isBucketEmpty);
+    var nonEmptyBuckets = buckets.filter(isBucketNonEmpty);
 
     return {
         result: {
@@ -250,20 +250,8 @@ WorkerTile.prototype.redoPlacement = function(angle, pitch, showCollisionBoxes) 
     };
 };
 
-function isBucketEmpty(bucket) {
-    for (var programName in bucket.arrayGroups) {
-        var programArrayGroups = bucket.arrayGroups[programName];
-        for (var k = 0; k < programArrayGroups.length; k++) {
-            var programArrayGroup = programArrayGroups[k];
-            for (var layoutOrPaint in programArrayGroup) {
-                var arrays = programArrayGroup[layoutOrPaint];
-                for (var bufferName in arrays) {
-                    if (arrays[bufferName].length > 0) return true;
-                }
-            }
-        }
-    }
-    return false;
+function isBucketNonEmpty(bucket) {
+    return !bucket.isEmpty();
 }
 
 function serializeBucket(bucket) {
@@ -273,19 +261,7 @@ function serializeBucket(bucket) {
 function getTransferables(buckets) {
     var transferables = [];
     for (var i in buckets) {
-        var bucket = buckets[i];
-        for (var programName in bucket.arrayGroups) {
-            var programArrayGroups = bucket.arrayGroups[programName];
-            for (var k = 0; k < programArrayGroups.length; k++) {
-                var programArrayGroup = programArrayGroups[k];
-                for (var layoutOrPaint in programArrayGroup) {
-                    var arrays = programArrayGroup[layoutOrPaint];
-                    for (var bufferName in arrays) {
-                        transferables.push(arrays[bufferName].arrayBuffer);
-                    }
-                }
-            }
-        }
+        buckets[i].getTransferables(transferables);
     }
     return transferables;
 }

@@ -266,6 +266,26 @@ test('StyleLayer#setPaintProperty', function(t) {
         });
     });
 
+    t.test('can unset fill-outline-color #2886', function (t) {
+        var layer = StyleLayer.create({
+            id: 'building',
+            type: 'fill',
+            source: 'streets',
+            paint: {
+                'fill-color': '#00f'
+            }
+        });
+
+        layer.setPaintProperty('fill-outline-color', '#f00');
+        layer.updatePaintTransitions([], {transition: false}, null, createAnimationLoop());
+        t.deepEqual(layer.getPaintValue('fill-outline-color'), [1, 0, 0, 1]);
+        layer.setPaintProperty('fill-outline-color', undefined);
+        layer.updatePaintTransitions([], {transition: false}, null, createAnimationLoop());
+        t.deepEqual(layer.getPaintValue('fill-outline-color'), [0, 0, 1, 1]);
+
+        t.end();
+    });
+
     t.end();
 });
 
@@ -537,6 +557,66 @@ test('StyleLayer#serialize', function(t) {
     });
 
     t.end();
+});
+
+test('StyleLayer#getLayoutValue (default exceptions)', function(assert) {
+    assert.test('symbol-placement:point => *-rotation-alignment:viewport', function(assert) {
+        var layer = StyleLayer.create({
+            "type": "symbol",
+            "layout": {
+                "symbol-placement": "point"
+            }
+        });
+        assert.equal(layer.getLayoutValue('text-rotation-alignment'), 'viewport');
+        assert.equal(layer.getLayoutValue('icon-rotation-alignment'), 'viewport');
+        assert.end();
+    });
+    assert.test('symbol-placement:line => *-rotation-alignment:map', function(assert) {
+        var layer = StyleLayer.create({
+            "type": "symbol",
+            "layout": {
+                "symbol-placement": "line"
+            }
+        });
+        assert.equal(layer.getLayoutValue('text-rotation-alignment'), 'map');
+        assert.equal(layer.getLayoutValue('icon-rotation-alignment'), 'map');
+        assert.end();
+    });
+    assert.test('text-rotation-alignment:map => text-pitch-alignment:map', function(assert) {
+        var layer = StyleLayer.create({
+            "type": "symbol",
+            "layout": {
+                "text-rotation-alignment": "map"
+            }
+        });
+        assert.equal(layer.getLayoutValue('text-rotation-alignment'), 'map');
+        assert.equal(layer.getLayoutValue('text-pitch-alignment'), 'map');
+        assert.end();
+    });
+    assert.test('text-rotation-alignment:viewport => text-pitch-alignment:viewport', function(assert) {
+        var layer = StyleLayer.create({
+            "type": "symbol",
+            "layout": {
+                "text-rotation-alignment": "viewport"
+            }
+        });
+        assert.equal(layer.getLayoutValue('text-rotation-alignment'), 'viewport');
+        assert.equal(layer.getLayoutValue('text-pitch-alignment'), 'viewport');
+        assert.end();
+    });
+    assert.test('text-pitch-alignment respected when set', function(assert) {
+        var layer = StyleLayer.create({
+            "type": "symbol",
+            "layout": {
+                "text-rotation-alignment": "viewport",
+                "text-pitch-alignment": "map"
+            }
+        });
+        assert.equal(layer.getLayoutValue('text-rotation-alignment'), 'viewport');
+        assert.equal(layer.getLayoutValue('text-pitch-alignment'), 'map');
+        assert.end();
+    });
+    assert.end();
 });
 
 function createAnimationLoop() {

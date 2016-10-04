@@ -1,16 +1,16 @@
 'use strict';
 
-var TilePyramid = require('../source/tile_pyramid');
-var pyramid = new TilePyramid({ tileSize: 512 });
-var util = require('../util/util');
 var pixelsToTileUnits = require('../source/pixels_to_tile_units');
+var createUniformPragmas = require('./create_uniform_pragmas');
+
+var tileSize = 512;
 
 module.exports = drawBackground;
 
 function drawBackground(painter, source, layer) {
     var gl = painter.gl;
     var transform = painter.transform;
-    var color = util.premultiply(layer.paint['background-color']);
+    var color = layer.paint['background-color'];
     var image = layer.paint['background-pattern'];
     var opacity = layer.paint['background-opacity'];
     var program;
@@ -47,7 +47,11 @@ function drawBackground(painter, source, layer) {
         // Draw filling rectangle.
         if (painter.isOpaquePass !== (color[3] === 1)) return;
 
-        program = painter.useProgram('fill');
+        var pragmas = createUniformPragmas([
+            {name: 'u_color', components: 4},
+            {name: 'u_opacity', components: 1}
+        ]);
+        program = painter.useProgram('fill', [], pragmas, pragmas);
         gl.uniform4fv(program.u_color, color);
         gl.uniform1f(program.u_opacity, opacity);
         painter.tileExtentVAO.bind(gl, program, painter.tileExtentBuffer);
@@ -60,10 +64,9 @@ function drawBackground(painter, source, layer) {
     // the depth and stencil buffers get into a bad state.
     // This can be refactored into a single draw call once earcut lands and
     // we don't have so much going on in the stencil buffer.
-    var coords = pyramid.coveringTiles(transform);
+    var coords = transform.coveringTiles({ tileSize: tileSize });
     for (var c = 0; c < coords.length; c++) {
         var coord = coords[c];
-        var tileSize = 512;
         // var pixelsToTileUnitsBound = pixelsToTileUnits.bind({coord:coord, tileSize: tileSize});
         if (imagePosA && imagePosB) {
             var tile = {coord:coord, tileSize: tileSize};

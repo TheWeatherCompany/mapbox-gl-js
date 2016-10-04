@@ -20,28 +20,27 @@ function CircleBucket() {
 
 CircleBucket.prototype = util.inherit(Bucket, {});
 
-CircleBucket.prototype.addCircleVertex = function(vertexArray, x, y, extrudeX, extrudeY) {
-    return vertexArray.emplaceBack(
+CircleBucket.prototype.addCircleVertex = function(layoutVertexArray, x, y, extrudeX, extrudeY) {
+    return layoutVertexArray.emplaceBack(
             (x * 2) + ((extrudeX + 1) / 2),
             (y * 2) + ((extrudeY + 1) / 2));
 };
 
 CircleBucket.prototype.programInterfaces = {
     circle: {
-        vertexBuffer: true,
-        elementBuffer: true,
-
-        layoutAttributes: [{
+        layoutVertexArrayType: new Bucket.VertexArrayType([{
             name: 'a_pos',
             components: 2,
             type: 'Int16'
-        }],
+        }]),
+        elementArrayType: new Bucket.ElementArrayType(),
+
         paintAttributes: [{
             name: 'a_color',
             components: 4,
             type: 'Uint8',
             getValue: function(layer, globalProperties, featureProperties) {
-                return util.premultiply(layer.getPaintValue("circle-color", globalProperties, featureProperties));
+                return layer.getPaintValue("circle-color", globalProperties, featureProperties);
             },
             multiplier: 255,
             paintProperty: 'circle-color'
@@ -55,6 +54,26 @@ CircleBucket.prototype.programInterfaces = {
             },
             multiplier: 10,
             paintProperty: 'circle-radius'
+        }, {
+            name: 'a_blur',
+            components: 1,
+            type: 'Uint16',
+            isLayerConstant: false,
+            getValue: function(layer, globalProperties, featureProperties) {
+                return [layer.getPaintValue("circle-blur", globalProperties, featureProperties)];
+            },
+            multiplier: 10,
+            paintProperty: 'circle-blur'
+        }, {
+            name: 'a_opacity',
+            components: 1,
+            type: 'Uint16',
+            isLayerConstant: false,
+            getValue: function(layer, globalProperties, featureProperties) {
+                return [layer.getPaintValue("circle-opacity", globalProperties, featureProperties)];
+            },
+            multiplier: 255,
+            paintProperty: 'circle-opacity'
         }]
     }
 };
@@ -63,8 +82,8 @@ CircleBucket.prototype.addFeature = function(feature) {
     var globalProperties = {zoom: this.zoom};
     var geometries = loadGeometry(feature);
 
-    var startGroup = this.makeRoomFor('circle', 0);
-    var startIndex = startGroup.layout.vertex.length;
+    var startGroup = this.prepareArrayGroup('circle', 0);
+    var startIndex = startGroup.layoutVertexArray.length;
 
     for (var j = 0; j < geometries.length; j++) {
         for (var k = 0; k < geometries[j].length; k++) {
@@ -84,16 +103,16 @@ CircleBucket.prototype.addFeature = function(feature) {
             // │ 0     1 │
             // └─────────┘
 
-            var group = this.makeRoomFor('circle', 4);
-            var vertexArray = group.layout.vertex;
+            var group = this.prepareArrayGroup('circle', 4);
+            var layoutVertexArray = group.layoutVertexArray;
 
-            var index = this.addCircleVertex(vertexArray, x, y, -1, -1);
-            this.addCircleVertex(vertexArray, x, y, 1, -1);
-            this.addCircleVertex(vertexArray, x, y, 1, 1);
-            this.addCircleVertex(vertexArray, x, y, -1, 1);
+            var index = this.addCircleVertex(layoutVertexArray, x, y, -1, -1);
+            this.addCircleVertex(layoutVertexArray, x, y, 1, -1);
+            this.addCircleVertex(layoutVertexArray, x, y, 1, 1);
+            this.addCircleVertex(layoutVertexArray, x, y, -1, 1);
 
-            group.layout.element.emplaceBack(index, index + 1, index + 2);
-            group.layout.element.emplaceBack(index, index + 3, index + 2);
+            group.elementArray.emplaceBack(index, index + 1, index + 2);
+            group.elementArray.emplaceBack(index, index + 3, index + 2);
         }
     }
 

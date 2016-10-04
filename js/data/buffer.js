@@ -1,7 +1,5 @@
 'use strict';
 
-var assert = require('assert');
-
 module.exports = Buffer;
 
 /**
@@ -65,16 +63,17 @@ Buffer.prototype.setVertexAttribPointers = function(gl, program) {
     for (var j = 0; j < this.attributes.length; j++) {
         var member = this.attributes[j];
         var attribIndex = program[member.name];
-        assert(attribIndex !== undefined, 'array member "' + member.name + '" name does not match shader attribute name');
 
-        gl.vertexAttribPointer(
-            attribIndex,
-            member.components,
-            gl[AttributeType[member.type]],
-            false,
-            this.arrayType.bytesPerElement,
-            member.offset
-        );
+        if (attribIndex !== undefined) {
+            gl.vertexAttribPointer(
+                attribIndex,
+                member.components,
+                gl[AttributeType[member.type]],
+                false,
+                this.arrayType.bytesPerElement,
+                member.offset
+            );
+        }
     }
 };
 
@@ -98,19 +97,3 @@ Buffer.BufferType = {
     VERTEX: 'ARRAY_BUFFER',
     ELEMENT: 'ELEMENT_ARRAY_BUFFER'
 };
-
-/**
- * An `BufferType.ELEMENT` buffer holds indicies of a corresponding `BufferType.VERTEX` buffer.
- * These indicies are stored in the `BufferType.ELEMENT` buffer as `UNSIGNED_SHORT`s.
- *
- * @private
- * @readonly
- */
-Buffer.ELEMENT_ATTRIBUTE_TYPE = 'Uint16';
-
-/**
- * WebGL performs best if vertex attribute offsets are aligned to 4 byte boundaries.
- * @private
- * @readonly
- */
-Buffer.VERTEX_ATTRIBUTE_ALIGNMENT = 4;

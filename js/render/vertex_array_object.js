@@ -1,7 +1,6 @@
 'use strict';
 
 var assert = require('assert');
-var util = require('../util/util');
 
 module.exports = VertexArrayObject;
 
@@ -13,7 +12,7 @@ function VertexArrayObject() {
     this.vao = null;
 }
 
-VertexArrayObject.prototype.bind = function(gl, program, vertexBuffer, elementBuffer, vertexBuffer2) {
+VertexArrayObject.prototype.bind = function(gl, program, layoutVertexBuffer, elementBuffer, vertexBuffer2) {
 
     if (gl.extVertexArrayObject === undefined) {
         gl.extVertexArrayObject = gl.getExtension("OES_vertex_array_object");
@@ -22,19 +21,19 @@ VertexArrayObject.prototype.bind = function(gl, program, vertexBuffer, elementBu
     var isFreshBindRequired = (
         !this.vao ||
         this.boundProgram !== program ||
-        this.boundVertexBuffer !== vertexBuffer ||
+        this.boundVertexBuffer !== layoutVertexBuffer ||
         this.boundVertexBuffer2 !== vertexBuffer2 ||
         this.boundElementBuffer !== elementBuffer
     );
 
     if (!gl.extVertexArrayObject || isFreshBindRequired) {
-        this.freshBind(gl, program, vertexBuffer, elementBuffer, vertexBuffer2);
+        this.freshBind(gl, program, layoutVertexBuffer, elementBuffer, vertexBuffer2);
     } else {
         gl.extVertexArrayObject.bindVertexArrayOES(this.vao);
     }
 };
 
-VertexArrayObject.prototype.freshBind = function(gl, program, vertexBuffer, elementBuffer, vertexBuffer2) {
+VertexArrayObject.prototype.freshBind = function(gl, program, layoutVertexBuffer, elementBuffer, vertexBuffer2) {
     var numPrevAttributes;
     var numNextAttributes = program.numAttributes;
 
@@ -46,13 +45,12 @@ VertexArrayObject.prototype.freshBind = function(gl, program, vertexBuffer, elem
 
         // store the arguments so that we can verify them when the vao is bound again
         this.boundProgram = program;
-        this.boundVertexBuffer = vertexBuffer;
+        this.boundVertexBuffer = layoutVertexBuffer;
         this.boundVertexBuffer2 = vertexBuffer2;
         this.boundElementBuffer = elementBuffer;
 
     } else {
         numPrevAttributes = gl.currentNumAttributes || 0;
-        util.warnOnce('Not using VertexArrayObject extension.');
 
         // Disable all attributes from the previous program that aren't used in
         // the new program. Note: attribute indices are *not* program specific!
@@ -69,8 +67,8 @@ VertexArrayObject.prototype.freshBind = function(gl, program, vertexBuffer, elem
         gl.enableVertexAttribArray(j);
     }
 
-    vertexBuffer.bind(gl);
-    vertexBuffer.setVertexAttribPointers(gl, program);
+    layoutVertexBuffer.bind(gl);
+    layoutVertexBuffer.setVertexAttribPointers(gl, program);
     if (vertexBuffer2) {
         vertexBuffer2.bind(gl);
         vertexBuffer2.setVertexAttribPointers(gl, program);

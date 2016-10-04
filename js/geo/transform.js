@@ -3,7 +3,7 @@
 var LngLat = require('./lng_lat'),
     Point = require('point-geometry'),
     Coordinate = require('./coordinate'),
-    wrap = require('../util/util').wrap,
+    util = require('../util/util'),
     interp = require('../util/interpolate'),
     TileCoord = require('../source/tile_coord'),
     EXTENT = require('../data/bucket').EXTENT,
@@ -72,11 +72,11 @@ Transform.prototype = {
         return -this.angle / Math.PI * 180;
     },
     set bearing(bearing) {
-        var b = -wrap(bearing, -180, 180) * Math.PI / 180;
+        var b = -util.wrap(bearing, -180, 180) * Math.PI / 180;
         if (this.angle === b) return;
         this._unmodified = false;
         this.angle = b;
-        this._calcProjMatrix();
+        this._calcMatrices();
 
         // 2x2 matrix for rotating points
         this.rotationMatrix = mat2.create();
@@ -87,11 +87,11 @@ Transform.prototype = {
         return this._pitch / Math.PI * 180;
     },
     set pitch(pitch) {
-        var p = Math.min(60, pitch) / 180 * Math.PI;
+        var p = util.clamp(pitch, 0, 60) / 180 * Math.PI;
         if (this._pitch === p) return;
         this._unmodified = false;
         this._pitch = p;
-        this._calcProjMatrix();
+        this._calcMatrices();
     },
 
     get altitude() {
@@ -102,7 +102,7 @@ Transform.prototype = {
         if (this._altitude === a) return;
         this._unmodified = false;
         this._altitude = a;
-        this._calcProjMatrix();
+        this._calcMatrices();
     },
 
     get zoom() { return this._zoom; },
@@ -114,7 +114,7 @@ Transform.prototype = {
         this.scale = this.zoomScale(z);
         this.tileZoom = Math.floor(z);
         this.zoomFraction = z - this.tileZoom;
-        this._calcProjMatrix();
+        this._calcMatrices();
         this._constrain();
     },
 
@@ -123,8 +123,55 @@ Transform.prototype = {
         if (center.lat === this._center.lat && center.lng === this._center.lng) return;
         this._unmodified = false;
         this._center = center;
-        this._calcProjMatrix();
+        this._calcMatrices();
         this._constrain();
+    },
+
+    /**
+     * Return a zoom level that will cover all tiles the transform
+     * @param {Object} options
+     * @param {number} options.tileSize
+     * @param {boolean} options.roundZoom
+     * @returns {number} zoom level
+     * @private
+     */
+    coveringZoomLevel: function(options) {
+        return (options.roundZoom ? Math.round : Math.floor)(
+            this.zoom + this.scaleZoom(this.tileSize / options.tileSize)
+        );
+    },
+
+    /**
+     * Return all coordinates that could cover this transform for a covering
+     * zoom level.
+     * @param {Object} options
+     * @param {number} options.tileSize
+     * @param {number} options.minzoom
+     * @param {number} options.maxzoom
+     * @param {boolean} options.roundZoom
+     * @param {boolean} options.reparseOverscaled
+     * @returns {Array<Tile>} tiles
+     * @private
+     */
+    coveringTiles: function(options) {
+        var z = this.coveringZoomLevel(options);
+        var actualZ = z;
+
+        if (z < options.minzoom) return [];
+        if (z > options.maxzoom) z = options.maxzoom;
+
+        var tr = this,
+            tileCenter = tr.locationCoordinate(tr.center)._zoomTo(z),
+            centerPoint = new Point(tileCenter.column - 0.5, tileCenter.row - 0.5);
+
+        return TileCoord.cover(z, [
+            tr.pointCoordinate(new Point(0, 0))._zoomTo(z),
+            tr.pointCoordinate(new Point(tr.width, 0))._zoomTo(z),
+            tr.pointCoordinate(new Point(tr.width, tr.height))._zoomTo(z),
+            tr.pointCoordinate(new Point(0, tr.height))._zoomTo(z)
+        ], options.reparseOverscaled ? actualZ : z).sort(function(a, b) {
+            return centerPoint.dist(a) - centerPoint.dist(b);
+        });
     },
 
     resize: function(width, height) {
@@ -132,7 +179,7 @@ Transform.prototype = {
         this.height = height;
 
         this.pixelsToGLUnits = [2 / width, -2 / height];
-        this._calcProjMatrix();
+        this._calcMatrices();
         this._constrain();
     },
 
@@ -256,12 +303,6 @@ Transform.prototype = {
     pointCoordinate: function(p) {
 
         var targetZ = 0;
-
-        var matrix = this.coordinatePointMatrix(this.tileZoom);
-        mat4.invert(matrix, matrix);
-
-        if (!matrix) throw new Error("failed to invert matrix");
-
         // since we don't know the correct projected z value for the point,
         // unproject two points to get a line and then find the point on that
         // line with z=0
@@ -269,8 +310,8 @@ Transform.prototype = {
         var coord0 = [p.x, p.y, 0, 1];
         var coord1 = [p.x, p.y, 1, 1];
 
-        vec4.transformMat4(coord0, coord0, matrix);
-        vec4.transformMat4(coord1, coord1, matrix);
+        vec4.transformMat4(coord0, coord0, this.pixelMatrixInverse);
+        vec4.transformMat4(coord1, coord1, this.pixelMatrixInverse);
 
         var w0 = coord0[3];
         var w1 = coord1[3];
@@ -283,10 +324,11 @@ Transform.prototype = {
 
 
         var t = z0 === z1 ? 0 : (targetZ - z0) / (z1 - z0);
+        var scale = this.worldSize / this.zoomScale(this.tileZoom);
 
         return new Coordinate(
-            interp(x0, x1, t),
-            interp(y0, y1, t),
+            interp(x0, x1, t) / scale,
+            interp(y0, y1, t) / scale,
             this.tileZoom);
     },
 
@@ -297,30 +339,10 @@ Transform.prototype = {
      * @private
      */
     coordinatePoint: function(coord) {
-        var matrix = this.coordinatePointMatrix(coord.zoom);
-        var p = [coord.column, coord.row, 0, 1];
-        vec4.transformMat4(p, p, matrix);
+        var scale = this.worldSize / this.zoomScale(coord.zoom);
+        var p = [coord.column * scale, coord.row * scale, 0, 1];
+        vec4.transformMat4(p, p, this.pixelMatrix);
         return new Point(p[0] / p[3], p[1] / p[3]);
-    },
-
-    coordinatePointMatrix: function(z) {
-        var proj = mat4.copy(new Float64Array(16), this.projMatrix);
-        var scale = this.worldSize / this.zoomScale(z);
-        mat4.scale(proj, proj, [scale, scale, 1]);
-        mat4.multiply(proj, this.getPixelMatrix(), proj);
-        return proj;
-    },
-
-    /**
-     * converts gl coordinates -1..1 to pixels 0..width
-     * @returns {Object} matrix
-     * @private
-     */
-    getPixelMatrix: function() {
-        var m = mat4.create();
-        mat4.scale(m, m, [this.width / 2, -this.height / 2, 1]);
-        mat4.translate(m, m, [1, -1, 0]);
-        return m;
     },
 
     /**
@@ -411,8 +433,8 @@ Transform.prototype = {
         this._constraining = false;
     },
 
-    _calcProjMatrix: function() {
-        var m = new Float64Array(16);
+    _calcMatrices: function() {
+        if (!this.height) return;
 
         // Find the distance from the center point to the center top in altitude units using law of sines.
         var halfFov = Math.atan(0.5 / this.altitude);
@@ -421,8 +443,9 @@ Transform.prototype = {
         // Calculate z value of the farthest fragment that should be rendered.
         var farZ = Math.cos(Math.PI / 2 - this._pitch) * topHalfSurfaceDistance + this.altitude;
 
+        // matrix for conversion from location to GL coordinates (-1 .. 1)
+        var m = new Float64Array(16);
         mat4.perspective(m, 2 * Math.atan((this.height / 2) / this.altitude), this.width / this.height, 0.1, farZ);
-
         mat4.translate(m, m, [0, 0, -this.altitude]);
 
         // After the rotateX, z values are in pixel units. Convert them to
@@ -434,5 +457,16 @@ Transform.prototype = {
         mat4.translate(m, m, [-this.x, -this.y, 0]);
 
         this.projMatrix = m;
+
+        // matrix for conversion from location to screen coordinates
+        m = mat4.create();
+        mat4.scale(m, m, [this.width / 2, -this.height / 2, 1]);
+        mat4.translate(m, m, [1, -1, 0]);
+        this.pixelMatrix = mat4.multiply(new Float64Array(16), m, this.projMatrix);
+
+        // inverse matrix for conversion from screen coordinaes to location
+        m = mat4.invert(new Float64Array(16), this.pixelMatrix);
+        if (!m) throw new Error("failed to invert matrix");
+        this.pixelMatrixInverse = m;
     }
 };

@@ -14,13 +14,16 @@ description: Using the queryRenderedFeatures API to show properties of hovered-o
         overflow: auto;
         background: rgba(255, 255, 255, 0.8);
     }
+    #map canvas {
+        cursor: crosshair;
+    }
 </style>
 <div id='map'></div>
 <pre id='features'></pre>
 <script>
 var map = new mapboxgl.Map({
     container: 'map',
-    style: 'mapbox://styles/mapbox/streets-v8',
+    style: 'mapbox://styles/mapbox/streets-v9',
     center: [-96, 37.8],
     zoom: 3
 });

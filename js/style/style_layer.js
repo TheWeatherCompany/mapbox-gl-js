@@ -193,6 +193,16 @@ StyleLayer.prototype = util.inherit(Evented, {
         }
     },
 
+    isLayoutValueFeatureConstant: function(name) {
+        var declaration = this._layoutDeclarations[name];
+
+        if (declaration) {
+            return declaration.isFeatureConstant;
+        } else {
+            return true;
+        }
+    },
+
     isPaintValueZoomConstant: function(name) {
         var transition = this._paintTransitions[name];
 
@@ -208,7 +218,7 @@ StyleLayer.prototype = util.inherit(Evented, {
         if (this.minzoom && zoom < this.minzoom) return true;
         if (this.maxzoom && zoom >= this.maxzoom) return true;
         if (this.layout['visibility'] === 'none') return true;
-        if (this.paint[this.type + '-opacity'] === 0) return true;
+
         return false;
     },
 
@@ -281,9 +291,9 @@ StyleLayer.prototype = util.inherit(Evented, {
     // set paint transition based on a given paint declaration
     _applyPaintDeclaration: function (name, declaration, options, globalOptions, animationLoop) {
         var oldTransition = options.transition ? this._paintTransitions[name] : undefined;
+        var spec = this._paintSpecifications[name];
 
         if (declaration === null || declaration === undefined) {
-            var spec = this._paintSpecifications[name];
             declaration = new StyleDeclaration(spec, spec.default);
         }
 
@@ -295,7 +305,7 @@ StyleLayer.prototype = util.inherit(Evented, {
         }, globalOptions, this.getPaintProperty(name + TRANSITION_SUFFIX));
 
         var newTransition = this._paintTransitions[name] =
-                new StyleTransition(declaration, oldTransition, transitionOptions);
+            new StyleTransition(spec, declaration, oldTransition, transitionOptions);
 
         if (!newTransition.instant()) {
             newTransition.loopID = animationLoop.set(newTransition.endTime - Date.now());
