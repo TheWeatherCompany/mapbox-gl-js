@@ -5,7 +5,7 @@ var StructArrayType = require('../util/struct_array');
 
 module.exports = drawRaster;
 
-function drawRaster(painter, source, layer, coords) {
+function drawRaster(painter, sourceCache, layer, coords) {
     if (painter.isOpaquePass) return;
 
     var gl = painter.gl;
@@ -22,7 +22,7 @@ function drawRaster(painter, source, layer, coords) {
         var coord = coords[i];
         // set the lower zoom level to sublayer 0, and higher zoom levels to higher sublayers
         painter.setDepthSublayer(coord.z - minTileZ);
-        drawRasterTile(painter, source, layer, coord);
+        drawRasterTile(painter, sourceCache, layer, coord);
     }
 
     gl.depthFunc(gl.LEQUAL);
@@ -35,14 +35,14 @@ drawRaster.RasterBoundsArray = new StructArrayType({
     ]
 });
 
-function drawRasterTile(painter, source, layer, coord) {
+function drawRasterTile(painter, sourceCache, layer, coord) {
 
     var gl = painter.gl;
 
     gl.disable(gl.STENCIL_TEST);
 
-    var tile = source.getTile(coord);
-    var posMatrix = painter.transform.calculatePosMatrix(coord, source.maxzoom);
+    var tile = sourceCache.getTile(coord);
+    var posMatrix = painter.transform.calculatePosMatrix(coord, sourceCache.getSource().maxzoom);
 
     var program = painter.useProgram('raster');
     gl.uniformMatrix4fv(program.u_matrix, false, posMatrix);
@@ -54,7 +54,7 @@ function drawRasterTile(painter, source, layer, coord) {
     gl.uniform1f(program.u_contrast_factor, contrastFactor(layer.paint['raster-contrast']));
     gl.uniform3fv(program.u_spin_weights, spinWeights(layer.paint['raster-hue-rotate']));
 
-    var parentTile = tile.source && tile.source.findLoadedParent(coord, 0, {}),
+    var parentTile = tile.sourceCache && tile.sourceCache.findLoadedParent(coord, 0, {}),
         opacities = getOpacities(tile, parentTile, layer, painter.transform);
 
     var parentScaleBy, parentTL;
@@ -116,13 +116,16 @@ function getOpacities(tile, parentTile, layer, transform) {
     var opacity = [1, 0];
     var fadeDuration = layer.paint['raster-fade-duration'];
 
-    if (tile.source && fadeDuration > 0) {
+    if (tile.sourceCache && fadeDuration > 0) {
         var now = new Date().getTime();
 
         var sinceTile = (now - tile.timeAdded) / fadeDuration;
         var sinceParent = parentTile ? (now - parentTile.timeAdded) / fadeDuration : -1;
 
-        var idealZ = transform.coveringZoomLevel(tile.source);
+        var idealZ = transform.coveringZoomLevel({
+            tileSize: tile.sourceCache.getSource().tileSize,
+            roundZoom: tile.sourceCache.getSource().roundZoom
+        });
         var parentFurther = parentTile ? Math.abs(parentTile.coord.z - idealZ) > Math.abs(tile.coord.z - idealZ) : false;
 
         if (!parentTile || parentFurther) {

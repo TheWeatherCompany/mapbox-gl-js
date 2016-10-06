@@ -17,7 +17,8 @@ function RasterTileSource(id, options, dispatcher) {
             return this.fire('error', err);
         }
         util.extend(this, tileJSON);
-        this.fire('load');
+        this.fire('data', {dataType: 'source'});
+        this.fire('source.load');
     }.bind(this));
 }
 
@@ -37,7 +38,8 @@ RasterTileSource.prototype = util.inherit(Evented, {
         return {
             type: 'raster',
             url: this.url,
-            tileSize: this.tileSize
+            tileSize: this.tileSize,
+            tiles: this.tiles
         };
     },
 

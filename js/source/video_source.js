@@ -22,8 +22,8 @@ module.exports = VideoSource;
  * map.addSource('some id', {
  *    type: 'video',
  *    url: [
- *        'https://www.mapbox.com/videos/baltimore-smoke.mp4',
- *        'https://www.mapbox.com/videos/baltimore-smoke.webm'
+ *        'https://www.mapbox.com/blog/assets/baltimore-smoke.mp4',
+ *        'https://www.mapbox.com/blog/assets/baltimore-smoke.webm'
  *    ],
  *    coordinates: [
  *        [-76.54, 39.18],
@@ -73,7 +73,8 @@ function VideoSource(id, options) {
             this.setCoordinates(options.coordinates);
         }
 
-        this.fire('load');
+        this.fire('data', {dataType: 'source'});
+        this.fire('source.load');
     }.bind(this));
 }
 
@@ -127,7 +128,7 @@ VideoSource.prototype = util.inherit(Evented, /** @lends VideoSource.prototype *
         centerCoord.row = Math.round(centerCoord.row);
 
         this.minzoom = this.maxzoom = centerCoord.zoom;
-        this._coord = new TileCoord(centerCoord.zoom, centerCoord.column, centerCoord.row);
+        this.coord = new TileCoord(centerCoord.zoom, centerCoord.column, centerCoord.row);
         this._tileCoords = cornerZ0Coords.map(function(coord) {
             var zoomedCoord = coord.zoomTo(centerCoord.zoom);
             return new Point(
@@ -135,7 +136,7 @@ VideoSource.prototype = util.inherit(Evented, /** @lends VideoSource.prototype *
                 Math.round((zoomedCoord.row - centerCoord.row) * EXTENT));
         });
 
-        this.fire('change');
+        this.fire('data', {dataType: 'source'});
         return this;
     },
 
@@ -179,11 +180,11 @@ VideoSource.prototype = util.inherit(Evented, /** @lends VideoSource.prototype *
     },
 
     loadTile: function(tile, callback) {
-        // We have a single tile -- whoose coordinates are this._coord -- that
+        // We have a single tile -- whoose coordinates are this.coord -- that
         // covers the video frame we want to render.  If that's the one being
         // requested, set it up with the image; otherwise, mark the tile as
         // `errored` to indicate that we have no data for it.
-        if (this._coord && this._coord.toString() === tile.coord.toString()) {
+        if (this.coord && this.coord.toString() === tile.coord.toString()) {
             this._setTile(tile);
             callback(null);
         } else {
