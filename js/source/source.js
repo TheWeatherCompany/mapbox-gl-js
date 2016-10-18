@@ -1,8 +1,8 @@
 'use strict';
 
-var util = require('../util/util');
+const util = require('../util/util');
 
-var sourceTypes = {
+const sourceTypes = {
     'vector': require('../source/vector_tile_source'),
     'raster': require('../source/raster_tile_source'),
     'geojson': require('../source/geojson_source'),
@@ -19,11 +19,12 @@ var sourceTypes = {
  * @param {Dispatcher} dispatcher
  * @returns {Source}
  */
-exports.create = function(id, source, dispatcher) {
-    source = new sourceTypes[source.type](id, source, dispatcher);
+exports.create = function(id, source, dispatcher, eventedParent) {
+    source = new sourceTypes[source.type](id, source, dispatcher, eventedParent);
+    source.setEventedParent(eventedParent);
 
     if (source.id !== id) {
-        throw new Error('Expected Source id to be ' + id + ' instead of ' + source.id);
+        throw new Error(`Expected Source id to be ${id} instead of ${source.id}`);
     }
 
     util.bindAll(['load', 'abort', 'unload', 'serialize', 'prepare'], source);

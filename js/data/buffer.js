@@ -27,9 +27,10 @@ function Buffer(array, arrayType, type) {
  * @param gl The WebGL context
  */
 Buffer.prototype.bind = function(gl) {
-    var type = gl[this.type];
+    const type = gl[this.type];
 
     if (!this.buffer) {
+        this.gl = gl;
         this.buffer = gl.createBuffer();
         gl.bindBuffer(type, this.buffer);
         gl.bufferData(type, this.arrayBuffer, gl.STATIC_DRAW);
@@ -46,7 +47,7 @@ Buffer.prototype.bind = function(gl) {
  * @private
  * @readonly
  */
-var AttributeType = {
+const AttributeType = {
     Int8:   'BYTE',
     Uint8:  'UNSIGNED_BYTE',
     Int16:  'SHORT',
@@ -60,9 +61,9 @@ var AttributeType = {
  * @param program The active WebGL program
  */
 Buffer.prototype.setVertexAttribPointers = function(gl, program) {
-    for (var j = 0; j < this.attributes.length; j++) {
-        var member = this.attributes[j];
-        var attribIndex = program[member.name];
+    for (let j = 0; j < this.attributes.length; j++) {
+        const member = this.attributes[j];
+        const attribIndex = program[member.name];
 
         if (attribIndex !== undefined) {
             gl.vertexAttribPointer(
@@ -82,9 +83,9 @@ Buffer.prototype.setVertexAttribPointers = function(gl, program) {
  * @private
  * @param gl The WebGL context
  */
-Buffer.prototype.destroy = function(gl) {
+Buffer.prototype.destroy = function() {
     if (this.buffer) {
-        gl.deleteBuffer(this.buffer);
+        this.gl.deleteBuffer(this.buffer);
     }
 };
 

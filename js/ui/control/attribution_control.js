@@ -1,44 +1,44 @@
 'use strict';
 
-var Control = require('./control');
-var DOM = require('../../util/dom');
-var util = require('../../util/util');
+const Control = require('./control');
+const DOM = require('../../util/dom');
+const util = require('../../util/util');
 
-module.exports = Attribution;
+module.exports = AttributionControl;
 
 /**
- * An `Attribution` control presents the map's [attribution information](https://www.mapbox.com/help/attribution/).
+ * An `AttributionControl` control presents the map's [attribution information](https://www.mapbox.com/help/attribution/).
  * Extends [`Control`](#Control).
  *
- * @class Attribution
+ * @class AttributionControl
  * @param {Object} [options]
  * @param {string} [options.position='bottom-right'] A string indicating the control's position on the map. Options are `'top-right'`, `'top-left'`, `'bottom-right'`, and `'bottom-left'`.
  * @example
  * var map = new mapboxgl.Map({attributionControl: false})
- *     .addControl(new mapboxgl.Attribution({position: 'top-left'}));
+ *     .addControl(new mapboxgl.AttributionControl({position: 'top-left'}));
  */
-function Attribution(options) {
+function AttributionControl(options) {
     util.setOptions(this, options);
 }
 
-Attribution.prototype = util.inherit(Control, {
+AttributionControl.prototype = util.inherit(Control, {
     options: {
         position: 'bottom-right'
     },
 
     onAdd: function(map) {
-        var className = 'mapboxgl-ctrl-attrib',
+        const className = 'mapboxgl-ctrl-attrib',
             container = this._container = DOM.create('div', className, map.getContainer());
 
         this._updateAttributions();
         this._updateEditLink();
 
-        map.on('data', function(event) {
+        map.on('data', (event) => {
             if (event.dataType === 'source') {
                 this._updateAttributions();
                 this._updateEditLink();
             }
-        }.bind(this));
+        });
 
         map.on('moveend', this._updateEditLink.bind(this));
 
@@ -48,11 +48,11 @@ Attribution.prototype = util.inherit(Control, {
     _updateAttributions: function() {
         if (!this._map.style) return;
 
-        var attributions = [];
+        let attributions = [];
 
-        var sourceCaches = this._map.style.sourceCaches;
-        for (var id in sourceCaches) {
-            var source = sourceCaches[id].getSource();
+        const sourceCaches = this._map.style.sourceCaches;
+        for (const id in sourceCaches) {
+            const source = sourceCaches[id].getSource();
             if (source.attribution && attributions.indexOf(source.attribution) < 0) {
                 attributions.push(source.attribution);
             }
@@ -60,22 +60,24 @@ Attribution.prototype = util.inherit(Control, {
 
         // remove any entries that are substrings of another entry.
         // first sort by length so that substrings come first
-        attributions.sort(function (a, b) { return a.length - b.length; });
-        attributions = attributions.filter(function (attrib, i) {
-            for (var j = i + 1; j < attributions.length; j++) {
+        attributions.sort((a, b) => { return a.length - b.length; });
+        attributions = attributions.filter((attrib, i) => {
+            for (let j = i + 1; j < attributions.length; j++) {
                 if (attributions[j].indexOf(attrib) >= 0) { return false; }
             }
             return true;
         });
-
         this._container.innerHTML = attributions.join(' | ');
+        // remove old DOM node from _editLink
+        this._editLink = null;
     },
 
     _updateEditLink: function() {
+        if (!this._editLink) this._editLink = this._container.querySelector('.mapbox-improve-map');
         if (this._editLink) {
-            var center = this._map.getCenter();
-            this._editLink.href = 'https://www.mapbox.com/map-feedback/#/' +
-                    center.lng + '/' + center.lat + '/' + Math.round(this._map.getZoom() + 1);
+            const center = this._map.getCenter();
+            this._editLink.href = `https://www.mapbox.com/map-feedback/#/${
+                    center.lng}/${center.lat}/${Math.round(this._map.getZoom() + 1)}`;
         }
     }
 });

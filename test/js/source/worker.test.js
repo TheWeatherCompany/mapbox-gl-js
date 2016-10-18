@@ -2,23 +2,24 @@
 
 /* jshint -W079 */
 
-var test = require('tap').test;
-var Worker = require('../../../js/source/worker');
-var window = require('../../../js/util/window');
+const test = require('mapbox-gl-js-test').test;
+const Worker = require('../../../js/source/worker');
+const window = require('../../../js/util/window');
 
-var _self = {
+const _self = {
     addEventListener: function() {}
 };
 
-test('load tile', function(t) {
-    t.test('calls callback on error', function(t) {
+test('load tile', (t) => {
+    t.test('calls callback on error', (t) => {
         window.useFakeXMLHttpRequest();
-        var worker = new Worker(_self);
+        const worker = new Worker(_self);
         worker['load tile'](0, {
+            type: 'vector',
             source: 'source',
             uid: 0,
             url: '/error' // Sinon fake server gives 404 responses by default
-        }, function(err) {
+        }, (err) => {
             t.ok(err);
             window.restore();
             t.end();
@@ -29,8 +30,8 @@ test('load tile', function(t) {
     t.end();
 });
 
-test('set layers', function(t) {
-    var worker = new Worker(_self);
+test('set layers', (t) => {
+    const worker = new Worker(_self);
 
     worker['set layers'](0, [
         { id: 'one', type: 'circle', paint: { 'circle-color': 'red' }  },
@@ -55,30 +56,31 @@ test('set layers', function(t) {
     t.end();
 });
 
-test('update layers', function(t) {
-    var worker = new Worker(_self);
+test('update layers', (t) => {
+    const worker = new Worker(_self);
 
     worker['set layers'](0, [
-        { id: 'one', type: 'circle', paint: { 'circle-color': 'red' }  },
-        { id: 'two', type: 'circle', paint: { 'circle-color': 'green' }  },
+        { id: 'one', type: 'circle', paint: { 'circle-color': 'red' }, 'source': 'foo' },
+        { id: 'two', type: 'circle', paint: { 'circle-color': 'green' }, 'source': 'foo' },
         { id: 'three', ref: 'two', type: 'circle', paint: { 'circle-color': 'blue' } }
     ]);
 
-    worker['update layers'](0, {
-        one: { id: 'one', type: 'circle', paint: { 'circle-color': 'cyan' }  },
-        two: { id: 'two', type: 'circle', paint: { 'circle-color': 'magenta' }  },
-        three: { id: 'three', ref: 'two', type: 'circle', paint: { 'circle-color': 'yellow' } }
-    });
+    worker['update layers'](0, [
+        { id: 'one', type: 'circle', paint: { 'circle-color': 'cyan' }, 'source': 'bar' },
+        { id: 'two', type: 'circle', paint: { 'circle-color': 'magenta' }, 'source': 'bar' },
+        { id: 'three', ref: 'two', type: 'circle', paint: { 'circle-color': 'yellow' } }
+    ]);
 
     t.equal(worker.layers[0].one.getPaintProperty('circle-color'), 'cyan');
     t.equal(worker.layers[0].two.getPaintProperty('circle-color'), 'magenta');
     t.equal(worker.layers[0].three.getPaintProperty('circle-color'), 'yellow');
+    t.equal(worker.layers[0].three.source, 'bar');
 
     t.end();
 });
 
-test('redo placement', function(t) {
-    var worker = new Worker(_self);
+test('redo placement', (t) => {
+    const worker = new Worker(_self);
     _self.registerWorkerSource('test', function() {
         this.redoPlacement = function(options) {
             t.ok(options.mapbox);
@@ -89,8 +91,8 @@ test('redo placement', function(t) {
     worker['redo placement'](0, {type: 'test', mapbox: true});
 });
 
-test('update layers isolates different instances\' data', function(t) {
-    var worker = new Worker(_self);
+test('update layers isolates different instances\' data', (t) => {
+    const worker = new Worker(_self);
 
     worker['set layers'](0, [
         { id: 'one', type: 'circle', paint: { 'circle-color': 'red' }  },
@@ -104,11 +106,11 @@ test('update layers isolates different instances\' data', function(t) {
         { id: 'three', ref: 'two', type: 'circle', paint: { 'circle-color': 'blue' } }
     ]);
 
-    worker['update layers'](1, {
-        one: { id: 'one', type: 'circle', paint: { 'circle-color': 'cyan' }  },
-        two: { id: 'two', type: 'circle', paint: { 'circle-color': 'magenta' }  },
-        three: { id: 'three', ref: 'two', type: 'circle', paint: { 'circle-color': 'yellow' } }
-    });
+    worker['update layers'](1, [
+        { id: 'one', type: 'circle', paint: { 'circle-color': 'cyan' }  },
+        { id: 'two', type: 'circle', paint: { 'circle-color': 'magenta' }  },
+        { id: 'three', ref: 'two', type: 'circle', paint: { 'circle-color': 'yellow' } }
+    ]);
 
     t.equal(worker.layers[0].one.id, 'one');
     t.equal(worker.layers[0].two.id, 'two');
@@ -128,8 +130,8 @@ test('update layers isolates different instances\' data', function(t) {
     t.end();
 });
 
-test('worker source messages dispatched to the correct map instance', function(t) {
-    var worker = new Worker(_self);
+test('worker source messages dispatched to the correct map instance', (t) => {
+    const worker = new Worker(_self);
 
     worker.actor.send = function (type, data, callback, buffers, mapId) {
         t.equal(type, 'main thread task');
@@ -141,7 +143,7 @@ test('worker source messages dispatched to the correct map instance', function(t
         this.loadTile = function() {
             // we expect the map id to get appended in the call to the "real"
             // actor.send()
-            actor.send('main thread task', {}, function () {}, null);
+            actor.send('main thread task', {}, () => {}, null);
         };
     });
 

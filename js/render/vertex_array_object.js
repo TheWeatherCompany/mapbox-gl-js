@@ -1,6 +1,6 @@
 'use strict';
 
-var assert = require('assert');
+const assert = require('assert');
 
 module.exports = VertexArrayObject;
 
@@ -18,7 +18,7 @@ VertexArrayObject.prototype.bind = function(gl, program, layoutVertexBuffer, ele
         gl.extVertexArrayObject = gl.getExtension("OES_vertex_array_object");
     }
 
-    var isFreshBindRequired = (
+    const isFreshBindRequired = (
         !this.vao ||
         this.boundProgram !== program ||
         this.boundVertexBuffer !== layoutVertexBuffer ||
@@ -28,17 +28,18 @@ VertexArrayObject.prototype.bind = function(gl, program, layoutVertexBuffer, ele
 
     if (!gl.extVertexArrayObject || isFreshBindRequired) {
         this.freshBind(gl, program, layoutVertexBuffer, elementBuffer, vertexBuffer2);
+        this.gl = gl;
     } else {
         gl.extVertexArrayObject.bindVertexArrayOES(this.vao);
     }
 };
 
 VertexArrayObject.prototype.freshBind = function(gl, program, layoutVertexBuffer, elementBuffer, vertexBuffer2) {
-    var numPrevAttributes;
-    var numNextAttributes = program.numAttributes;
+    let numPrevAttributes;
+    const numNextAttributes = program.numAttributes;
 
     if (gl.extVertexArrayObject) {
-        if (this.vao) this.destroy(gl);
+        if (this.vao) this.destroy();
         this.vao = gl.extVertexArrayObject.createVertexArrayOES();
         gl.extVertexArrayObject.bindVertexArrayOES(this.vao);
         numPrevAttributes = 0;
@@ -54,7 +55,7 @@ VertexArrayObject.prototype.freshBind = function(gl, program, layoutVertexBuffer
 
         // Disable all attributes from the previous program that aren't used in
         // the new program. Note: attribute indices are *not* program specific!
-        for (var i = numNextAttributes; i < numPrevAttributes; i++) {
+        for (let i = numNextAttributes; i < numPrevAttributes; i++) {
             // WebGL breaks if you disable attribute 0.
             // http://stackoverflow.com/questions/20305231
             assert(i !== 0);
@@ -63,7 +64,7 @@ VertexArrayObject.prototype.freshBind = function(gl, program, layoutVertexBuffer
     }
 
     // Enable all attributes for the new program.
-    for (var j = numPrevAttributes; j < numNextAttributes; j++) {
+    for (let j = numPrevAttributes; j < numNextAttributes; j++) {
         gl.enableVertexAttribArray(j);
     }
 
@@ -80,10 +81,9 @@ VertexArrayObject.prototype.freshBind = function(gl, program, layoutVertexBuffer
     gl.currentNumAttributes = numNextAttributes;
 };
 
-VertexArrayObject.prototype.destroy = function(gl) {
-    var ext = gl.extVertexArrayObject;
-    if (ext && this.vao) {
-        ext.deleteVertexArrayOES(this.vao);
+VertexArrayObject.prototype.destroy = function() {
+    if (this.vao) {
+        this.gl.extVertexArrayObject.deleteVertexArrayOES(this.vao);
         this.vao = null;
     }
 };

@@ -2,7 +2,7 @@
 
 module.exports = LngLat;
 
-var wrap = require('../util/util').wrap;
+const wrap = require('../util/util').wrap;
 
 /**
  * A `LngLat` object represents a given longitude and latitude coordinate, measured in degrees.
@@ -18,10 +18,14 @@ var wrap = require('../util/util').wrap;
  * @param {number} lat Latitude, measured in degrees.
  * @example
  * var ll = new mapboxgl.LngLat(-73.9749, 40.7736);
+ * @see [Get coordinates of the mouse pointer](https://www.mapbox.com/mapbox-gl-js/example/mouse-position/)
+ * @see [Display a popup](https://www.mapbox.com/mapbox-gl-js/example/popup/)
+ * @see [Highlight features within a bounding box](https://www.mapbox.com/mapbox-gl-js/example/using-box-queryrenderedfeatures/)
+ * @see [Create a timeline animation](https://www.mapbox.com/mapbox-gl-js/example/timeline-animation/)
  */
 function LngLat(lng, lat) {
     if (isNaN(lng) || isNaN(lat)) {
-        throw new Error('Invalid LngLat object: (' + lng + ', ' + lat + ')');
+        throw new Error(`Invalid LngLat object: (${lng}, ${lat})`);
     }
     this.lng = +lng;
     this.lat = +lat;
@@ -64,7 +68,7 @@ LngLat.prototype.toArray = function () {
  * ll.toString(); // = "LngLat(-73.9749, 40.7736)"
  */
 LngLat.prototype.toString = function () {
-    return 'LngLat(' + this.lng + ', ' + this.lat + ')';
+    return `LngLat(${this.lng}, ${this.lat})`;
 };
 
 /**

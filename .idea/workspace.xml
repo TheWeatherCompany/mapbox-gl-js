@@ -2,7 +2,285 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="abccecf1-7af2-4613-8dd5-c4e252188943" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/assets/washington-monument.jpg" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/debug/color_spaces.html" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/_data/plugins.json" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-27-set-popup.html" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/js/data/bucket/fill_extrusion_bucket.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/js/render/draw_extrusion.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/js/render/set_pattern.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/js/style/light.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/README.md" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/exists.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-compare/v0.0.1/mapbox-gl-compare.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-compare/v0.0.1/mapbox-gl-compare.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-compare/v0.0.2/mapbox-gl-compare.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-compare/v0.0.2/mapbox-gl-compare.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-directions/v0.0.0/mapbox-gl-directions.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-directions/v0.0.0/mapbox-gl-directions.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-directions/v1.0.0/mapbox-gl-directions.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-directions/v1.0.0/mapbox-gl-directions.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-directions/v2.0.0/mapbox-gl-directions.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-directions/v2.0.0/mapbox-gl-directions.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-directions/v2.1.0/mapbox-gl-directions.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-directions/v2.1.0/mapbox-gl-directions.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-directions/v2.2.0/mapbox-gl-directions.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-directions/v2.2.0/mapbox-gl-directions.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-draw/v0.11.15/mapbox-gl-draw.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-draw/v0.11.15/mapbox-gl-draw.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-draw/v0.11.18/index.html" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-draw/v0.11.18/mapbox-gl-draw.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-draw/v0.11.18/mapbox-gl-draw.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-draw/v0.12.0/mapbox-gl-draw.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-draw/v0.12.0/mapbox-gl-draw.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-draw/v0.12.1/mapbox-gl-draw.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-draw/v0.12.1/mapbox-gl-draw.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-geocoder/v0.0.0/mapbox-gl-geocoder.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-geocoder/v0.0.0/mapbox-gl-geocoder.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-geocoder/v0.1.0/mapbox-gl-geocoder.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-geocoder/v0.1.0/mapbox-gl-geocoder.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-geocoder/v1.0.0/mapbox-gl-geocoder.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-geocoder/v1.0.0/mapbox-gl-geocoder.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-geocoder/v1.1.0/mapbox-gl-geocoder.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-geocoder/v1.1.0/mapbox-gl-geocoder.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-geocoder/v1.3.0/mapbox-gl-geocoder.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-geocoder/v1.3.0/mapbox-gl-geocoder.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-geocoder/v1.3.1/mapbox-gl-geocoder.css" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-geocoder/v1.3.1/mapbox-gl-geocoder.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-supported/v0.0.1/mapbox-gl-supported.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-supported/v1.1.1/mapbox-gl-supported.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/plugins/src/mapbox-gl-supported/v1.2.0/mapbox-gl-supported.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test/README.md" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test/js/style/light.test.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test/node_modules/mapbox-gl-js-test.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test/plugins/json.test.js" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/js/ui/control/attribution.js" afterPath="$PROJECT_DIR$/js/ui/control/attribution_control.js" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/js/ui/control/geolocate.js" afterPath="$PROJECT_DIR$/js/ui/control/geolocate_control.js" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/js/ui/control/navigation.js" afterPath="$PROJECT_DIR$/js/ui/control/navigation_control.js" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/js/ui/control/scale.js" afterPath="$PROJECT_DIR$/js/ui/control/scale_control.js" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/test/testutil/fixed.js" afterPath="$PROJECT_DIR$/test/node_modules/mapbox-gl-js-test/fixed.js" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/test/testutil/simulate_interaction.js" afterPath="$PROJECT_DIR$/test/node_modules/mapbox-gl-js-test/simulate_interaction.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.eslintrc" afterPath="$PROJECT_DIR$/.eslintrc" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/jsLibraryMappings.xml" afterPath="$PROJECT_DIR$/.idea/jsLibraryMappings.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CHANGELOG.md" afterPath="$PROJECT_DIR$/CHANGELOG.md" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CONTRIBUTING.md" afterPath="$PROJECT_DIR$/CONTRIBUTING.md" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ISSUE_TEMPLATE.md" afterPath="$PROJECT_DIR$/ISSUE_TEMPLATE.md" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/README.md" afterPath="$PROJECT_DIR$/README.md" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/benchmarks.js" afterPath="$PROJECT_DIR$/bench/benchmarks.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/benchmarks/buffer.js" afterPath="$PROJECT_DIR$/bench/benchmarks/buffer.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/benchmarks/fps.js" afterPath="$PROJECT_DIR$/bench/benchmarks/fps.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/benchmarks/frame_duration.js" afterPath="$PROJECT_DIR$/bench/benchmarks/frame_duration.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/benchmarks/geojson_setdata_large.js" afterPath="$PROJECT_DIR$/bench/benchmarks/geojson_setdata_large.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/benchmarks/geojson_setdata_small.js" afterPath="$PROJECT_DIR$/bench/benchmarks/geojson_setdata_small.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/benchmarks/map_load.js" afterPath="$PROJECT_DIR$/bench/benchmarks/map_load.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/benchmarks/query_box.js" afterPath="$PROJECT_DIR$/bench/benchmarks/query_box.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/benchmarks/query_point.js" afterPath="$PROJECT_DIR$/bench/benchmarks/query_point.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/benchmarks/style_load.js" afterPath="$PROJECT_DIR$/bench/benchmarks/style_load.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/benchmarks_view.js" afterPath="$PROJECT_DIR$/bench/benchmarks_view.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/lib/access_token.js" afterPath="$PROJECT_DIR$/bench/lib/access_token.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/lib/coordinates.js" afterPath="$PROJECT_DIR$/bench/lib/coordinates.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/lib/create_map.js" afterPath="$PROJECT_DIR$/bench/lib/create_map.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/lib/measure_framerate.js" afterPath="$PROJECT_DIR$/bench/lib/measure_framerate.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/lib/set_data_perf.js" afterPath="$PROJECT_DIR$/bench/lib/set_data_perf.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bench/unit/bench_transform.js" afterPath="$PROJECT_DIR$/bench/unit/bench_transform.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/debug/index.html" afterPath="$PROJECT_DIR$/debug/index.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/README.md" afterPath="$PROJECT_DIR$/docs/README.md" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/.eslintrc" afterPath="$PROJECT_DIR$/docs/_posts/examples/.eslintrc" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-02-check-for-support.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-02-check-for-support.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-02-cluster.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-02-cluster.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-04-navigation.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-04-navigation.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-08-data-driven-circle-colors.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-08-data-driven-circle-colors.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-08-third-party.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-08-third-party.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-11-mapbox-gl-directions.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-11-mapbox-gl-directions.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-12-mapbox-gl-geocoder.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-12-mapbox-gl-geocoder.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-16-point-from-geocoder-result.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-16-point-from-geocoder-result.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-21-mapbox-gl-compare.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-21-mapbox-gl-compare.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-25-mapbox-gl-draw.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-25-mapbox-gl-draw.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-26-game-controls.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-26-game-controls.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/plugins/0100-01-01-mapbox-gl-compare.html" afterPath="$PROJECT_DIR$/docs/_posts/plugins/0100-01-01-mapbox-gl-compare.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/plugins/0100-01-01-mapbox-gl-directions.html" afterPath="$PROJECT_DIR$/docs/_posts/plugins/0100-01-01-mapbox-gl-directions.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/plugins/0100-01-01-mapbox-gl-draw.html" afterPath="$PROJECT_DIR$/docs/_posts/plugins/0100-01-01-mapbox-gl-draw.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/plugins/0100-01-01-mapbox-gl-geocoder.html" afterPath="$PROJECT_DIR$/docs/_posts/plugins/0100-01-01-mapbox-gl-geocoder.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/plugins/0100-01-01-mapbox-gl-supported.html" afterPath="$PROJECT_DIR$/docs/_posts/plugins/0100-01-01-mapbox-gl-supported.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_theme/section.hbs" afterPath="$PROJECT_DIR$/docs/_theme/section.hbs" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/api/assets/site.js" afterPath="$PROJECT_DIR$/docs/api/assets/site.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/js/site.js" afterPath="$PROJECT_DIR$/docs/js/site.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/plugins/index.html" afterPath="$PROJECT_DIR$/docs/plugins/index.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/documentation.yml" afterPath="$PROJECT_DIR$/documentation.yml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/data/array_group.js" afterPath="$PROJECT_DIR$/js/data/array_group.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/data/bucket.js" afterPath="$PROJECT_DIR$/js/data/bucket.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/data/bucket/circle_bucket.js" afterPath="$PROJECT_DIR$/js/data/bucket/circle_bucket.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/data/bucket/fill_bucket.js" afterPath="$PROJECT_DIR$/js/data/bucket/fill_bucket.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/data/bucket/line_bucket.js" afterPath="$PROJECT_DIR$/js/data/bucket/line_bucket.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/data/bucket/symbol_bucket.js" afterPath="$PROJECT_DIR$/js/data/bucket/symbol_bucket.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/data/buffer.js" afterPath="$PROJECT_DIR$/js/data/buffer.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/data/buffer_group.js" afterPath="$PROJECT_DIR$/js/data/buffer_group.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/data/feature_index.js" afterPath="$PROJECT_DIR$/js/data/feature_index.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/data/load_geometry.js" afterPath="$PROJECT_DIR$/js/data/load_geometry.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/geo/coordinate.js" afterPath="$PROJECT_DIR$/js/geo/coordinate.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/geo/lng_lat.js" afterPath="$PROJECT_DIR$/js/geo/lng_lat.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/geo/lng_lat_bounds.js" afterPath="$PROJECT_DIR$/js/geo/lng_lat_bounds.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/geo/transform.js" afterPath="$PROJECT_DIR$/js/geo/transform.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/global_worker_pool.js" afterPath="$PROJECT_DIR$/js/global_worker_pool.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/lib/debugtext.js" afterPath="$PROJECT_DIR$/js/lib/debugtext.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/mapbox-gl.js" afterPath="$PROJECT_DIR$/js/mapbox-gl.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/render/create_uniform_pragmas.js" afterPath="$PROJECT_DIR$/js/render/create_uniform_pragmas.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/render/draw_background.js" afterPath="$PROJECT_DIR$/js/render/draw_background.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/render/draw_circle.js" afterPath="$PROJECT_DIR$/js/render/draw_circle.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/render/draw_collision_debug.js" afterPath="$PROJECT_DIR$/js/render/draw_collision_debug.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/render/draw_debug.js" afterPath="$PROJECT_DIR$/js/render/draw_debug.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/render/draw_fill.js" afterPath="$PROJECT_DIR$/js/render/draw_fill.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/render/draw_line.js" afterPath="$PROJECT_DIR$/js/render/draw_line.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/render/draw_raster.js" afterPath="$PROJECT_DIR$/js/render/draw_raster.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/render/draw_symbol.js" afterPath="$PROJECT_DIR$/js/render/draw_symbol.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/render/frame_history.js" afterPath="$PROJECT_DIR$/js/render/frame_history.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/render/line_atlas.js" afterPath="$PROJECT_DIR$/js/render/line_atlas.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/render/painter.js" afterPath="$PROJECT_DIR$/js/render/painter.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/render/painter/use_program.js" afterPath="$PROJECT_DIR$/js/render/painter/use_program.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/render/vertex_array_object.js" afterPath="$PROJECT_DIR$/js/render/vertex_array_object.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/geojson_source.js" afterPath="$PROJECT_DIR$/js/source/geojson_source.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/geojson_worker_source.js" afterPath="$PROJECT_DIR$/js/source/geojson_worker_source.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/geojson_wrapper.js" afterPath="$PROJECT_DIR$/js/source/geojson_wrapper.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/image_source.js" afterPath="$PROJECT_DIR$/js/source/image_source.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/load_tilejson.js" afterPath="$PROJECT_DIR$/js/source/load_tilejson.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/pixels_to_tile_units.js" afterPath="$PROJECT_DIR$/js/source/pixels_to_tile_units.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/query_features.js" afterPath="$PROJECT_DIR$/js/source/query_features.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/raster_tile_source.js" afterPath="$PROJECT_DIR$/js/source/raster_tile_source.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/source.js" afterPath="$PROJECT_DIR$/js/source/source.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/source_cache.js" afterPath="$PROJECT_DIR$/js/source/source_cache.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/tile.js" afterPath="$PROJECT_DIR$/js/source/tile.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/tile_coord.js" afterPath="$PROJECT_DIR$/js/source/tile_coord.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/vector_tile_source.js" afterPath="$PROJECT_DIR$/js/source/vector_tile_source.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/vector_tile_worker_source.js" afterPath="$PROJECT_DIR$/js/source/vector_tile_worker_source.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/video_source.js" afterPath="$PROJECT_DIR$/js/source/video_source.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/worker.js" afterPath="$PROJECT_DIR$/js/source/worker.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/source/worker_tile.js" afterPath="$PROJECT_DIR$/js/source/worker_tile.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/style/animation_loop.js" afterPath="$PROJECT_DIR$/js/style/animation_loop.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/style/image_sprite.js" afterPath="$PROJECT_DIR$/js/style/image_sprite.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/style/parse_color.js" afterPath="$PROJECT_DIR$/js/style/parse_color.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/style/style.js" afterPath="$PROJECT_DIR$/js/style/style.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/style/style_declaration.js" afterPath="$PROJECT_DIR$/js/style/style_declaration.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/style/style_function.js" afterPath="$PROJECT_DIR$/js/style/style_function.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/style/style_layer.js" afterPath="$PROJECT_DIR$/js/style/style_layer.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/style/style_layer/background_style_layer.js" afterPath="$PROJECT_DIR$/js/style/style_layer/background_style_layer.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/style/style_layer/circle_style_layer.js" afterPath="$PROJECT_DIR$/js/style/style_layer/circle_style_layer.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/style/style_layer/fill_style_layer.js" afterPath="$PROJECT_DIR$/js/style/style_layer/fill_style_layer.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/style/style_layer/line_style_layer.js" afterPath="$PROJECT_DIR$/js/style/style_layer/line_style_layer.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/style/style_layer/raster_style_layer.js" afterPath="$PROJECT_DIR$/js/style/style_layer/raster_style_layer.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/style/style_layer/symbol_style_layer.js" afterPath="$PROJECT_DIR$/js/style/style_layer/symbol_style_layer.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/style/style_transition.js" afterPath="$PROJECT_DIR$/js/style/style_transition.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/style/validate_style.js" afterPath="$PROJECT_DIR$/js/style/validate_style.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/symbol/anchor.js" afterPath="$PROJECT_DIR$/js/symbol/anchor.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/symbol/check_max_angle.js" afterPath="$PROJECT_DIR$/js/symbol/check_max_angle.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/symbol/clip_line.js" afterPath="$PROJECT_DIR$/js/symbol/clip_line.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/symbol/collision_box.js" afterPath="$PROJECT_DIR$/js/symbol/collision_box.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/symbol/collision_feature.js" afterPath="$PROJECT_DIR$/js/symbol/collision_feature.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/symbol/collision_tile.js" afterPath="$PROJECT_DIR$/js/symbol/collision_tile.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/symbol/get_anchors.js" afterPath="$PROJECT_DIR$/js/symbol/get_anchors.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/symbol/glyph_atlas.js" afterPath="$PROJECT_DIR$/js/symbol/glyph_atlas.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/symbol/glyph_source.js" afterPath="$PROJECT_DIR$/js/symbol/glyph_source.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/symbol/mergelines.js" afterPath="$PROJECT_DIR$/js/symbol/mergelines.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/symbol/quads.js" afterPath="$PROJECT_DIR$/js/symbol/quads.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/symbol/resolve_text.js" afterPath="$PROJECT_DIR$/js/symbol/resolve_text.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/symbol/shaping.js" afterPath="$PROJECT_DIR$/js/symbol/shaping.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/symbol/sprite_atlas.js" afterPath="$PROJECT_DIR$/js/symbol/sprite_atlas.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/symbol/symbol_instances.js" afterPath="$PROJECT_DIR$/js/symbol/symbol_instances.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/symbol/symbol_quads.js" afterPath="$PROJECT_DIR$/js/symbol/symbol_quads.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/ui/bind_handlers.js" afterPath="$PROJECT_DIR$/js/ui/bind_handlers.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/ui/camera.js" afterPath="$PROJECT_DIR$/js/ui/camera.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/ui/control/control.js" afterPath="$PROJECT_DIR$/js/ui/control/control.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/ui/handler/box_zoom.js" afterPath="$PROJECT_DIR$/js/ui/handler/box_zoom.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/ui/handler/drag_pan.js" afterPath="$PROJECT_DIR$/js/ui/handler/drag_pan.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/ui/handler/drag_rotate.js" afterPath="$PROJECT_DIR$/js/ui/handler/drag_rotate.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/ui/handler/keyboard.js" afterPath="$PROJECT_DIR$/js/ui/handler/keyboard.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/ui/handler/scroll_zoom.js" afterPath="$PROJECT_DIR$/js/ui/handler/scroll_zoom.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/ui/handler/touch_zoom_rotate.js" afterPath="$PROJECT_DIR$/js/ui/handler/touch_zoom_rotate.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/ui/hash.js" afterPath="$PROJECT_DIR$/js/ui/hash.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/ui/map.js" afterPath="$PROJECT_DIR$/js/ui/map.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/ui/marker.js" afterPath="$PROJECT_DIR$/js/ui/marker.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/ui/popup.js" afterPath="$PROJECT_DIR$/js/ui/popup.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/actor.js" afterPath="$PROJECT_DIR$/js/util/actor.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/ajax.js" afterPath="$PROJECT_DIR$/js/util/ajax.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/browser.js" afterPath="$PROJECT_DIR$/js/util/browser.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/browser/web_worker.js" afterPath="$PROJECT_DIR$/js/util/browser/web_worker.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/classify_rings.js" afterPath="$PROJECT_DIR$/js/util/classify_rings.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/dictionary_coder.js" afterPath="$PROJECT_DIR$/js/util/dictionary_coder.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/dispatcher.js" afterPath="$PROJECT_DIR$/js/util/dispatcher.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/dom.js" afterPath="$PROJECT_DIR$/js/util/dom.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/evented.js" afterPath="$PROJECT_DIR$/js/util/evented.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/find_pole_of_inaccessibility.js" afterPath="$PROJECT_DIR$/js/util/find_pole_of_inaccessibility.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/glyphs.js" afterPath="$PROJECT_DIR$/js/util/glyphs.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/interpolate.js" afterPath="$PROJECT_DIR$/js/util/interpolate.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/intersection_tests.js" afterPath="$PROJECT_DIR$/js/util/intersection_tests.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/lru_cache.js" afterPath="$PROJECT_DIR$/js/util/lru_cache.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/mapbox.js" afterPath="$PROJECT_DIR$/js/util/mapbox.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/struct_array.js" afterPath="$PROJECT_DIR$/js/util/struct_array.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/token.js" afterPath="$PROJECT_DIR$/js/util/token.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/util.js" afterPath="$PROJECT_DIR$/js/util/util.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/vectortile_to_geojson.js" afterPath="$PROJECT_DIR$/js/util/vectortile_to_geojson.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/web_worker.js" afterPath="$PROJECT_DIR$/js/util/web_worker.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/window.js" afterPath="$PROJECT_DIR$/js/util/window.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/util/worker_pool.js" afterPath="$PROJECT_DIR$/js/util/worker_pool.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/package.json" afterPath="$PROJECT_DIR$/package.json" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/build/dev.test.js" afterPath="$PROJECT_DIR$/test/build/dev.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/build/min.test.js" afterPath="$PROJECT_DIR$/test/build/min.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/data/bucket.test.js" afterPath="$PROJECT_DIR$/test/js/data/bucket.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/data/buffer.test.js" afterPath="$PROJECT_DIR$/test/js/data/buffer.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/data/fill_bucket.test.js" afterPath="$PROJECT_DIR$/test/js/data/fill_bucket.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/data/line_bucket.test.js" afterPath="$PROJECT_DIR$/test/js/data/line_bucket.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/data/load_geometry.test.js" afterPath="$PROJECT_DIR$/test/js/data/load_geometry.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/data/symbol_bucket.test.js" afterPath="$PROJECT_DIR$/test/js/data/symbol_bucket.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/geo/coordinate.test.js" afterPath="$PROJECT_DIR$/test/js/geo/coordinate.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/geo/lng_lat.test.js" afterPath="$PROJECT_DIR$/test/js/geo/lng_lat.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/geo/lng_lat_bounds.test.js" afterPath="$PROJECT_DIR$/test/js/geo/lng_lat_bounds.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/geo/transform.test.js" afterPath="$PROJECT_DIR$/test/js/geo/transform.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/mapbox-gl.js" afterPath="$PROJECT_DIR$/test/js/mapbox-gl.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/source/geojson_source.test.js" afterPath="$PROJECT_DIR$/test/js/source/geojson_source.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/source/geojson_wrapper.test.js" afterPath="$PROJECT_DIR$/test/js/source/geojson_wrapper.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/source/query_features.test.js" afterPath="$PROJECT_DIR$/test/js/source/query_features.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/source/source_cache.test.js" afterPath="$PROJECT_DIR$/test/js/source/source_cache.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/source/tile.test.js" afterPath="$PROJECT_DIR$/test/js/source/tile.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/source/tile_coord.test.js" afterPath="$PROJECT_DIR$/test/js/source/tile_coord.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/source/vector_tile_source.test.js" afterPath="$PROJECT_DIR$/test/js/source/vector_tile_source.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/source/vector_tile_worker_source.test.js" afterPath="$PROJECT_DIR$/test/js/source/vector_tile_worker_source.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/source/worker.test.js" afterPath="$PROJECT_DIR$/test/js/source/worker.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/source/worker_tile.test.js" afterPath="$PROJECT_DIR$/test/js/source/worker_tile.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/style/animation_loop.test.js" afterPath="$PROJECT_DIR$/test/js/style/animation_loop.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/style/style.test.js" afterPath="$PROJECT_DIR$/test/js/style/style.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/style/style_declaration.test.js" afterPath="$PROJECT_DIR$/test/js/style/style_declaration.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/style/style_layer.test.js" afterPath="$PROJECT_DIR$/test/js/style/style_layer.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/symbol/anchor.test.js" afterPath="$PROJECT_DIR$/test/js/symbol/anchor.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/symbol/check_max_angle.test.js" afterPath="$PROJECT_DIR$/test/js/symbol/check_max_angle.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/symbol/collision_feature.js" afterPath="$PROJECT_DIR$/test/js/symbol/collision_feature.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/symbol/get_anchors.test.js" afterPath="$PROJECT_DIR$/test/js/symbol/get_anchors.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/symbol/mergelines.test.js" afterPath="$PROJECT_DIR$/test/js/symbol/mergelines.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/symbol/quads.test.js" afterPath="$PROJECT_DIR$/test/js/symbol/quads.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/symbol/resolve_text.test.js" afterPath="$PROJECT_DIR$/test/js/symbol/resolve_text.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/symbol/shaping.test.js" afterPath="$PROJECT_DIR$/test/js/symbol/shaping.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/ui/camera.test.js" afterPath="$PROJECT_DIR$/test/js/ui/camera.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/ui/control/attribution.test.js" afterPath="$PROJECT_DIR$/test/js/ui/control/attribution.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/ui/hash.test.js" afterPath="$PROJECT_DIR$/test/js/ui/hash.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/ui/map.test.js" afterPath="$PROJECT_DIR$/test/js/ui/map.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/ui/marker.test.js" afterPath="$PROJECT_DIR$/test/js/ui/marker.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/ui/popup.test.js" afterPath="$PROJECT_DIR$/test/js/ui/popup.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/util/actor.test.js" afterPath="$PROJECT_DIR$/test/js/util/actor.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/util/browser.test.js" afterPath="$PROJECT_DIR$/test/js/util/browser.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/util/classify_rings.test.js" afterPath="$PROJECT_DIR$/test/js/util/classify_rings.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/util/dispatcher.test.js" afterPath="$PROJECT_DIR$/test/js/util/dispatcher.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/util/evented.test.js" afterPath="$PROJECT_DIR$/test/js/util/evented.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/util/find_pole_of_inaccessibility.test.js" afterPath="$PROJECT_DIR$/test/js/util/find_pole_of_inaccessibility.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/util/interpolate.test.js" afterPath="$PROJECT_DIR$/test/js/util/interpolate.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/util/lru_cache.test.js" afterPath="$PROJECT_DIR$/test/js/util/lru_cache.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/util/mapbox.test.js" afterPath="$PROJECT_DIR$/test/js/util/mapbox.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/util/struct_array.test.js" afterPath="$PROJECT_DIR$/test/js/util/struct_array.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/util/token.test.js" afterPath="$PROJECT_DIR$/test/js/util/token.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/util/util.test.js" afterPath="$PROJECT_DIR$/test/js/util/util.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/js/util/worker_pool.test.js" afterPath="$PROJECT_DIR$/test/js/util/worker_pool.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/query.test.js" afterPath="$PROJECT_DIR$/test/query.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/render.test.js" afterPath="$PROJECT_DIR$/test/render.test.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/suite_implementation.js" afterPath="$PROJECT_DIR$/test/suite_implementation.js" />
     </list>
     <ignored path="mapbox-gl-js.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -25,19 +303,57 @@
       <file leaf-file-name="mapbox-gl-dev.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/dist/mapbox-gl-dev.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="200">
+            <state relative-caret-position="73500">
               <caret line="3500" column="16" selection-start-line="3500" selection-start-column="9" selection-end-line="3500" selection-end-column="16" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="vector_tile_source.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="map.js" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/js/ui/map.js">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="231">
+              <caret line="132" column="44" selection-start-line="132" selection-start-column="44" selection-end-line="132" selection-end-column="44" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="README.md" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/README.md">
+          <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
+            <state split_layout="FIRST">
+              <first_editor relative-caret-position="134">
+                <caret line="77" column="0" selection-start-line="77" selection-start-column="0" selection-end-line="77" selection-end-column="0" />
+                <folding />
+              </first_editor>
+              <second_editor />
+            </state>
+          </provider>
+          <provider editor-type-id="MarkdownFxPreviewEditor">
+            <state />
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="package.json" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/package.json">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="425">
+              <caret line="57" column="26" selection-start-line="57" selection-start-column="26" selection-end-line="57" selection-end-column="26" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="vector_tile_source.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/js/source/vector_tile_source.js">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="442">
-              <caret line="65" column="43" selection-start-line="65" selection-start-column="43" selection-end-line="65" selection-end-column="43" />
-              <folding />
+              <caret line="65" column="0" selection-start-line="65" selection-start-column="0" selection-end-line="65" selection-end-column="0" />
+              <folding>
+                <marker date="1476804867738" expanded="true" signature="761:861" ph="{...}" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -50,9 +366,9 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/js/ui/map.js" />
         <option value="$PROJECT_DIR$/package.json" />
         <option value="$PROJECT_DIR$/dist/mapbox-gl-dev.js" />
+        <option value="$PROJECT_DIR$/js/ui/map.js" />
       </list>
     </option>
   </component>
@@ -66,12 +382,13 @@
   </component>
   <component name="NodeModulesDirectoryManager">
     <handled-path value="$PROJECT_DIR$/node_modules" />
+    <handled-path value="$PROJECT_DIR$/test/node_modules" />
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="1912" />
-    <option name="y" value="-15" />
-    <option name="width" value="1936" />
-    <option name="height" value="1056" />
+    <option name="x" value="1924" />
+    <option name="y" value="1" />
+    <option name="width" value="1910" />
+    <option name="height" value="1078" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />
@@ -98,6 +415,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scratches" />
       <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
@@ -183,25 +501,20 @@
           </PATH>
         </subPane>
       </pane>
-      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="settings.editor.selected.configurable" value="configurable.group.other" />
+    <property name="settings.editor.selected.configurable" value="Settings.JavaScript" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="HbShouldOpenHtmlAsHb" value="" />
     <property name="nodejs_interpreter_path" value="C:/Program Files/nodejs/node" />
     <property name="js-jscs-nodeInterpreter" value="C:\Program Files\nodejs\node.exe" />
+    <property name="JavaScriptPreferStrict" value="false" />
+    <property name="JavaScriptWeakerCompletionTypeGuess" value="true" />
   </component>
   <component name="RunManager">
-    <configuration default="true" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application">
-      <method />
-    </configuration>
-    <configuration default="true" type="DartTestRunConfigurationType" factoryName="Dart Test">
-      <method />
-    </configuration>
     <configuration default="true" type="JavaScriptTestRunnerKarma" factoryName="Karma">
       <config-file value="" />
       <node-interpreter value="project" />
@@ -212,12 +525,6 @@
       <method />
     </configuration>
     <configuration default="true" type="NodeJSConfigurationType" factoryName="Node.js" path-to-node="project" working-dir="">
-      <method />
-    </configuration>
-    <configuration default="true" type="cucumber.js" factoryName="Cucumber.js">
-      <option name="cucumberJsArguments" value="" />
-      <option name="executablePath" />
-      <option name="filePath" />
       <method />
     </configuration>
     <configuration default="true" type="js.build_tools.gulp" factoryName="Gulp.js">
@@ -270,6 +577,7 @@
       <workItem from="1475776619967" duration="11000" />
       <workItem from="1475776640221" duration="1606000" />
       <workItem from="1476803611822" duration="302000" />
+      <workItem from="1476804885221" duration="1156000" />
     </task>
     <task id="LOCAL-00001" summary="after building">
       <created>1475690737967</created>
@@ -282,26 +590,28 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="7163000" />
+    <option name="totallyTimeSpent" value="8319000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="1912" y="-15" width="1936" height="1056" extended-state="6" />
+    <frame x="1924" y="1" width="1910" height="1078" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18124342" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18108974" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="npm" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.14693446" sideWeight="0.50443953" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25785482" sideWeight="0.4955605" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25714287" sideWeight="0.4955605" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Grunt " active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.496208" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -327,11 +637,28 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/dist/mapbox-gl-dev.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="73500">
+          <caret line="3500" column="16" selection-start-line="3500" selection-start-column="9" selection-end-line="3500" selection-end-column="16" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/js/source/vector_tile_source.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <marker date="1476804867738" expanded="true" signature="761:861" ph="{...}" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/js/mapbox-gl.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="544">
           <caret line="32" column="17" selection-start-line="32" selection-start-column="14" selection-end-line="32" selection-end-column="17" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -347,7 +674,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+          <folding>
+            <marker date="1476804867738" expanded="true" signature="761:861" ph="{...}" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -363,10 +692,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="10217">
           <caret line="601" column="28" selection-start-line="601" selection-start-column="28" selection-end-line="601" selection-end-column="28" />
-          <folding>
-            <marker date="1475776897064" expanded="true" signature="51163:51168" ph="/** Fired if any error occurs. This is GL JS's primary error reporting ...*/" />
-            <marker date="1475776897064" expanded="true" signature="51164:51168" ph="/** Move end event. This event is emitted just after the map completes a transition from one ...*/" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -374,7 +700,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="544">
           <caret line="32" column="17" selection-start-line="32" selection-start-column="14" selection-end-line="32" selection-end-column="17" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -382,10 +707,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <marker date="1475776897064" expanded="true" signature="51163:51168" ph="/** Fired if any error occurs. This is GL JS's primary error reporting ...*/" />
-            <marker date="1475776897064" expanded="true" signature="51164:51168" ph="/** Move end event. This event is emitted just after the map completes a transition from one ...*/" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -393,7 +715,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="544">
           <caret line="32" column="17" selection-start-line="32" selection-start-column="14" selection-end-line="32" selection-end-column="17" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -401,10 +722,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <marker date="1475776897064" expanded="true" signature="51163:51168" ph="/** Fired if any error occurs. This is GL JS's primary error reporting ...*/" />
-            <marker date="1475776897064" expanded="true" signature="51164:51168" ph="/** Move end event. This event is emitted just after the map completes a transition from one ...*/" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -425,7 +743,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="646">
           <caret line="38" column="48" selection-start-line="38" selection-start-column="48" selection-end-line="38" selection-end-column="48" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -433,10 +750,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="6732">
           <caret line="396" column="0" selection-start-line="396" selection-start-column="0" selection-end-line="396" selection-end-column="0" />
-          <folding>
-            <marker date="1475776897064" expanded="true" signature="51163:51168" ph="/** Fired if any error occurs. This is GL JS's primary error reporting ...*/" />
-            <marker date="1475776897064" expanded="true" signature="51164:51168" ph="/** Move end event. This event is emitted just after the map completes a transition from one ...*/" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -455,14 +769,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/dist/mapbox-gl.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/dist/mapbox-gl.js" />
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
         <state split_layout="FIRST">
@@ -480,7 +787,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="714">
           <caret line="42" column="48" selection-start-line="42" selection-start-column="48" selection-end-line="42" selection-end-column="48" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -488,21 +794,11 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <marker date="1475776897064" expanded="true" signature="51163:51168" ph="/** Fired if any error occurs. This is GL JS's primary error reporting ...*/" />
-            <marker date="1475776897064" expanded="true" signature="51164:51168" ph="/** Move end event. This event is emitted just after the map completes a transition from one ...*/" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/dist/mapbox-gl.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/dist/mapbox-gl.js" />
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
         <state split_layout="FIRST">
@@ -516,27 +812,7 @@
         <state />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/dist/mapbox-gl.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/README.md">
-      <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
-        <state split_layout="FIRST">
-          <first_editor relative-caret-position="0">
-            <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          </first_editor>
-          <second_editor />
-        </state>
-      </provider>
-      <provider editor-type-id="MarkdownFxPreviewEditor">
-        <state />
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/dist/mapbox-gl.js" />
     <entry file="file://$PROJECT_DIR$/CHANGELOG.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
         <state split_layout="FIRST">
@@ -550,45 +826,18 @@
         <state />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/js/ui/map.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="10217">
-          <caret line="601" column="28" selection-start-line="601" selection-start-column="28" selection-end-line="601" selection-end-column="28" />
-          <folding>
-            <marker date="1475776897064" expanded="true" signature="51163:51168" ph="/** Fired if any error occurs. This is GL JS's primary error reporting ...*/" />
-            <marker date="1475776897064" expanded="true" signature="51164:51168" ph="/** Move end event. This event is emitted just after the map completes a transition from one ...*/" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/js/mapbox-gl.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="13" selection-start-line="0" selection-start-column="13" selection-end-line="0" selection-end-column="13" />
-          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/dist/mapbox-gl.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/dist/mapbox-gl.js" />
     <entry file="file://$PROJECT_DIR$/dist/mapbox-gl-dev.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="200">
+        <state relative-caret-position="73500">
           <caret line="3500" column="16" selection-start-line="3500" selection-start-column="9" selection-end-line="3500" selection-end-column="16" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/package.json">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="51">
-          <caret line="3" column="22" selection-start-line="3" selection-start-column="22" selection-end-line="3" selection-end-column="22" />
           <folding />
         </state>
       </provider>
@@ -596,7 +845,39 @@
     <entry file="file://$PROJECT_DIR$/js/source/vector_tile_source.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="442">
-          <caret line="65" column="43" selection-start-line="65" selection-start-column="43" selection-end-line="65" selection-end-column="43" />
+          <caret line="65" column="0" selection-start-line="65" selection-start-column="0" selection-end-line="65" selection-end-column="0" />
+          <folding>
+            <marker date="1476804867738" expanded="true" signature="761:861" ph="{...}" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/js/ui/map.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="231">
+          <caret line="132" column="44" selection-start-line="132" selection-start-column="44" selection-end-line="132" selection-end-column="44" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
+        <state split_layout="FIRST">
+          <first_editor relative-caret-position="134">
+            <caret line="77" column="0" selection-start-line="77" selection-start-column="0" selection-end-line="77" selection-end-column="0" />
+            <folding />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+      <provider editor-type-id="MarkdownFxPreviewEditor">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/package.json">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="425">
+          <caret line="57" column="26" selection-start-line="57" selection-start-column="26" selection-end-line="57" selection-end-column="26" />
           <folding />
         </state>
       </provider>

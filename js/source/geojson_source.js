@@ -1,9 +1,9 @@
 'use strict';
 
-var Evented = require('../util/evented');
-var util = require('../util/util');
-var window = require('../util/window');
-var EXTENT = require('../data/bucket').EXTENT;
+const Evented = require('../util/evented');
+const util = require('../util/util');
+const window = require('../util/window');
+const EXTENT = require('../data/bucket').EXTENT;
 
 module.exports = GeoJSONSource;
 
@@ -49,8 +49,11 @@ module.exports = GeoJSONSource;
  *       }
  *   }]
  * });
+ * @see [Draw GeoJSON points](https://www.mapbox.com/mapbox-gl-js/example/geojson-markers/)
+ * @see [Add a GeoJSON line](https://www.mapbox.com/mapbox-gl-js/example/geojson-line/)
+ * @see [Create a heatmap from points](https://www.mapbox.com/mapbox-gl-js/example/heatmap/)
  */
-function GeoJSONSource(id, options, dispatcher) {
+function GeoJSONSource(id, options, dispatcher, eventedParent) {
     options = options || {};
     this.id = id;
     this.dispatcher = dispatcher;
@@ -60,7 +63,7 @@ function GeoJSONSource(id, options, dispatcher) {
     if (options.maxzoom !== undefined) this.maxzoom = options.maxzoom;
     if (options.type) this.type = options.type;
 
-    var scale = EXTENT / this.tileSize;
+    const scale = EXTENT / this.tileSize;
 
     // sent to the worker, along with `url: ...` or `data: literal geojson`,
     // so that it can load/parse/index the geojson data
@@ -83,14 +86,16 @@ function GeoJSONSource(id, options, dispatcher) {
         }
     }, options.workerOptions);
 
-    this._updateWorkerData(function done(err) {
+    this.setEventedParent(eventedParent);
+    this.fire('dataloading', {dataType: 'source'});
+    this._updateWorkerData((err) => {
         if (err) {
             this.fire('error', {error: err});
             return;
         }
         this.fire('data', {dataType: 'source'});
         this.fire('source.load');
-    }.bind(this));
+    });
 }
 
 GeoJSONSource.prototype = util.inherit(Evented, /** @lends GeoJSONSource.prototype */ {
@@ -116,12 +121,13 @@ GeoJSONSource.prototype = util.inherit(Evented, /** @lends GeoJSONSource.prototy
     setData: function(data) {
         this._data = data;
 
-        this._updateWorkerData(function (err) {
+        this.fire('dataloading', {dataType: 'source'});
+        this._updateWorkerData((err) => {
             if (err) {
                 return this.fire('error', { error: err });
             }
             this.fire('data', {dataType: 'source'});
-        }.bind(this));
+        });
 
         return this;
     },
@@ -132,8 +138,8 @@ GeoJSONSource.prototype = util.inherit(Evented, /** @lends GeoJSONSource.prototy
      * using geojson-vt or supercluster as appropriate.
      */
     _updateWorkerData: function(callback) {
-        var options = util.extend({}, this.workerOptions);
-        var data = this._data;
+        const options = util.extend({}, this.workerOptions);
+        const data = this._data;
         if (typeof data === 'string') {
             options.url = resolveURL(data);
         } else {
@@ -143,16 +149,16 @@ GeoJSONSource.prototype = util.inherit(Evented, /** @lends GeoJSONSource.prototy
         // target {this.type}.loadData rather than literally geojson.loadData,
         // so that other geojson-like source types can easily reuse this
         // implementation
-        this.workerID = this.dispatcher.send(this.type + '.loadData', options, function(err) {
+        this.workerID = this.dispatcher.send(`${this.type}.loadData`, options, (err) => {
             this._loaded = true;
             callback(err);
 
-        }.bind(this));
+        });
     },
 
     loadTile: function (tile, callback) {
-        var overscaling = tile.coord.z > this.maxzoom ? Math.pow(2, tile.coord.z - this.maxzoom) : 1;
-        var params = {
+        const overscaling = tile.coord.z > this.maxzoom ? Math.pow(2, tile.coord.z - this.maxzoom) : 1;
+        const params = {
             type: this.type,
             uid: tile.uid,
             coord: tile.coord,
@@ -166,9 +172,9 @@ GeoJSONSource.prototype = util.inherit(Evented, /** @lends GeoJSONSource.prototy
             showCollisionBoxes: this.map.showCollisionBoxes
         };
 
-        tile.workerID = this.dispatcher.send('load tile', params, function(err, data) {
+        tile.workerID = this.dispatcher.send('load tile', params, (err, data) => {
 
-            tile.unloadVectorData(this.map.painter);
+            tile.unloadVectorData();
 
             if (tile.aborted)
                 return;
@@ -186,7 +192,7 @@ GeoJSONSource.prototype = util.inherit(Evented, /** @lends GeoJSONSource.prototy
 
             return callback(null);
 
-        }.bind(this), this.workerID);
+        }, this.workerID);
     },
 
     abortTile: function(tile) {
@@ -194,8 +200,8 @@ GeoJSONSource.prototype = util.inherit(Evented, /** @lends GeoJSONSource.prototy
     },
 
     unloadTile: function(tile) {
-        tile.unloadVectorData(this.map.painter);
-        this.dispatcher.send('remove tile', { uid: tile.uid, source: this.id }, function() {}, tile.workerID);
+        tile.unloadVectorData();
+        this.dispatcher.send('remove tile', { uid: tile.uid, type: this.type, source: this.id }, () => {}, tile.workerID);
     },
 
     serialize: function() {
@@ -207,7 +213,7 @@ GeoJSONSource.prototype = util.inherit(Evented, /** @lends GeoJSONSource.prototy
 });
 
 function resolveURL(url) {
-    var a = window.document.createElement('a');
+    const a = window.document.createElement('a');
     a.href = url;
     return a.href;
 }

@@ -1,13 +1,13 @@
 'use strict';
 
-var Evented = require('../util/evented');
-var util = require('../util/util');
-var loadTileJSON = require('./load_tilejson');
-var normalizeURL = require('../util/mapbox').normalizeTileURL;
+const Evented = require('../util/evented');
+const util = require('../util/util');
+const loadTileJSON = require('./load_tilejson');
+const normalizeURL = require('../util/mapbox').normalizeTileURL;
 
 module.exports = VectorTileSource;
 
-function VectorTileSource(id, options, dispatcher) {
+function VectorTileSource(id, options, dispatcher, eventedParent) {
     this.id = id;
     this.dispatcher = dispatcher;
     util.extend(this, util.pick(options, ['url', 'scheme', 'tileSize']));
@@ -17,7 +17,10 @@ function VectorTileSource(id, options, dispatcher) {
         throw new Error('vector tile sources must have a tileSize of 512');
     }
 
-    loadTileJSON(options, function (err, tileJSON) {
+    this.setEventedParent(eventedParent);
+    this.fire('dataloading', {dataType: 'source'});
+
+    loadTileJSON(options, (err, tileJSON) => {
         if (err) {
             this.fire('error', err);
             return;
@@ -25,10 +28,11 @@ function VectorTileSource(id, options, dispatcher) {
         util.extend(this, tileJSON);
         this.fire('data', {dataType: 'source'});
         this.fire('source.load');
-    }.bind(this));
+    });
 }
 
 VectorTileSource.prototype = util.inherit(Evented, {
+    type: 'vector',
     minzoom: 0,
     maxzoom: 22,
     scheme: 'xyz',
@@ -45,13 +49,14 @@ VectorTileSource.prototype = util.inherit(Evented, {
     },
 
     loadTile: function(tile, callback) {
-        var overscaling = tile.coord.z > this.maxzoom ? Math.pow(2, tile.coord.z - this.maxzoom) : 1;
-        var params = {
+        const overscaling = tile.coord.z > this.maxzoom ? Math.pow(2, tile.coord.z - this.maxzoom) : 1;
+        const params = {
             url: normalizeURL(tile.coord.url(this.tiles, this.maxzoom, this.scheme), this.url),
             uid: tile.uid,
             coord: tile.coord,
             zoom: tile.coord.z,
             tileSize: this.tileSize * overscaling,
+            type: this.type,
             source: this.id,
             overscaling: overscaling,
             angle: this.map.transform.angle,
@@ -93,11 +98,11 @@ VectorTileSource.prototype = util.inherit(Evented, {
     },
 
     abortTile: function(tile) {
-        this.dispatcher.send('abort tile', { uid: tile.uid, source: this.id }, null, tile.workerID);
+        this.dispatcher.send('abort tile', { uid: tile.uid, type: this.type, source: this.id }, null, tile.workerID);
     },
 
     unloadTile: function(tile) {
-        tile.unloadVectorData(this.map.painter);
-        this.dispatcher.send('remove tile', { uid: tile.uid, source: this.id }, null, tile.workerID);
+        tile.unloadVectorData();
+        this.dispatcher.send('remove tile', { uid: tile.uid, type: this.type, source: this.id }, null, tile.workerID);
     }
 });

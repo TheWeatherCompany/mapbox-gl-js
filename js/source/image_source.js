@@ -1,15 +1,15 @@
 'use strict';
 
-var util = require('../util/util');
-var TileCoord = require('./tile_coord');
-var LngLat = require('../geo/lng_lat');
-var Point = require('point-geometry');
-var Evented = require('../util/evented');
-var ajax = require('../util/ajax');
-var EXTENT = require('../data/bucket').EXTENT;
-var RasterBoundsArray = require('../render/draw_raster').RasterBoundsArray;
-var Buffer = require('../data/buffer');
-var VertexArrayObject = require('../render/vertex_array_object');
+const util = require('../util/util');
+const TileCoord = require('./tile_coord');
+const LngLat = require('../geo/lng_lat');
+const Point = require('point-geometry');
+const Evented = require('../util/evented');
+const ajax = require('../util/ajax');
+const EXTENT = require('../data/bucket').EXTENT;
+const RasterBoundsArray = require('../render/draw_raster').RasterBoundsArray;
+const Buffer = require('../data/buffer');
+const VertexArrayObject = require('../render/vertex_array_object');
 
 module.exports = ImageSource;
 
@@ -41,14 +41,17 @@ module.exports = ImageSource;
  * ]);
  *
  * map.removeSource('some id');  // remove
+ * @see [Add an image](https://www.mapbox.com/mapbox-gl-js/example/image-on-a-map/)
  */
-function ImageSource(id, options, dispatcher) {
+function ImageSource(id, options, dispatcher, eventedParent) {
     this.id = id;
     this.dispatcher = dispatcher;
     this.url = options.url;
     this.coordinates = options.coordinates;
 
-    ajax.getImage(options.url, function(err, image) {
+    this.setEventedParent(eventedParent);
+    this.fire('dataloading', {dataType: 'source'});
+    ajax.getImage(options.url, (err, image) => {
         if (err) return this.fire('error', {error: err});
 
         this.image = image;
@@ -59,7 +62,7 @@ function ImageSource(id, options, dispatcher) {
         if (this.map) {
             this.setCoordinates(options.coordinates);
         }
-    }.bind(this));
+    });
 }
 
 ImageSource.prototype = util.inherit(Evented, /** @lends ImageSource.prototype */ {
@@ -89,19 +92,19 @@ ImageSource.prototype = util.inherit(Evented, /** @lends ImageSource.prototype *
         // and create a buffer with the corner coordinates. These coordinates
         // may be outside the tile, because raster tiles aren't clipped when rendering.
 
-        var map = this.map;
-        var cornerZ0Coords = coordinates.map(function(coord) {
+        const map = this.map;
+        const cornerZ0Coords = coordinates.map((coord) => {
             return map.transform.locationCoordinate(LngLat.convert(coord)).zoomTo(0);
         });
 
-        var centerCoord = this.centerCoord = util.getCoordinatesCenter(cornerZ0Coords);
+        const centerCoord = this.centerCoord = util.getCoordinatesCenter(cornerZ0Coords);
         centerCoord.column = Math.round(centerCoord.column);
         centerCoord.row = Math.round(centerCoord.row);
 
         this.minzoom = this.maxzoom = centerCoord.zoom;
         this.coord = new TileCoord(centerCoord.zoom, centerCoord.column, centerCoord.row);
-        this._tileCoords = cornerZ0Coords.map(function(coord) {
-            var zoomedCoord = coord.zoomTo(centerCoord.zoom);
+        this._tileCoords = cornerZ0Coords.map((coord) => {
+            const zoomedCoord = coord.zoomTo(centerCoord.zoom);
             return new Point(
                 Math.round((zoomedCoord.column - centerCoord.column) * EXTENT),
                 Math.round((zoomedCoord.row - centerCoord.row) * EXTENT));
@@ -114,8 +117,8 @@ ImageSource.prototype = util.inherit(Evented, /** @lends ImageSource.prototype *
     _setTile: function (tile) {
         this._prepared = false;
         this.tile = tile;
-        var maxInt16 = 32767;
-        var array = new RasterBoundsArray();
+        const maxInt16 = 32767;
+        const array = new RasterBoundsArray();
         array.emplaceBack(this._tileCoords[0].x, this._tileCoords[0].y, 0, 0);
         array.emplaceBack(this._tileCoords[1].x, this._tileCoords[1].y, maxInt16, 0);
         array.emplaceBack(this._tileCoords[3].x, this._tileCoords[3].y, 0, maxInt16);
@@ -129,23 +132,23 @@ ImageSource.prototype = util.inherit(Evented, /** @lends ImageSource.prototype *
     },
 
     prepare: function() {
-        if (!this._loaded || !this.image || !this.image.complete) return;
-        if (!this.tile) return;
+        if (!this.tile || !this._loaded || !this.image || !this.image.complete) return;
+        this._prepareImage(this.map.painter.gl, this.image);
+    },
 
-        var painter = this.map.painter;
-        var gl = painter.gl;
-
+    _prepareImage: function (gl, image) {
         if (!this._prepared) {
+            this._prepared = true;
             this.tile.texture = gl.createTexture();
             gl.bindTexture(gl.TEXTURE_2D, this.tile.texture);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.image);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
         } else {
             gl.bindTexture(gl.TEXTURE_2D, this.tile.texture);
-            gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.image);
+            gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, image);
         }
     },
 

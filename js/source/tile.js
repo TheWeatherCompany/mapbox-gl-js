@@ -1,16 +1,16 @@
 'use strict';
 
-var util = require('../util/util');
-var Bucket = require('../data/bucket');
-var FeatureIndex = require('../data/feature_index');
-var vt = require('vector-tile');
-var Protobuf = require('pbf');
-var GeoJSONFeature = require('../util/vectortile_to_geojson');
-var featureFilter = require('feature-filter');
-var CollisionTile = require('../symbol/collision_tile');
-var CollisionBoxArray = require('../symbol/collision_box');
-var SymbolInstancesArray = require('../symbol/symbol_instances');
-var SymbolQuadsArray = require('../symbol/symbol_quads');
+const util = require('../util/util');
+const Bucket = require('../data/bucket');
+const FeatureIndex = require('../data/feature_index');
+const vt = require('vector-tile');
+const Protobuf = require('pbf');
+const GeoJSONFeature = require('../util/vectortile_to_geojson');
+const featureFilter = require('feature-filter');
+const CollisionTile = require('../symbol/collision_tile');
+const CollisionBoxArray = require('../symbol/collision_box');
+const SymbolInstancesArray = require('../symbol/symbol_instances');
+const SymbolQuadsArray = require('../symbol/symbol_quads');
 
 module.exports = Tile;
 
@@ -77,24 +77,22 @@ Tile.prototype = {
     },
 
     /**
-     * given a data object and a GL painter, destroy and re-create
-     * all of its buffers.
+     * Replace this tile's symbol buckets with fresh data.
      * @param {Object} data
-     * @param {Object} painter
+     * @param {Style} style
      * @returns {undefined}
      * @private
      */
-    reloadSymbolData: function(data, painter, style) {
+    reloadSymbolData: function(data, style) {
         if (this.state === 'unloaded') return;
 
         this.collisionTile = new CollisionTile(data.collisionTile, this.collisionBoxArray);
         this.featureIndex.setCollisionTile(this.collisionTile);
 
-        // Destroy and delete existing symbol buckets
-        for (var id in this.buckets) {
-            var bucket = this.buckets[id];
+        for (const id in this.buckets) {
+            const bucket = this.buckets[id];
             if (bucket.type === 'symbol') {
-                bucket.destroy(painter.gl);
+                bucket.destroy();
                 delete this.buckets[id];
             }
         }
@@ -104,17 +102,13 @@ Tile.prototype = {
     },
 
     /**
-     * Make sure that this tile doesn't own any data within a given
-     * painter, so that it doesn't consume any memory or maintain
-     * any references to the painter.
-     * @param {Object} painter gl painter object
+     * Release any data or WebGL resources referenced by this tile.
      * @returns {undefined}
      * @private
      */
-    unloadVectorData: function(painter) {
-        for (var id in this.buckets) {
-            var bucket = this.buckets[id];
-            bucket.destroy(painter.gl);
+    unloadVectorData: function() {
+        for (const id in this.buckets) {
+            this.buckets[id].destroy();
         }
 
         this.collisionBoxArray = null;
@@ -135,6 +129,7 @@ Tile.prototype = {
         this.state = 'reloading';
 
         source.dispatcher.send('redo placement', {
+            type: source.type,
             uid: this.uid,
             source: source.id,
             angle: source.map.transform.angle,
@@ -143,7 +138,7 @@ Tile.prototype = {
         }, done.bind(this), this.workerID);
 
         function done(_, data) {
-            this.reloadSymbolData(data, source.map.painter, source.map.style);
+            this.reloadSymbolData(data, source.map.style);
             source.fire('data', {tile: this, dataType: 'tile'});
 
             // HACK this is nescessary to fix https://github.com/mapbox/mapbox-gl-js/issues/2986
@@ -168,17 +163,17 @@ Tile.prototype = {
             this.vtLayers = new vt.VectorTile(new Protobuf(this.rawTileData)).layers;
         }
 
-        var layer = this.vtLayers._geojsonTileLayer || this.vtLayers[params.sourceLayer];
+        const layer = this.vtLayers._geojsonTileLayer || this.vtLayers[params.sourceLayer];
 
         if (!layer) return;
 
-        var filter = featureFilter(params.filter);
-        var coord = { z: this.coord.z, x: this.coord.x, y: this.coord.y };
+        const filter = featureFilter(params.filter);
+        const coord = { z: this.coord.z, x: this.coord.x, y: this.coord.y };
 
-        for (var i = 0; i < layer.length; i++) {
-            var feature = layer.feature(i);
+        for (let i = 0; i < layer.length; i++) {
+            const feature = layer.feature(i);
             if (filter(feature)) {
-                var geojsonFeature = new GeoJSONFeature(feature, this.coord.z, this.coord.x, this.coord.y);
+                const geojsonFeature = new GeoJSONFeature(feature, this.coord.z, this.coord.x, this.coord.y);
                 geojsonFeature.tile = coord;
                 result.push(geojsonFeature);
             }
@@ -195,16 +190,16 @@ function unserializeBuckets(input, style) {
     // this bucket has been parsing.
     if (!style) return;
 
-    var output = {};
-    for (var i = 0; i < input.length; i++) {
-        var layer = style.getLayer(input[i].layerId);
+    const output = {};
+    for (let i = 0; i < input.length; i++) {
+        const layer = style.getLayer(input[i].layerId);
         if (!layer) continue;
 
-        var bucket = Bucket.create(util.extend({
+        const bucket = Bucket.create(util.extend({
             layer: layer,
             childLayers: input[i].childLayerIds
                 .map(style.getLayer.bind(style))
-                .filter(function(layer) { return layer; })
+                .filter((layer) => { return layer; })
         }, input[i]));
         output[bucket.id] = bucket;
     }

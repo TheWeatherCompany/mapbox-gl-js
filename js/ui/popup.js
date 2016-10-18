@@ -2,12 +2,12 @@
 
 module.exports = Popup;
 
-var util = require('../util/util');
-var Evented = require('../util/evented');
-var DOM = require('../util/dom');
-var LngLat = require('../geo/lng_lat');
-var Point = require('point-geometry');
-var window = require('../util/window');
+const util = require('../util/util');
+const Evented = require('../util/evented');
+const DOM = require('../util/dom');
+const LngLat = require('../geo/lng_lat');
+const Point = require('point-geometry');
+const window = require('../util/window');
 
 /**
  * A popup component.
@@ -46,6 +46,9 @@ var window = require('../util/window');
  *   .setLngLat(e.lngLat)
  *   .setHTML("<h1>Hello World!</h1>")
  *   .addTo(map);
+ * @see [Display a popup](https://www.mapbox.com/mapbox-gl-js/example/popup/)
+ * @see [Display a popup on hover](https://www.mapbox.com/mapbox-gl-js/example/popup-on-hover/)
+ * @see [Display a popup on click](https://www.mapbox.com/mapbox-gl-js/example/popup-on-click/)
  */
 function Popup(options) {
     util.setOptions(this, options);
@@ -169,8 +172,9 @@ Popup.prototype = util.inherit(Evented, /** @lends Popup.prototype */{
      * @returns {Popup} `this`
      */
     setHTML: function(html) {
-        var frag = window.document.createDocumentFragment();
-        var temp = window.document.createElement('body'), child;
+        const frag = window.document.createDocumentFragment();
+        const temp = window.document.createElement('body');
+        let child;
         temp.innerHTML = html;
         while (true) {
             child = temp.firstChild;
@@ -226,15 +230,15 @@ Popup.prototype = util.inherit(Evented, /** @lends Popup.prototype */{
             this._container.appendChild(this._content);
         }
 
-        var anchor = this.options.anchor;
-        var offset = normalizeOffset(this.options.offset);
-        var pos = this._map.project(this._lngLat).round();
+        let anchor = this.options.anchor;
+        const offset = normalizeOffset(this.options.offset);
+        const pos = this._map.project(this._lngLat).round();
 
         if (!anchor) {
-            var width = this._container.offsetWidth,
+            const width = this._container.offsetWidth,
                 height = this._container.offsetHeight;
 
-            if (pos.y < height) {
+            if (pos.y + offset.bottom.y < height) {
                 anchor = ['top'];
             } else if (pos.y > this._map.transform.height - height) {
                 anchor = ['bottom'];
@@ -255,9 +259,9 @@ Popup.prototype = util.inherit(Evented, /** @lends Popup.prototype */{
             }
         }
 
-        var offsetedPos = pos.add(offset[anchor]);
+        const offsetedPos = pos.add(offset[anchor]);
 
-        var anchorTranslate = {
+        const anchorTranslate = {
             'top': 'translate(-50%,0)',
             'top-left': 'translate(0,0)',
             'top-right': 'translate(-100%,0)',
@@ -268,13 +272,13 @@ Popup.prototype = util.inherit(Evented, /** @lends Popup.prototype */{
             'right': 'translate(-100%,-50%)'
         };
 
-        var classList = this._container.classList;
-        for (var key in anchorTranslate) {
-            classList.remove('mapboxgl-popup-anchor-' + key);
+        const classList = this._container.classList;
+        for (const key in anchorTranslate) {
+            classList.remove(`mapboxgl-popup-anchor-${key}`);
         }
-        classList.add('mapboxgl-popup-anchor-' + anchor);
+        classList.add(`mapboxgl-popup-anchor-${anchor}`);
 
-        DOM.setTransform(this._container, anchorTranslate[anchor] + ' translate(' + offsetedPos.x + 'px,' + offsetedPos.y + 'px)');
+        DOM.setTransform(this._container, `${anchorTranslate[anchor]} translate(${offsetedPos.x}px,${offsetedPos.y}px)`);
     },
 
     _onClickClose: function() {
@@ -289,7 +293,7 @@ function normalizeOffset(offset) {
 
     } else if (typeof offset === 'number') {
         // input specifies a radius from which to calculate offsets at all positions
-        var cornerOffset = Math.round(Math.sqrt(0.5 * Math.pow(offset, 2)));
+        const cornerOffset = Math.round(Math.sqrt(0.5 * Math.pow(offset, 2)));
         return {
             'top': new Point(0, offset),
             'top-left': new Point(cornerOffset, cornerOffset),
@@ -303,7 +307,7 @@ function normalizeOffset(offset) {
 
     } else if (isPointLike(offset)) {
         // input specifies a single offset to be applied to all positions
-        var convertedOffset = Point.convert(offset);
+        const convertedOffset = Point.convert(offset);
         return {
             'top': convertedOffset,
             'top-left': convertedOffset,

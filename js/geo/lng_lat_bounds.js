@@ -2,7 +2,7 @@
 
 module.exports = LngLatBounds;
 
-var LngLat = require('./lng_lat');
+const LngLat = require('./lng_lat');
 
 /**
  * A `LngLatBounds` object represents a geographical bounding box,
@@ -15,8 +15,8 @@ var LngLat = require('./lng_lat');
  * This flexible type is documented as [`LngLatBoundsLike`](#LngLatBoundsLike).
  *
  * @class LngLatBounds
- * @param {LngLatLike} sw The southwest corner of the bounding box.
- * @param {LngLatLike} ne The northeast corner of the bounding box.
+ * @param {LngLatLike} [sw] The southwest corner of the bounding box.
+ * @param {LngLatLike} [ne] The northeast corner of the bounding box.
  * @example
  * var sw = new mapboxgl.LngLat(-73.9876, 40.7661);
  * var ne = new mapboxgl.LngLat(-73.9397, 40.8002);
@@ -65,9 +65,9 @@ LngLatBounds.prototype = {
      * @returns {LngLatBounds} `this`
      */
     extend: function(obj) {
-        var sw = this._sw,
-            ne = this._ne,
-            sw2, ne2;
+        const sw = this._sw,
+            ne = this._ne;
+        let sw2, ne2;
 
         if (obj instanceof LngLat) {
             sw2 = obj;
@@ -195,7 +195,7 @@ LngLatBounds.prototype = {
      * llb.toString(); // = "LngLatBounds(LngLat(-73.9876, 40.7661), LngLat(-73.9397, 40.8002))"
      */
     toString: function () {
-        return 'LngLatBounds(' + this._sw.toString() + ', ' + this._ne.toString() + ')';
+        return `LngLatBounds(${this._sw.toString()}, ${this._ne.toString()})`;
     }
 };
 

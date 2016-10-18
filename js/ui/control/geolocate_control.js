@@ -1,44 +1,44 @@
 'use strict';
 
-var Control = require('./control');
-var browser = require('../../util/browser');
-var DOM = require('../../util/dom');
-var util = require('../../util/util');
-var window = require('../../util/window');
+const Control = require('./control');
+const browser = require('../../util/browser');
+const DOM = require('../../util/dom');
+const util = require('../../util/util');
+const window = require('../../util/window');
 
-module.exports = Geolocate;
+module.exports = GeolocateControl;
 
-var geoOptions = { enableHighAccuracy: false, timeout: 6000 /* 6sec */ };
+const geoOptions = { enableHighAccuracy: false, timeout: 6000 /* 6sec */ };
 
 
 /**
- * A `Geolocate` control provides a button that uses the browser's geolocation
+ * A `GeolocateControl` control provides a button that uses the browser's geolocation
  * API to locate the user on the map. Extends [`Control`](#Control).
  *
- * @class Geolocate
+ * @class GeolocateControl
  * @param {Object} [options]
  * @param {string} [options.position='top-right'] A string indicating the control's position on the map. Options are `'top-right'`, `'top-left'`, `'bottom-right'`, and `'bottom-left'`.
  * @example
- * map.addControl(new mapboxgl.Geolocate({position: 'top-left'})); // position is optional
+ * map.addControl(new mapboxgl.GeolocateControl({position: 'top-left'})); // position is optional
  */
-function Geolocate(options) {
+function GeolocateControl(options) {
     util.setOptions(this, options);
 }
 
-Geolocate.prototype = util.inherit(Control, {
+GeolocateControl.prototype = util.inherit(Control, {
     options: {
         position: 'top-right'
     },
 
     onAdd: function(map) {
-        var className = 'mapboxgl-ctrl';
+        const className = 'mapboxgl-ctrl';
 
-        var container = this._container = DOM.create('div', className + '-group', map.getContainer());
+        const container = this._container = DOM.create('div', `${className}-group`, map.getContainer());
         if (!browser.supportsGeolocation) return container;
 
         this._container.addEventListener('contextmenu', this._onContextMenu.bind(this));
 
-        this._geolocateButton = DOM.create('button', (className + '-icon ' + className + '-geolocate'), this._container);
+        this._geolocateButton = DOM.create('button', (`${className}-icon ${className}-geolocate`), this._container);
         this._geolocateButton.type = 'button';
         this._geolocateButton.addEventListener('click', this._onClickGeolocate.bind(this));
         return container;
@@ -84,7 +84,7 @@ Geolocate.prototype = util.inherit(Control, {
  * geolocate event.
  *
  * @event geolocate
- * @memberof Geolocate
+ * @memberof GeolocateControl
  * @instance
  * @property {Position} data The returned [Position](https://developer.mozilla.org/en-US/docs/Web/API/Position) object from the callback in [Geolocation.getCurrentPosition()](https://developer.mozilla.org/en-US/docs/Web/API/Geolocation/getCurrentPosition).
  *
@@ -94,7 +94,7 @@ Geolocate.prototype = util.inherit(Control, {
  * error event.
  *
  * @event error
- * @memberof Geolocate
+ * @memberof GeolocateControl
  * @instance
  * @property {PositionError} data The returned [PositionError](https://developer.mozilla.org/en-US/docs/Web/API/PositionError) object from the callback in [Geolocation.getCurrentPosition()](https://developer.mozilla.org/en-US/docs/Web/API/Geolocation/getCurrentPosition).
  *

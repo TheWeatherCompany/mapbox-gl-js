@@ -9,8 +9,8 @@
  */
 module.exports = Hash;
 
-var util = require('../util/util');
-var window = require('../util/window');
+const util = require('../util/util');
+const window = require('../util/window');
 
 function Hash() {
     util.bindAll([
@@ -46,7 +46,7 @@ Hash.prototype = {
     },
 
     _onHashChange: function() {
-        var loc = window.location.hash.replace('#', '').split('/');
+        const loc = window.location.hash.replace('#', '').split('/');
         if (loc.length >= 3) {
             this._map.jumpTo({
                 center: [+loc[2], +loc[1]],
@@ -60,18 +60,18 @@ Hash.prototype = {
     },
 
     _updateHash: function() {
-        var center = this._map.getCenter(),
+        const center = this._map.getCenter(),
             zoom = this._map.getZoom(),
             bearing = this._map.getBearing(),
             pitch = this._map.getPitch(),
-            precision = Math.max(0, Math.ceil(Math.log(zoom) / Math.LN2)),
+            precision = Math.max(0, Math.ceil(Math.log(zoom) / Math.LN2));
 
-            hash = '#' + (Math.round(zoom * 100) / 100) +
-                '/' + center.lat.toFixed(precision) +
-                '/' + center.lng.toFixed(precision);
+        let hash = `#${Math.round(zoom * 100) / 100
+                }/${center.lat.toFixed(precision)
+                }/${center.lng.toFixed(precision)}`;
 
-        if (bearing || pitch) hash += ('/' + (Math.round(bearing * 10) / 10));
-        if (pitch) hash += ('/' + Math.round(pitch));
+        if (bearing || pitch) hash += (`/${Math.round(bearing * 10) / 10}`);
+        if (pitch) hash += (`/${Math.round(pitch)}`);
 
         window.history.replaceState('', '', hash);
     }

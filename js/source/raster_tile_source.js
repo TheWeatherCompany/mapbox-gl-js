@@ -1,25 +1,28 @@
 'use strict';
 
-var util = require('../util/util');
-var ajax = require('../util/ajax');
-var Evented = require('../util/evented');
-var loadTileJSON = require('./load_tilejson');
-var normalizeURL = require('../util/mapbox').normalizeTileURL;
+const util = require('../util/util');
+const ajax = require('../util/ajax');
+const Evented = require('../util/evented');
+const loadTileJSON = require('./load_tilejson');
+const normalizeURL = require('../util/mapbox').normalizeTileURL;
 
 module.exports = RasterTileSource;
 
-function RasterTileSource(id, options, dispatcher) {
+function RasterTileSource(id, options, dispatcher, eventedParent) {
     this.id = id;
     this.dispatcher = dispatcher;
     util.extend(this, util.pick(options, ['url', 'scheme', 'tileSize']));
-    loadTileJSON(options, function (err, tileJSON) {
+
+    this.setEventedParent(eventedParent);
+    this.fire('dataloading', {dataType: 'source'});
+    loadTileJSON(options, (err, tileJSON) => {
         if (err) {
             return this.fire('error', err);
         }
         util.extend(this, tileJSON);
         this.fire('data', {dataType: 'source'});
         this.fire('source.load');
-    }.bind(this));
+    });
 }
 
 RasterTileSource.prototype = util.inherit(Evented, {
@@ -44,7 +47,7 @@ RasterTileSource.prototype = util.inherit(Evented, {
     },
 
     loadTile: function(tile, callback) {
-        var url = normalizeURL(tile.coord.url(this.tiles, null, this.scheme), this.url, this.tileSize);
+        const url = normalizeURL(tile.coord.url(this.tiles, null, this.scheme), this.url, this.tileSize);
 
         tile.request = ajax.getImage(url, done.bind(this));
 
@@ -58,8 +61,8 @@ RasterTileSource.prototype = util.inherit(Evented, {
                 return callback(err);
             }
 
-            var gl = this.map.painter.gl;
-            tile.texture = this.map.painter.getTexture(img.width);
+            const gl = this.map.painter.gl;
+            tile.texture = this.map.painter.getTileTexture(img.width);
             if (tile.texture) {
                 gl.bindTexture(gl.TEXTURE_2D, tile.texture);
                 gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, img);
@@ -92,6 +95,6 @@ RasterTileSource.prototype = util.inherit(Evented, {
     },
 
     unloadTile: function(tile) {
-        if (tile.texture) this.map.painter.saveTexture(tile.texture);
+        if (tile.texture) this.map.painter.saveTileTexture(tile.texture);
     }
 });

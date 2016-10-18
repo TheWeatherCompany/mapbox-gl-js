@@ -2,12 +2,12 @@
 
 module.exports = function (features, textFeatures, geometries) {
 
-    var leftIndex = {},
+    const leftIndex = {},
         rightIndex = {},
         mergedFeatures = [],
         mergedGeom = [],
-        mergedTexts = [],
-        mergedIndex = 0,
+        mergedTexts = [];
+    let mergedIndex = 0,
         k;
 
     function add(k) {
@@ -18,7 +18,7 @@ module.exports = function (features, textFeatures, geometries) {
     }
 
     function mergeFromRight(leftKey, rightKey, geom) {
-        var i = rightIndex[leftKey];
+        const i = rightIndex[leftKey];
         delete rightIndex[leftKey];
         rightIndex[rightKey] = i;
 
@@ -28,7 +28,7 @@ module.exports = function (features, textFeatures, geometries) {
     }
 
     function mergeFromLeft(leftKey, rightKey, geom) {
-        var i = leftIndex[rightKey];
+        const i = leftIndex[rightKey];
         delete leftIndex[rightKey];
         leftIndex[leftKey] = i;
 
@@ -38,12 +38,12 @@ module.exports = function (features, textFeatures, geometries) {
     }
 
     function getKey(text, geom, onRight) {
-        var point = onRight ? geom[0][geom[0].length - 1] : geom[0][0];
-        return text + ':' + point.x + ':' + point.y;
+        const point = onRight ? geom[0][geom[0].length - 1] : geom[0][0];
+        return `${text}:${point.x}:${point.y}`;
     }
 
     for (k = 0; k < features.length; k++) {
-        var geom = geometries[k],
+        const geom = geometries[k],
             text = textFeatures[k];
 
         if (!text) {
@@ -51,13 +51,13 @@ module.exports = function (features, textFeatures, geometries) {
             continue;
         }
 
-        var leftKey = getKey(text, geom),
+        const leftKey = getKey(text, geom),
             rightKey = getKey(text, geom, true);
 
         if ((leftKey in rightIndex) && (rightKey in leftIndex) && (rightIndex[leftKey] !== leftIndex[rightKey])) {
             // found lines with the same text adjacent to both ends of the current line, merge all three
-            var j = mergeFromLeft(leftKey, rightKey, geom);
-            var i = mergeFromRight(leftKey, rightKey, mergedGeom[j]);
+            const j = mergeFromLeft(leftKey, rightKey, geom);
+            const i = mergeFromRight(leftKey, rightKey, mergedGeom[j]);
 
             delete leftIndex[leftKey];
             delete rightIndex[rightKey];

@@ -1,12 +1,13 @@
 'use strict';
 
-var Actor = require('../util/actor');
-var StyleLayer = require('../style/style_layer');
-var util = require('../util/util');
+const Actor = require('../util/actor');
+const StyleLayer = require('../style/style_layer');
+const util = require('../util/util');
 
-var VectorTileWorkerSource = require('./vector_tile_worker_source');
-var GeoJSONWorkerSource = require('./geojson_worker_source');
-var featureFilter = require('feature-filter');
+const VectorTileWorkerSource = require('./vector_tile_worker_source');
+const GeoJSONWorkerSource = require('./geojson_worker_source');
+const featureFilter = require('feature-filter');
+const assert = require('assert');
 
 module.exports = function createWorker(self) {
     return new Worker(self);
@@ -29,7 +30,7 @@ function Worker(self) {
 
     this.self.registerWorkerSource = function (name, WorkerSource) {
         if (this.workerSourceTypes[name]) {
-            throw new Error('Worker source with name "' + name + '" already registered.');
+            throw new Error(`Worker source with name "${name}" already registered.`);
         }
         this.workerSourceTypes[name] = WorkerSource;
     }.bind(this);
@@ -37,60 +38,28 @@ function Worker(self) {
 
 util.extend(Worker.prototype, {
     'set layers': function(mapId, layerDefinitions) {
-        var layers = this.layers[mapId] = {};
-
-        // Filter layers and create an id -> layer map
-        var childLayerIndicies = [];
-        for (var i = 0; i < layerDefinitions.length; i++) {
-            var layer = layerDefinitions[i];
-            if (layer.type === 'fill' || layer.type === 'line' || layer.type === 'circle' || layer.type === 'symbol') {
-                if (layer.ref) {
-                    childLayerIndicies.push(i);
-                } else {
-                    setLayer(layer);
-                }
-            }
-        }
-
-        // Create an instance of StyleLayer per layer
-        for (var j = 0; j < childLayerIndicies.length; j++) {
-            setLayer(layerDefinitions[childLayerIndicies[j]]);
-        }
-
-        function setLayer(serializedLayer) {
-            var styleLayer = StyleLayer.create(
-                serializedLayer,
-                serializedLayer.ref && layers[serializedLayer.ref]
-            );
-            styleLayer.updatePaintTransitions({}, {transition: false});
-            styleLayer.filter = featureFilter(styleLayer.filter);
-            layers[styleLayer.id] = styleLayer;
-        }
-
-        this.layerFamilies[mapId] = createLayerFamilies(this.layers[mapId]);
+        this.layers[mapId] = {};
+        this['update layers'](mapId, layerDefinitions);
     },
 
     'update layers': function(mapId, layerDefinitions) {
-        var id;
-        var layer;
-
-        var layers = this.layers[mapId];
+        const layers = this.layers[mapId];
 
         // Update ref parents
-        for (id in layerDefinitions) {
-            layer = layerDefinitions[id];
-            if (layer.ref) updateLayer(layer);
-        }
-
-        // Update ref children
-        for (id in layerDefinitions) {
-            layer = layerDefinitions[id];
+        for (const layer of layerDefinitions) {
             if (!layer.ref) updateLayer(layer);
         }
 
+        // Update ref children
+        for (const layer of layerDefinitions) {
+            if (layer.ref) updateLayer(layer);
+        }
+
         function updateLayer(layer) {
-            var refLayer = layers[layer.ref];
-            var styleLayer = layers[layer.id];
+            if (layer.type !== 'fill' && layer.type !== 'line' && layer.type !== 'circle' && layer.type !== 'symbol')
+                return;
+            const refLayer = layer.ref && layers[layer.ref];
+            let styleLayer = layers[layer.id];
             if (styleLayer) {
                 styleLayer.set(layer, refLayer);
             } else {
@@ -104,28 +73,28 @@ util.extend(Worker.prototype, {
     },
 
     'load tile': function(mapId, params, callback) {
-        var type = params.type || 'vector';
-        this.getWorkerSource(mapId, type).loadTile(params, callback);
+        assert(params.type);
+        this.getWorkerSource(mapId, params.type).loadTile(params, callback);
     },
 
     'reload tile': function(mapId, params, callback) {
-        var type = params.type || 'vector';
-        this.getWorkerSource(mapId, type).reloadTile(params, callback);
+        assert(params.type);
+        this.getWorkerSource(mapId, params.type).reloadTile(params, callback);
     },
 
     'abort tile': function(mapId, params) {
-        var type = params.type || 'vector';
-        this.getWorkerSource(mapId, type).abortTile(params);
+        assert(params.type);
+        this.getWorkerSource(mapId, params.type).abortTile(params);
     },
 
     'remove tile': function(mapId, params) {
-        var type = params.type || 'vector';
-        this.getWorkerSource(mapId, type).removeTile(params);
+        assert(params.type);
+        this.getWorkerSource(mapId, params.type).removeTile(params);
     },
 
     'redo placement': function(mapId, params, callback) {
-        var type = params.type || 'vector';
-        this.getWorkerSource(mapId, type).redoPlacement(params, callback);
+        assert(params.type);
+        this.getWorkerSource(mapId, params.type).redoPlacement(params, callback);
     },
 
     /**
@@ -148,17 +117,17 @@ util.extend(Worker.prototype, {
             this.workerSources[mapId] = {};
         if (!this.workerSources[mapId][type]) {
             // simple accessor object for passing to WorkerSources
-            var layers = {
-                getLayers: function () { return this.layers[mapId]; }.bind(this),
-                getLayerFamilies: function () { return this.layerFamilies[mapId]; }.bind(this)
+            const layers = {
+                getLayers: () => this.layers[mapId],
+                getLayerFamilies: () => this.layerFamilies[mapId]
             };
 
             // use a wrapped actor so that we can attach a target mapId param
             // to any messages invoked by the WorkerSource
-            var actor = {
-                send: function (type, data, callback, buffers) {
+            const actor = {
+                send: (type, data, callback, buffers) => {
                     this.actor.send(type, data, callback, buffers, mapId);
-                }.bind(this)
+                }
             };
 
             this.workerSources[mapId][type] = new this.workerSourceTypes[type](actor, layers);
@@ -169,12 +138,12 @@ util.extend(Worker.prototype, {
 });
 
 function createLayerFamilies(layers) {
-    var families = {};
+    const families = {};
 
-    for (var layerId in layers) {
-        var layer = layers[layerId];
-        var parentLayerId = layer.ref || layer.id;
-        var parentLayer = layers[parentLayerId];
+    for (const layerId in layers) {
+        const layer = layers[layerId];
+        const parentLayerId = layer.ref || layer.id;
+        const parentLayer = layers[parentLayerId];
 
         if (parentLayer.layout && parentLayer.layout.visibility === 'none') continue;
 

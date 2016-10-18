@@ -1,20 +1,20 @@
 'use strict';
 
-var test = require('tap').test;
-var SourceCache = require('../../../js/source/source_cache');
-var Source = require('../../../js/source/source');
-var TileCoord = require('../../../js/source/tile_coord');
-var Transform = require('../../../js/geo/transform');
-var LngLat = require('../../../js/geo/lng_lat');
-var Coordinate = require('../../../js/geo/coordinate');
-var Evented = require('../../../js/util/evented');
-var util = require('../../../js/util/util');
+const test = require('mapbox-gl-js-test').test;
+const SourceCache = require('../../../js/source/source_cache');
+const Source = require('../../../js/source/source');
+const TileCoord = require('../../../js/source/tile_coord');
+const Transform = require('../../../js/geo/transform');
+const LngLat = require('../../../js/geo/lng_lat');
+const Coordinate = require('../../../js/geo/coordinate');
+const Evented = require('../../../js/util/evented');
+const util = require('../../../js/util/util');
 
 // Add a mocked source type for use in these tests
-Source.setType('mock-source-type', function create (id, sourceOptions) {
+function MockSourceType(id, sourceOptions) {
     // allow tests to override mocked methods/properties by providing
     // them in the source definition object that's given to Source.create()
-    var source = util.extend({
+    let source = util.extend({
         id: id,
         minzoom: 0,
         maxzoom: 22,
@@ -28,7 +28,7 @@ Source.setType('mock-source-type', function create (id, sourceOptions) {
     source = util.inherit(Evented, source);
 
     if (sourceOptions.noLoad) { return source; }
-    setTimeout(function () {
+    setTimeout(() => {
         if (sourceOptions.error) {
             source.fire('error', { error: sourceOptions.error });
         } else {
@@ -36,10 +36,12 @@ Source.setType('mock-source-type', function create (id, sourceOptions) {
         }
     }, 0);
     return source;
-});
+}
+
+Source.setType('mock-source-type', MockSourceType);
 
 function createSourceCache(options, used) {
-    var sc = new SourceCache('id', util.extend({
+    const sc = new SourceCache('id', util.extend({
         tileSize: 512,
         minzoom: 0,
         maxzoom: 14,
@@ -49,10 +51,10 @@ function createSourceCache(options, used) {
     return sc;
 }
 
-test('SourceCache#addTile', function(t) {
-    t.test('loads tile when uncached', function(t) {
-        var coord = new TileCoord(0, 0, 0);
-        var sourceCache = createSourceCache({
+test('SourceCache#addTile', (t) => {
+    t.test('loads tile when uncached', (t) => {
+        const coord = new TileCoord(0, 0, 0);
+        const sourceCache = createSourceCache({
             loadTile: function(tile) {
                 t.deepEqual(tile.coord, coord);
                 t.equal(tile.uses, 0);
@@ -62,10 +64,10 @@ test('SourceCache#addTile', function(t) {
         sourceCache.addTile(coord);
     });
 
-    t.test('adds tile when uncached', function(t) {
-        var coord = new TileCoord(0, 0, 0);
-        var sourceCache = createSourceCache({})
-        .on('dataloading', function (data) {
+    t.test('adds tile when uncached', (t) => {
+        const coord = new TileCoord(0, 0, 0);
+        const sourceCache = createSourceCache({})
+        .on('dataloading', (data) => {
             t.deepEqual(data.tile.coord, coord);
             t.equal(data.tile.uses, 1);
             t.end();
@@ -73,21 +75,21 @@ test('SourceCache#addTile', function(t) {
         sourceCache.addTile(coord);
     });
 
-    t.test('uses cached tile', function(t) {
-        var coord = new TileCoord(0, 0, 0),
-            load = 0,
+    t.test('uses cached tile', (t) => {
+        const coord = new TileCoord(0, 0, 0);
+        let load = 0,
             add = 0;
 
-        var sourceCache = createSourceCache({
+        const sourceCache = createSourceCache({
             loadTile: function(tile, callback) {
                 tile.state = 'loaded';
                 load++;
                 callback();
             }
         })
-        .on('dataloading', function () { add++; });
+        .on('dataloading', () => { add++; });
 
-        var tr = new Transform();
+        const tr = new Transform();
         tr.width = 512;
         tr.height = 512;
         sourceCache.updateCacheSize(tr);
@@ -101,22 +103,22 @@ test('SourceCache#addTile', function(t) {
         t.end();
     });
 
-    t.test('reuses wrapped tile', function(t) {
-        var coord = new TileCoord(0, 0, 0),
-            load = 0,
+    t.test('reuses wrapped tile', (t) => {
+        const coord = new TileCoord(0, 0, 0);
+        let load = 0,
             add = 0;
 
-        var sourceCache = createSourceCache({
+        const sourceCache = createSourceCache({
             loadTile: function(tile, callback) {
                 tile.state = 'loaded';
                 load++;
                 callback();
             }
         })
-        .on('dataloading', function () { add++; });
+        .on('dataloading', () => { add++; });
 
-        var t1 = sourceCache.addTile(coord);
-        var t2 = sourceCache.addTile(new TileCoord(0, 0, 0, 1));
+        const t1 = sourceCache.addTile(coord);
+        const t2 = sourceCache.addTile(new TileCoord(0, 0, 0, 1));
 
         t.equal(load, 1);
         t.equal(add, 2);
@@ -128,11 +130,11 @@ test('SourceCache#addTile', function(t) {
     t.end();
 });
 
-test('SourceCache#removeTile', function(t) {
-    t.test('removes tile', function(t) {
-        var coord = new TileCoord(0, 0, 0);
-        var sourceCache = createSourceCache({});
-        sourceCache.once('data', function (event) {
+test('SourceCache#removeTile', (t) => {
+    t.test('removes tile', (t) => {
+        const coord = new TileCoord(0, 0, 0);
+        const sourceCache = createSourceCache({});
+        sourceCache.once('data', (event) => {
             if (event.dataType === 'tile') {
                 t.end();
             }
@@ -141,9 +143,9 @@ test('SourceCache#removeTile', function(t) {
         sourceCache.removeTile(coord.id);
     });
 
-    t.test('caches (does not unload) loaded tile', function(t) {
-        var coord = new TileCoord(0, 0, 0);
-        var sourceCache = createSourceCache({
+    t.test('caches (does not unload) loaded tile', (t) => {
+        const coord = new TileCoord(0, 0, 0);
+        const sourceCache = createSourceCache({
             loadTile: function(tile) {
                 tile.state = 'loaded';
             },
@@ -152,7 +154,7 @@ test('SourceCache#removeTile', function(t) {
             }
         });
 
-        var tr = new Transform();
+        const tr = new Transform();
         tr.width = 512;
         tr.height = 512;
         sourceCache.updateCacheSize(tr);
@@ -163,12 +165,12 @@ test('SourceCache#removeTile', function(t) {
         t.end();
     });
 
-    t.test('aborts and unloads unfinished tile', function(t) {
-        var coord = new TileCoord(0, 0, 0),
-            abort = 0,
+    t.test('aborts and unloads unfinished tile', (t) => {
+        const coord = new TileCoord(0, 0, 0);
+        let abort = 0,
             unload = 0;
 
-        var sourceCache = createSourceCache({
+        const sourceCache = createSourceCache({
             abortTile: function(tile) {
                 t.deepEqual(tile.coord, coord);
                 abort++;
@@ -191,48 +193,48 @@ test('SourceCache#removeTile', function(t) {
     t.end();
 });
 
-test('SourceCache / Source lifecycle', function (t) {
-    t.test('does not fire load or change before source load event', function (t) {
+test('SourceCache / Source lifecycle', (t) => {
+    t.test('does not fire load or change before source load event', (t) => {
         createSourceCache({noLoad: true})
             .on('source.load', t.fail)
             .on('data', t.fail);
         setTimeout(t.end, 1);
     });
 
-    t.test('forward load event', function (t) {
+    t.test('forward load event', (t) => {
         createSourceCache({}).on('source.load', t.end);
     });
 
-    t.test('forward change event', function (t) {
-        var sourceCache = createSourceCache().on('data', t.end);
+    t.test('forward change event', (t) => {
+        const sourceCache = createSourceCache().on('data', t.end);
         sourceCache.getSource().fire('data');
     });
 
-    t.test('forward error event', function (t) {
+    t.test('forward error event', (t) => {
         createSourceCache({ error: 'Error loading source' })
-        .on('error', function (err) {
+        .on('error', (err) => {
             t.equal(err.error, 'Error loading source');
             t.end();
         });
     });
 
-    t.test('loaded() true after error', function (t) {
-        var sourceCache = createSourceCache({ error: 'Error loading source' })
-        .on('error', function () {
+    t.test('loaded() true after error', (t) => {
+        const sourceCache = createSourceCache({ error: 'Error loading source' })
+        .on('error', () => {
             t.ok(sourceCache.loaded());
             t.end();
         });
     });
 
-    t.test('reloads tiles after a "source" data event', function (t) {
-        var transform = new Transform();
+    t.test('reloads tiles after a "source" data event', (t) => {
+        const transform = new Transform();
         transform.resize(511, 511);
         transform.zoom = 0;
 
-        var expected = [ new TileCoord(0, 0, 0).id, new TileCoord(0, 0, 0).id ];
+        const expected = [ new TileCoord(0, 0, 0).id, new TileCoord(0, 0, 0).id ];
         t.plan(expected.length);
 
-        var sourceCache = createSourceCache({
+        const sourceCache = createSourceCache({
             loadTile: function (tile, callback) {
                 t.equal(tile.coord.id, expected.shift());
                 tile.loaded = true;
@@ -240,7 +242,7 @@ test('SourceCache / Source lifecycle', function (t) {
             }
         });
 
-        sourceCache.on('source.load', function () {
+        sourceCache.on('source.load', () => {
             sourceCache.update(transform);
             sourceCache.getSource().fire('data', {dataType: 'source'});
         });
@@ -249,14 +251,14 @@ test('SourceCache / Source lifecycle', function (t) {
     t.end();
 });
 
-test('SourceCache#update', function(t) {
-    t.test('loads no tiles if used is false', function(t) {
-        var transform = new Transform();
+test('SourceCache#update', (t) => {
+    t.test('loads no tiles if used is false', (t) => {
+        const transform = new Transform();
         transform.resize(512, 512);
         transform.zoom = 0;
 
-        var sourceCache = createSourceCache({}, false);
-        sourceCache.on('source.load', function () {
+        const sourceCache = createSourceCache({}, false);
+        sourceCache.on('source.load', () => {
             sourceCache.update(transform);
 
             t.deepEqual(sourceCache.getIds(), []);
@@ -264,31 +266,31 @@ test('SourceCache#update', function(t) {
         });
     });
 
-    t.test('loads covering tiles', function(t) {
-        var transform = new Transform();
+    t.test('loads covering tiles', (t) => {
+        const transform = new Transform();
         transform.resize(511, 511);
         transform.zoom = 0;
 
-        var sourceCache = createSourceCache({});
-        sourceCache.on('source.load', function () {
+        const sourceCache = createSourceCache({});
+        sourceCache.on('source.load', () => {
             sourceCache.update(transform);
             t.deepEqual(sourceCache.getIds(), [new TileCoord(0, 0, 0).id]);
             t.end();
         });
     });
 
-    t.test('removes unused tiles', function(t) {
-        var transform = new Transform();
+    t.test('removes unused tiles', (t) => {
+        const transform = new Transform();
         transform.resize(511, 511);
         transform.zoom = 0;
 
-        var sourceCache = createSourceCache({
+        const sourceCache = createSourceCache({
             load: function(tile) {
                 tile.state = 'loaded';
             }
         });
 
-        sourceCache.on('source.load', function () {
+        sourceCache.on('source.load', () => {
             sourceCache.update(transform);
             t.deepEqual(sourceCache.getIds(), [new TileCoord(0, 0, 0).id]);
 
@@ -306,20 +308,20 @@ test('SourceCache#update', function(t) {
     });
 
 
-    t.test('retains parent tiles for pending children', function(t) {
-        var transform = new Transform();
+    t.test('retains parent tiles for pending children', (t) => {
+        const transform = new Transform();
         transform._test = 'retains';
         transform.resize(511, 511);
         transform.zoom = 0;
 
-        var sourceCache = createSourceCache({
+        const sourceCache = createSourceCache({
             loadTile: function(tile, callback) {
                 tile.state = (tile.coord.id === new TileCoord(0, 0, 0).id) ? 'loaded' : 'loading';
                 callback();
             }
         });
 
-        sourceCache.on('source.load', function () {
+        sourceCache.on('source.load', () => {
             sourceCache.update(transform);
             t.deepEqual(sourceCache.getIds(), [new TileCoord(0, 0, 0).id]);
 
@@ -337,20 +339,20 @@ test('SourceCache#update', function(t) {
         });
     });
 
-    t.test('retains parent tiles for pending children (wrapped)', function(t) {
-        var transform = new Transform();
+    t.test('retains parent tiles for pending children (wrapped)', (t) => {
+        const transform = new Transform();
         transform.resize(511, 511);
         transform.zoom = 0;
         transform.center = new LngLat(360, 0);
 
-        var sourceCache = createSourceCache({
+        const sourceCache = createSourceCache({
             loadTile: function(tile, callback) {
                 tile.state = (tile.coord.id === new TileCoord(0, 0, 0).id) ? 'loaded' : 'loading';
                 callback();
             }
         });
 
-        sourceCache.on('source.load', function () {
+        sourceCache.on('source.load', () => {
             sourceCache.update(transform);
             t.deepEqual(sourceCache.getIds(), [new TileCoord(0, 0, 0, 1).id]);
 
@@ -368,12 +370,12 @@ test('SourceCache#update', function(t) {
         });
     });
 
-    t.test('includes partially covered tiles in rendered tiles', function(t) {
-        var transform = new Transform();
+    t.test('includes partially covered tiles in rendered tiles', (t) => {
+        const transform = new Transform();
         transform.resize(511, 511);
         transform.zoom = 2;
 
-        var sourceCache = createSourceCache({
+        const sourceCache = createSourceCache({
             loadTile: function(tile, callback) {
                 tile.timeAdded = Infinity;
                 tile.state = 'loaded';
@@ -381,7 +383,7 @@ test('SourceCache#update', function(t) {
             }
         });
 
-        sourceCache.on('source.load', function () {
+        sourceCache.on('source.load', () => {
             sourceCache.update(transform, 100);
             t.deepEqual(sourceCache.getIds(), [
                 new TileCoord(2, 1, 1).id,
@@ -398,12 +400,12 @@ test('SourceCache#update', function(t) {
         });
     });
 
-    t.test('retains a parent tile for fading even if a tile is partially covered by children', function(t) {
-        var transform = new Transform();
+    t.test('retains a parent tile for fading even if a tile is partially covered by children', (t) => {
+        const transform = new Transform();
         transform.resize(511, 511);
         transform.zoom = 0;
 
-        var sourceCache = createSourceCache({
+        const sourceCache = createSourceCache({
             loadTile: function(tile, callback) {
                 tile.timeAdded = Infinity;
                 tile.state = 'loaded';
@@ -411,7 +413,7 @@ test('SourceCache#update', function(t) {
             }
         });
 
-        sourceCache.on('source.load', function () {
+        sourceCache.on('source.load', () => {
             sourceCache.update(transform, 100);
 
             transform.zoom = 2;
@@ -426,14 +428,14 @@ test('SourceCache#update', function(t) {
     });
 
 
-    t.test('retains overscaled loaded children', function(t) {
-        var transform = new Transform();
+    t.test('retains overscaled loaded children', (t) => {
+        const transform = new Transform();
         transform.resize(511, 511);
         transform.zoom = 16;
         transform.center = new LngLat(0, 0);
 
 
-        var sourceCache = createSourceCache({
+        const sourceCache = createSourceCache({
             reparseOverscaled: true,
             loadTile: function(tile, callback) {
                 tile.state = tile.coord.z === 16 ? 'loaded' : 'loading';
@@ -441,7 +443,7 @@ test('SourceCache#update', function(t) {
             }
         });
 
-        sourceCache.on('source.load', function () {
+        sourceCache.on('source.load', () => {
             sourceCache.update(transform);
             t.deepEqual(sourceCache.getRenderableIds(), [
                 new TileCoord(16, 8191, 8191, 0).id,
@@ -466,13 +468,13 @@ test('SourceCache#update', function(t) {
     t.end();
 });
 
-test('SourceCache#clearTiles', function(t) {
-    t.test('unloads tiles', function(t) {
-        var coord = new TileCoord(0, 0, 0),
-            abort = 0,
+test('SourceCache#clearTiles', (t) => {
+    t.test('unloads tiles', (t) => {
+        const coord = new TileCoord(0, 0, 0);
+        let abort = 0,
             unload = 0;
 
-        var sourceCache = createSourceCache({
+        const sourceCache = createSourceCache({
             abortTile: function(tile) {
                 t.deepEqual(tile.coord, coord);
                 abort++;
@@ -495,9 +497,9 @@ test('SourceCache#clearTiles', function(t) {
     t.end();
 });
 
-test('SourceCache#tilesIn', function (t) {
-    t.test('graceful response before source loaded', function (t) {
-        var sourceCache = createSourceCache({ noLoad: true });
+test('SourceCache#tilesIn', (t) => {
+    t.test('graceful response before source loaded', (t) => {
+        const sourceCache = createSourceCache({ noLoad: true });
         t.same(sourceCache.tilesIn([
             new Coordinate(0.5, 0.25, 1),
             new Coordinate(1.5, 0.75, 1)
@@ -506,19 +508,19 @@ test('SourceCache#tilesIn', function (t) {
         t.end();
     });
 
-    t.test('regular tiles', function(t) {
-        var transform = new Transform();
+    t.test('regular tiles', (t) => {
+        const transform = new Transform();
         transform.resize(511, 511);
         transform.zoom = 1;
 
-        var sourceCache = createSourceCache({
+        const sourceCache = createSourceCache({
             loadTile: function(tile, callback) {
                 tile.state = 'loaded';
                 callback();
             }
         });
 
-        sourceCache.on('source.load', function () {
+        sourceCache.on('source.load', () => {
             sourceCache.update(transform);
 
             t.deepEqual(sourceCache.getIds(), [
@@ -528,13 +530,13 @@ test('SourceCache#tilesIn', function (t) {
                 new TileCoord(1, 1, 1).id
             ]);
 
-            var tiles = sourceCache.tilesIn([
+            const tiles = sourceCache.tilesIn([
                 new Coordinate(0.5, 0.25, 1),
                 new Coordinate(1.5, 0.75, 1)
             ]);
 
-            tiles.sort(function (a, b) { return a.tile.coord.x - b.tile.coord.x; });
-            tiles.forEach(function (result) { delete result.tile.uid; });
+            tiles.sort((a, b) => { return a.tile.coord.x - b.tile.coord.x; });
+            tiles.forEach((result) => { delete result.tile.uid; });
 
             t.equal(tiles[0].tile.coord.id, 1);
             t.equal(tiles[0].tile.tileSize, 512);
@@ -550,8 +552,8 @@ test('SourceCache#tilesIn', function (t) {
         });
     });
 
-    t.test('reparsed overscaled tiles', function(t) {
-        var sourceCache = createSourceCache({
+    t.test('reparsed overscaled tiles', (t) => {
+        const sourceCache = createSourceCache({
             loadTile: function(tile, callback) { tile.state = 'loaded'; callback(); },
             reparseOverscaled: true,
             minzoom: 1,
@@ -559,8 +561,8 @@ test('SourceCache#tilesIn', function (t) {
             tileSize: 512
         });
 
-        sourceCache.on('source.load', function () {
-            var transform = new Transform();
+        sourceCache.on('source.load', () => {
+            const transform = new Transform();
             transform.resize(512, 512);
             transform.zoom = 2.0;
             sourceCache.update(transform);
@@ -572,13 +574,13 @@ test('SourceCache#tilesIn', function (t) {
                 new TileCoord(2, 1, 1).id
             ]);
 
-            var tiles = sourceCache.tilesIn([
+            const tiles = sourceCache.tilesIn([
                 new Coordinate(0.5, 0.25, 1),
                 new Coordinate(1.5, 0.75, 1)
             ]);
 
-            tiles.sort(function (a, b) { return a.tile.coord.x - b.tile.coord.x; });
-            tiles.forEach(function (result) { delete result.tile.uid; });
+            tiles.sort((a, b) => { return a.tile.coord.x - b.tile.coord.x; });
+            tiles.forEach((result) => { delete result.tile.uid; });
 
             t.equal(tiles[0].tile.coord.id, 2);
             t.equal(tiles[0].tile.tileSize, 1024);
@@ -594,8 +596,8 @@ test('SourceCache#tilesIn', function (t) {
         });
     });
 
-    t.test('overscaled tiles', function(t) {
-        var sourceCache = createSourceCache({
+    t.test('overscaled tiles', (t) => {
+        const sourceCache = createSourceCache({
             loadTile: function(tile, callback) { tile.state = 'loaded'; callback(); },
             reparseOverscaled: false,
             minzoom: 1,
@@ -603,8 +605,8 @@ test('SourceCache#tilesIn', function (t) {
             tileSize: 512
         });
 
-        sourceCache.on('source.load', function () {
-            var transform = new Transform();
+        sourceCache.on('source.load', () => {
+            const transform = new Transform();
             transform.resize(512, 512);
             transform.zoom = 2.0;
             sourceCache.update(transform);
@@ -617,16 +619,16 @@ test('SourceCache#tilesIn', function (t) {
     t.end();
 });
 
-test('SourceCache#loaded (no errors)', function (t) {
-    var sourceCache = createSourceCache({
+test('SourceCache#loaded (no errors)', (t) => {
+    const sourceCache = createSourceCache({
         loadTile: function(tile, callback) {
             tile.state = 'loaded';
             callback();
         }
     });
 
-    sourceCache.on('source.load', function () {
-        var coord = new TileCoord(0, 0, 0);
+    sourceCache.on('source.load', () => {
+        const coord = new TileCoord(0, 0, 0);
         sourceCache.addTile(coord);
 
         t.ok(sourceCache.loaded());
@@ -634,15 +636,15 @@ test('SourceCache#loaded (no errors)', function (t) {
     });
 });
 
-test('SourceCache#loaded (with errors)', function (t) {
-    var sourceCache = createSourceCache({
+test('SourceCache#loaded (with errors)', (t) => {
+    const sourceCache = createSourceCache({
         loadTile: function(tile) {
             tile.state = 'errored';
         }
     });
 
-    sourceCache.on('source.load', function () {
-        var coord = new TileCoord(0, 0, 0);
+    sourceCache.on('source.load', () => {
+        const coord = new TileCoord(0, 0, 0);
         sourceCache.addTile(coord);
 
         t.ok(sourceCache.loaded());
@@ -650,16 +652,16 @@ test('SourceCache#loaded (with errors)', function (t) {
     });
 });
 
-test('SourceCache#getIds (ascending order by zoom level)', function(t) {
-    var ids = [
+test('SourceCache#getIds (ascending order by zoom level)', (t) => {
+    const ids = [
         new TileCoord(0, 0, 0),
         new TileCoord(3, 0, 0),
         new TileCoord(1, 0, 0),
         new TileCoord(2, 0, 0)
     ];
 
-    var sourceCache = createSourceCache({});
-    for (var i = 0; i < ids.length; i++) {
+    const sourceCache = createSourceCache({});
+    for (let i = 0; i < ids.length; i++) {
         sourceCache._tiles[ids[i].id] = {};
     }
     t.deepEqual(sourceCache.getIds(), [
@@ -672,24 +674,24 @@ test('SourceCache#getIds (ascending order by zoom level)', function(t) {
 });
 
 
-test('SourceCache#findLoadedParent', function(t) {
+test('SourceCache#findLoadedParent', (t) => {
 
-    t.test('adds from previously used tiles (sourceCache._tiles)', function(t) {
-        var sourceCache = createSourceCache({});
-        var tr = new Transform();
+    t.test('adds from previously used tiles (sourceCache._tiles)', (t) => {
+        const sourceCache = createSourceCache({});
+        const tr = new Transform();
         tr.width = 512;
         tr.height = 512;
         sourceCache.updateCacheSize(tr);
 
-        var tile = {
+        const tile = {
             coord: new TileCoord(1, 0, 0),
             hasData: function() { return true; }
         };
 
         sourceCache._tiles[tile.coord.id] = tile;
 
-        var retain = {};
-        var expectedRetain = {};
+        const retain = {};
+        const expectedRetain = {};
         expectedRetain[tile.coord.id] = true;
 
         t.equal(sourceCache.findLoadedParent(new TileCoord(2, 3, 3), 0, retain), undefined);
@@ -698,22 +700,22 @@ test('SourceCache#findLoadedParent', function(t) {
         t.end();
     });
 
-    t.test('adds from cache', function(t) {
-        var sourceCache = createSourceCache({});
-        var tr = new Transform();
+    t.test('adds from cache', (t) => {
+        const sourceCache = createSourceCache({});
+        const tr = new Transform();
         tr.width = 512;
         tr.height = 512;
         sourceCache.updateCacheSize(tr);
 
-        var tile = {
+        const tile = {
             coord: new TileCoord(1, 0, 0),
             loaded: true
         };
 
         sourceCache._cache.add(tile.coord.id, tile);
 
-        var retain = {};
-        var expectedRetain = {};
+        const retain = {};
+        const expectedRetain = {};
         expectedRetain[tile.coord.id] = true;
 
         t.equal(sourceCache.findLoadedParent(new TileCoord(2, 3, 3), 0, retain), undefined);
@@ -728,11 +730,11 @@ test('SourceCache#findLoadedParent', function(t) {
     t.end();
 });
 
-test('SourceCache#reload', function(t) {
-    t.test('before loaded', function(t) {
-        var sourceCache = createSourceCache({ noLoad: true });
+test('SourceCache#reload', (t) => {
+    t.test('before loaded', (t) => {
+        const sourceCache = createSourceCache({ noLoad: true });
 
-        t.doesNotThrow(function() {
+        t.doesNotThrow(() => {
             sourceCache.reload();
         }, null, 'reload ignored gracefully');
 

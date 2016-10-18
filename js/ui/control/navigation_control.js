@@ -1,41 +1,43 @@
 'use strict';
 
-var Control = require('./control');
-var DOM = require('../../util/dom');
-var util = require('../../util/util');
-var window = require('../../util/window');
+const Control = require('./control');
+const DOM = require('../../util/dom');
+const util = require('../../util/util');
+const window = require('../../util/window');
 
-module.exports = Navigation;
+module.exports = NavigationControl;
 
 /**
- * A `Navigation` control contains zoom buttons and a compass.
+ * A `NavigationControl` control contains zoom buttons and a compass.
  * Extends [`Control`](#Control).
  *
- * @class Navigation
+ * @class NavigationControl
  * @param {Object} [options]
  * @param {string} [options.position='top-right'] A string indicating the control's position on the map. Options are `'top-right'`, `'top-left'`, `'bottom-right'`, and `'bottom-left'`.
  * @example
- * var nav = new mapboxgl.Navigation({position: 'top-left'}); // position is optional
+ * var nav = new mapboxgl.NavigationControl({position: 'top-left'}); // position is optional
  * map.addControl(nav);
+ * @see [Display map navigation controls](https://www.mapbox.com/mapbox-gl-js/example/navigation/)
+ * @see [Add a third party vector tile source](https://www.mapbox.com/mapbox-gl-js/example/third-party/)
  */
-function Navigation(options) {
+function NavigationControl(options) {
     util.setOptions(this, options);
 }
 
-Navigation.prototype = util.inherit(Control, {
+NavigationControl.prototype = util.inherit(Control, {
     options: {
         position: 'top-right'
     },
 
     onAdd: function(map) {
-        var className = 'mapboxgl-ctrl';
+        const className = 'mapboxgl-ctrl';
 
-        var container = this._container = DOM.create('div', className + '-group', map.getContainer());
+        const container = this._container = DOM.create('div', `${className}-group`, map.getContainer());
         this._container.addEventListener('contextmenu', this._onContextMenu.bind(this));
 
-        this._zoomInButton = this._createButton(className + '-icon ' + className + '-zoom-in', map.zoomIn.bind(map));
-        this._zoomOutButton = this._createButton(className + '-icon ' + className + '-zoom-out', map.zoomOut.bind(map));
-        this._compass = this._createButton(className + '-icon ' + className + '-compass', map.resetNorth.bind(map));
+        this._zoomInButton = this._createButton(`${className}-icon ${className}-zoom-in`, map.zoomIn.bind(map));
+        this._zoomOutButton = this._createButton(`${className}-icon ${className}-zoom-out`, map.zoomOut.bind(map));
+        this._compass = this._createButton(`${className}-icon ${className}-compass`, map.resetNorth.bind(map));
 
         this._compassArrow = DOM.create('span', 'arrow', this._compass);
 
@@ -85,14 +87,14 @@ Navigation.prototype = util.inherit(Control, {
     },
 
     _createButton: function(className, fn) {
-        var a = DOM.create('button', className, this._container);
+        const a = DOM.create('button', className, this._container);
         a.type = 'button';
-        a.addEventListener('click', function() { fn(); });
+        a.addEventListener('click', () => { fn(); });
         return a;
     },
 
     _rotateCompassArrow: function() {
-        var rotate = 'rotate(' + (this._map.transform.angle * (180 / Math.PI)) + 'deg)';
+        const rotate = `rotate(${this._map.transform.angle * (180 / Math.PI)}deg)`;
         this._compassArrow.style.transform = rotate;
     }
 });
