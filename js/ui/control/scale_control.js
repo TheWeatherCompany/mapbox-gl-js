@@ -1,19 +1,15 @@
 'use strict';
-const util = require('../../util/util');
+
 const Control = require('./control');
 const DOM = require('../../util/dom');
 
-module.exports = ScaleControl;
-
 /**
  * A `ScaleControl` control displays the ratio of a distance on the map to the corresponding distance on the ground.
- * Extends [`Control`](#Control).
  *
- * @class ScaleControl
  * @param {Object} [options]
  * @param {string} [options.position='bottom-left'] A string indicating the control's position on the map. Options are `'top-right'`, `'top-left'`, `'bottom-right'`, and `'bottom-left'`.
  * @param {number} [options.maxWidth='150'] The maximum length of the scale control in pixels.
- * @param {string} [option.unit='metric'] Unit of the distance (`'imperial'` or `'metric'`).
+ * @param {string} [options.unit='metric'] Unit of the distance (`'imperial'` or `'metric'`).
  * @example
  * map.addControl(new mapboxgl.ScaleControl({
  *     position: 'top-left',
@@ -21,16 +17,14 @@ module.exports = ScaleControl;
  *     unit: 'imperial'
  * }));
  */
-function ScaleControl(options) {
-    util.setOptions(this, options);
-}
+class ScaleControl extends Control {
 
-ScaleControl.prototype = util.inherit(Control, {
-    options: {
-        position: 'bottom-left'
-    },
+    constructor(options) {
+        super();
+        this._position = options && options.position || 'bottom-left';
+    }
 
-    onAdd: function(map) {
+    onAdd(map) {
         const className = 'mapboxgl-ctrl-scale',
             container = this._container = DOM.create('div', className, map.getContainer()),
             options = this.options;
@@ -42,7 +36,9 @@ ScaleControl.prototype = util.inherit(Control, {
 
         return container;
     }
-});
+}
+
+module.exports = ScaleControl;
 
 function updateScale(map, scale, options) {
     // A horizontal scale is imagined to be present at center of the map

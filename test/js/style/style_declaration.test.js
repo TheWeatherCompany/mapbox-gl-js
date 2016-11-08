@@ -12,6 +12,12 @@ test('StyleDeclaration', (t) => {
         t.end();
     });
 
+    t.test('with minimum value', (t) => {
+        t.equal((new StyleDeclaration({type: "number", minimum: -2}, -5)).calculate({zoom: 0}), -2);
+        t.equal((new StyleDeclaration({type: "number", minimum: -2}, 5)).calculate({zoom: 0}), 5);
+        t.end();
+    });
+
     t.test('interpolated functions', (t) => {
         const reference = {type: "number", function: "interpolated"};
         t.equal((new StyleDeclaration(reference, { stops: [[0, 1]] })).calculate({zoom: 0}), 1);
@@ -27,41 +33,9 @@ test('StyleDeclaration', (t) => {
         t.end();
     });
 
-    t.test('non-interpolated piecewise-constant function', (t) => {
+    t.test('piecewise-constant function', (t) => {
         const decl = new StyleDeclaration({type: "array", function: "piecewise-constant"}, {stops: [[0, [0, 10, 5]]]});
         t.deepEqual(decl.calculate({zoom: 0}), [0, 10, 5]);
-        t.end();
-    });
-
-    t.test('interpolated piecewise-constant function', (t) => {
-        const reference = {type: "image", function: "piecewise-constant", transition: true};
-
-        const constant = new StyleDeclaration(reference, 'a.png');
-        t.deepEqual(
-            constant.calculate({zoom: 0, zoomHistory: { lastIntegerZoomTime: 0, lastIntegerZoom: 0 }, duration: 300}),
-            { to: 'a.png', toScale: 1, from: 'a.png', fromScale: 0.5, t: 1 }
-        );
-
-        const variable = new StyleDeclaration(reference, {stops: [[0, 'a.png'], [1, 'b.png']]});
-        t.deepEqual(
-            variable.calculate({
-                zoom: 1,
-                zoomHistory: { lastIntegerZoomTime: 0, lastIntegerZoom: 0 },
-                duration: 300
-            }),
-            { to: 'b.png', toScale: 1, from: 'a.png', fromScale: 2, t: 1 }
-        );
-
-        const unset = new StyleDeclaration(reference, undefined);
-        t.deepEqual(
-            unset.calculate({
-                zoom: 1,
-                zoomHistory: { lastIntegerZoomTime: 0, lastIntegerZoom: 0 },
-                duration: 300
-            }),
-            undefined
-        );
-
         t.end();
     });
 

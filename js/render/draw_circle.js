@@ -22,16 +22,12 @@ function drawCircles(painter, sourceCache, layer, coords) {
         const tile = sourceCache.getTile(coord);
         const bucket = tile.getBucket(layer);
         if (!bucket) continue;
-        const bufferGroups = bucket.bufferGroups.circle;
-        if (!bufferGroups) continue;
 
-        const programOptions = bucket.paintAttributes.circle[layer.id];
-        const program = painter.useProgram(
-            'circle',
-            programOptions.defines,
-            programOptions.vertexPragmas,
-            programOptions.fragmentPragmas
-        );
+        const buffers = bucket.buffers;
+        const layerData = buffers.layerData[layer.id];
+        const programConfiguration = layerData.programConfiguration;
+        const program = painter.useProgram('circle', programConfiguration);
+        programConfiguration.setUniforms(gl, program, layer, {zoom: painter.transform.zoom});
 
         if (layer.paint['circle-pitch-scale'] === 'map') {
             gl.uniform1i(program.u_scale_with_map, true);
@@ -52,12 +48,9 @@ function drawCircles(painter, sourceCache, layer, coords) {
             layer.paint['circle-translate-anchor']
         ));
 
-        bucket.setUniforms(gl, 'circle', program, layer, {zoom: painter.transform.zoom});
-
-        for (let k = 0; k < bufferGroups.length; k++) {
-            const group = bufferGroups[k];
-            group.vaos[layer.id].bind(gl, program, group.layoutVertexBuffer, group.elementBuffer, group.paintVertexBuffers[layer.id]);
-            gl.drawElements(gl.TRIANGLES, group.elementBuffer.length * 3, gl.UNSIGNED_SHORT, 0);
+        for (const segment of buffers.segments) {
+            segment.vaos[layer.id].bind(gl, program, buffers.layoutVertexBuffer, buffers.elementBuffer, layerData.paintVertexBuffer, segment.vertexOffset);
+            gl.drawElements(gl.TRIANGLES, segment.primitiveLength * 3, gl.UNSIGNED_SHORT, segment.primitiveOffset * 3 * 2);
         }
     }
 }

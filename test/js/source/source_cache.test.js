@@ -2,6 +2,7 @@
 
 const test = require('mapbox-gl-js-test').test;
 const SourceCache = require('../../../js/source/source_cache');
+const AnimationLoop = require('../../../js/style/animation_loop');
 const Source = require('../../../js/source/source');
 const TileCoord = require('../../../js/source/tile_coord');
 const Transform = require('../../../js/geo/transform');
@@ -14,18 +15,22 @@ const util = require('../../../js/util/util');
 function MockSourceType(id, sourceOptions) {
     // allow tests to override mocked methods/properties by providing
     // them in the source definition object that's given to Source.create()
-    let source = util.extend({
-        id: id,
-        minzoom: 0,
-        maxzoom: 22,
-        loadTile: function (tile, callback) {
+    class SourceMock extends Evented {
+        constructor() {
+            super();
+            this.id = id;
+            this.minzoom = 0;
+            this.maxzoom = 22;
+            util.extend(this, sourceOptions);
+        }
+        loadTile(tile, callback) {
             setTimeout(callback, 0);
-        },
-        abortTile: function () {},
-        unloadTile: function () {},
-        serialize: function () {}
-    }, sourceOptions);
-    source = util.inherit(Evented, source);
+        }
+        abortTile() {}
+        unloadTile() {}
+        serialize() {}
+    }
+    const source = new SourceMock();
 
     if (sourceOptions.noLoad) { return source; }
     setTimeout(() => {
@@ -374,17 +379,19 @@ test('SourceCache#update', (t) => {
         const transform = new Transform();
         transform.resize(511, 511);
         transform.zoom = 2;
+        const animationLoop = new AnimationLoop();
 
         const sourceCache = createSourceCache({
             loadTile: function(tile, callback) {
                 tile.timeAdded = Infinity;
                 tile.state = 'loaded';
+                tile.setAnimationLoop(animationLoop, 100);
                 callback();
             }
         });
 
         sourceCache.on('source.load', () => {
-            sourceCache.update(transform, 100);
+            sourceCache.update(transform);
             t.deepEqual(sourceCache.getIds(), [
                 new TileCoord(2, 1, 1).id,
                 new TileCoord(2, 2, 1).id,
@@ -393,7 +400,7 @@ test('SourceCache#update', (t) => {
             ]);
 
             transform.zoom = 0;
-            sourceCache.update(transform, 100);
+            sourceCache.update(transform);
 
             t.deepEqual(sourceCache.getRenderableIds().length, 5);
             t.end();
@@ -405,22 +412,25 @@ test('SourceCache#update', (t) => {
         transform.resize(511, 511);
         transform.zoom = 0;
 
+        const animationLoop = new AnimationLoop();
+
         const sourceCache = createSourceCache({
             loadTile: function(tile, callback) {
                 tile.timeAdded = Infinity;
                 tile.state = 'loaded';
+                tile.setAnimationLoop(animationLoop, 100);
                 callback();
             }
         });
 
         sourceCache.on('source.load', () => {
-            sourceCache.update(transform, 100);
+            sourceCache.update(transform);
 
             transform.zoom = 2;
-            sourceCache.update(transform, 100);
+            sourceCache.update(transform);
 
             transform.zoom = 1;
-            sourceCache.update(transform, 100);
+            sourceCache.update(transform);
 
             t.equal(sourceCache._coveredTiles[(new TileCoord(0, 0, 0).id)], true);
             t.end();

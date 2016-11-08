@@ -50,7 +50,7 @@ test('Style', (t) => {
     });
 
     t.test('fires "dataloading"', (t) => {
-        const eventedParent = Object.create(Evented);
+        const eventedParent = new Evented();
         eventedParent.on('dataloading', t.end);
         new Style(createStyleJSON(), eventedParent);
     });
@@ -219,7 +219,7 @@ test('Style#_updateWorkerLayers', (t) => {
         style.addLayer({id: 'third', source: 'source', type: 'fill', 'source-layer': 'source-layer' });
 
         style.dispatcher.broadcast = function(key, value) {
-            t.equal(key, 'set layers');
+            t.equal(key, 'setLayers');
             t.deepEqual(value.map((layer) => { return layer.id; }), ['first', 'second', 'third']);
             t.end();
         };
@@ -247,7 +247,7 @@ test('Style#_updateWorkerLayers with specific ids', (t) => {
 
     style.on('style.load', () => {
         style.dispatcher.broadcast = function(key, value) {
-            t.equal(key, 'update layers');
+            t.equal(key, 'updateLayers');
             t.deepEqual(value.map((layer) => { return layer.id; }), ['second', 'third']);
             t.end();
         };
@@ -786,7 +786,7 @@ test('Style#removeLayer', (t) => {
         });
     });
 
-    t.test('removes referring layers', (t) => {
+    t.test('does not remove dereffed layers', (t) => {
         const style = new Style(createStyleJSON({
             layers: [{
                 id: 'a',
@@ -799,8 +799,8 @@ test('Style#removeLayer', (t) => {
 
         style.on('style.load', () => {
             style.removeLayer('a');
-            t.deepEqual(style.getLayer('a'), undefined);
-            t.deepEqual(style.getLayer('b'), undefined);
+            t.equal(style.getLayer('a'), undefined);
+            t.notEqual(style.getLayer('b'), undefined);
             t.end();
         });
     });
@@ -816,8 +816,7 @@ test('Style#setFilter', (t) => {
                 geojson: createGeoJSONSource()
             },
             layers: [
-                { id: 'symbol', type: 'symbol', source: 'geojson', filter: ['==', 'id', 0] },
-                { id: 'symbol-child', ref: 'symbol' }
+                { id: 'symbol', type: 'symbol', source: 'geojson', filter: ['==', 'id', 0] }
             ]
         });
     }
@@ -827,7 +826,7 @@ test('Style#setFilter', (t) => {
 
         style.on('style.load', () => {
             style.dispatcher.broadcast = function(key, value) {
-                t.equal(key, 'update layers');
+                t.equal(key, 'updateLayers');
                 t.deepEqual(value[0].id, 'symbol');
                 t.deepEqual(value[0].filter, ['==', 'id', 1]);
                 t.end();
@@ -865,7 +864,7 @@ test('Style#setFilter', (t) => {
             style.update({}, {}); // flush pending operations
 
             style.dispatcher.broadcast = function(key, value) {
-                t.equal(key, 'update layers');
+                t.equal(key, 'updateLayers');
                 t.deepEqual(value[0].id, 'symbol');
                 t.deepEqual(value[0].filter, ['==', 'id', 2]);
                 t.end();
@@ -873,22 +872,6 @@ test('Style#setFilter', (t) => {
             filter[2] = 2;
             style.setFilter('symbol', filter);
             style.update({}, {}); // trigger dispatcher broadcast
-        });
-    });
-
-    t.test('sets filter on parent', (t) => {
-        const style = createStyle();
-
-        style.on('style.load', () => {
-            style.dispatcher.broadcast = function(key, value) {
-                t.equal(key, 'update layers');
-                t.deepEqual(value.map((layer) => { return layer.id; }), ['symbol']);
-            };
-
-            style.setFilter('symbol-child', ['==', 'id', 1]);
-            t.deepEqual(style.getFilter('symbol'), ['==', 'id', 1]);
-            t.deepEqual(style.getFilter('symbol-child'), ['==', 'id', 1]);
-            t.end();
         });
     });
 
@@ -927,9 +910,6 @@ test('Style#setLayerZoomRange', (t) => {
                 "id": "symbol",
                 "type": "symbol",
                 "source": "geojson"
-            }, {
-                "id": "symbol-child",
-                "ref": "symbol"
             }]
         });
     }
@@ -939,27 +919,11 @@ test('Style#setLayerZoomRange', (t) => {
 
         style.on('style.load', () => {
             style.dispatcher.broadcast = function(key, value) {
-                t.equal(key, 'update layers');
+                t.equal(key, 'updateLayers');
                 t.deepEqual(value.map((layer) => { return layer.id; }), ['symbol']);
             };
 
             style.setLayerZoomRange('symbol', 5, 12);
-            t.equal(style.getLayer('symbol').minzoom, 5, 'set minzoom');
-            t.equal(style.getLayer('symbol').maxzoom, 12, 'set maxzoom');
-            t.end();
-        });
-    });
-
-    t.test('sets zoom range on parent layer', (t) => {
-        const style = createStyle();
-
-        style.on('style.load', () => {
-            style.dispatcher.broadcast = function(key, value) {
-                t.equal(key, 'update layers');
-                t.deepEqual(value.map((layer) => { return layer.id; }), ['symbol']);
-            };
-
-            style.setLayerZoomRange('symbol-child', 5, 12);
             t.equal(style.getLayer('symbol').minzoom, 5, 'set minzoom');
             t.equal(style.getLayer('symbol').maxzoom, 12, 'set maxzoom');
             t.end();
@@ -1102,17 +1066,6 @@ test('Style#queryRenderedFeatures', (t) => {
             t.end();
         });
 
-        t.test('ref layer inherits properties', (t) => {
-            const results = style.queryRenderedFeatures([{column: 1, row: 1, zoom: 1}], {}, 0, 0);
-            const layer = results[1].layer;
-            const refLayer = results[0].layer;
-            t.deepEqual(layer.layout, refLayer.layout);
-            t.deepEqual(layer.type, refLayer.type);
-            t.deepEqual(layer.id, refLayer.ref);
-            t.notEqual(layer.paint, refLayer.paint);
-            t.end();
-        });
-
         t.test('includes metadata', (t) => {
             const results = style.queryRenderedFeatures([{column: 1, row: 1, zoom: 1}], {}, 0, 0);
 
@@ -1212,9 +1165,6 @@ test('Style#query*Features', (t) => {
                 "id": "symbol",
                 "type": "symbol",
                 "source": "geojson"
-            }, {
-                "id": "symbol-child",
-                "ref": "symbol"
             }]
         });
 
@@ -1256,7 +1206,7 @@ test('Style#addSourceType', (t) => {
 
         // expect no call to load worker source
         style.dispatcher.broadcast = function (type) {
-            if (type === 'load worker source') {
+            if (type === 'loadWorkerSource') {
                 t.fail();
             }
         };
@@ -1273,7 +1223,7 @@ test('Style#addSourceType', (t) => {
         SourceType.workerSourceURL = 'worker-source.js';
 
         style.dispatcher.broadcast = function (type, params) {
-            if (type === 'load worker source') {
+            if (type === 'loadWorkerSource') {
                 t.equal(_types['bar'], SourceType);
                 t.equal(params.name, 'bar');
                 t.equal(params.url, 'worker-source.js');

@@ -5,22 +5,23 @@ const Protobuf = require('pbf');
 const assert = require('assert');
 
 const WorkerTile = require('../../js/source/worker_tile');
-const Worker = require('../../js/source/worker');
 const ajax = require('../../js/util/ajax');
 const Style = require('../../js/style/style');
+const StyleLayerIndex = require('../../js/style/style_layer_index');
 const util = require('../../js/util/util');
 const Evented = require('../../js/util/evented');
 const config = require('../../js/util/config');
 const coordinates = require('../lib/coordinates');
 const formatNumber = require('../lib/format_number');
 const accessToken = require('../lib/access_token');
+const deref = require('mapbox-gl-style-spec/lib/deref');
 
 const SAMPLE_COUNT = 10;
 
 module.exports = function run() {
     config.ACCESS_TOKEN = accessToken;
 
-    const evented = util.extend({}, Evented);
+    const evented = new Evented();
 
     const stylesheetURL = `https://api.mapbox.com/styles/v1/mapbox/streets-v9?access_token=${accessToken}`;
     ajax.getJSON(stylesheetURL, (err, stylesheet) => {
@@ -92,14 +93,14 @@ function preloadAssets(stylesheet, callback) {
 
     style.on('style.load', () => {
         function getGlyphs(params, callback) {
-            style['get glyphs'](0, params, (err, glyphs) => {
+            style.getGlyphs(0, params, (err, glyphs) => {
                 assets.glyphs[JSON.stringify(params)] = glyphs;
                 callback(err, glyphs);
             });
         }
 
         function getIcons(params, callback) {
-            style['get icons'](0, params, (err, icons) => {
+            style.getIcons(0, params, (err, icons) => {
                 assets.icons[JSON.stringify(params)] = icons;
                 callback(err, icons);
             });
@@ -125,9 +126,9 @@ function preloadAssets(stylesheet, callback) {
 }
 
 function runSample(stylesheet, getGlyphs, getIcons, getTile, callback) {
-    const timeStart = performance.now();
+    const layerIndex = new StyleLayerIndex(deref(stylesheet.layers));
 
-    const layerFamilies = createLayerFamilies(stylesheet.layers);
+    const timeStart = performance.now();
 
     util.asyncAll(coordinates, (coordinate, eachCallback) => {
         const url = `https://a.tiles.mapbox.com/v4/mapbox.mapbox-terrain-v2,mapbox.mapbox-streets-v6/${coordinate.zoom}/${coordinate.row}/${coordinate.column}.vector.pbf?access_token=${config.ACCESS_TOKEN}`;
@@ -147,9 +148,9 @@ function runSample(stylesheet, getGlyphs, getIcons, getTile, callback) {
         const actor = {
             send: function(action, params, sendCallback) {
                 setTimeout(() => {
-                    if (action === 'get icons') {
+                    if (action === 'getIcons') {
                         getIcons(params, sendCallback);
-                    } else if (action === 'get glyphs') {
+                    } else if (action === 'getGlyphs') {
                         getGlyphs(params, sendCallback);
                     } else assert(false);
                 }, 0);
@@ -159,7 +160,7 @@ function runSample(stylesheet, getGlyphs, getIcons, getTile, callback) {
         getTile(url, (err, response) => {
             if (err) throw err;
             const data = new VT.VectorTile(new Protobuf(response));
-            workerTile.parse(data, layerFamilies, actor, (err) => {
+            workerTile.parse(data, layerIndex, actor, (err) => {
                 if (err) return callback(err);
                 eachCallback();
             });
@@ -179,17 +180,4 @@ function asyncTimesSeries(times, work, callback) {
     } else {
         callback();
     }
-}
-
-let createLayerFamiliesCacheKey;
-let createLayerFamiliesCacheValue;
-function createLayerFamilies(layers) {
-    if (layers !== createLayerFamiliesCacheKey) {
-        const worker = new Worker({addEventListener: function() {} });
-        worker['set layers'](0, layers);
-
-        createLayerFamiliesCacheKey = layers;
-        createLayerFamiliesCacheValue = worker.layerFamilies[0];
-    }
-    return createLayerFamiliesCacheValue;
 }

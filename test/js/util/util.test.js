@@ -1,4 +1,5 @@
 'use strict';
+// @flow
 
 const test = require('mapbox-gl-js-test').test;
 const Coordinate = require('../../../js/geo/coordinate');
@@ -12,25 +13,9 @@ test('util', (t) => {
     t.deepEqual(util.keysDifference({a:1}, {}), ['a'], 'keysDifference');
     t.deepEqual(util.keysDifference({a:1}, {a:1}), [], 'keysDifference');
     t.deepEqual(util.extend({a:1}, {b:2}), {a:1, b:2}, 'extend');
-    t.deepEqual(util.extendAll({a:1}, {b:2}), {a:1, b:2}, 'extend');
     t.deepEqual(util.pick({a:1, b:2, c:3}, ['a', 'c']), {a:1, c:3}, 'pick');
     t.deepEqual(util.pick({a:1, b:2, c:3}, ['a', 'c', 'd']), {a:1, c:3}, 'pick');
     t.ok(typeof util.uniqueId() === 'number', 'uniqueId');
-
-    t.test('inherit', (t) => {
-        function Inheritance() { }
-        Inheritance.prototype.foo = function() { return 42; };
-        function Child() {}
-        Child.prototype = util.inherit(Inheritance, {
-            bar: function() {
-                return 20;
-            }
-        });
-        const c = new Child();
-        t.equal(c.foo(), 42);
-        t.equal(c.bar(), 20);
-        t.end();
-    });
 
     t.test('getCoordinatesCenter', (t) => {
         t.deepEqual(util.getCoordinatesCenter(
@@ -53,43 +38,6 @@ test('util', (t) => {
         };
         const my = new MyClass();
         setTimeout(my.ontimer, 0);
-    });
-
-    t.test('setOptions', (t) => {
-        function MyClass(options) {
-            util.setOptions(this, options);
-        }
-        const my = new MyClass();
-        t.deepEqual(my.options, {});
-        const my2 = new MyClass({ a: 2 });
-        t.deepEqual(my2.options, { a: 2});
-
-        function MyClassDefaults(options) {
-            this.options = { foo: 'bar' };
-            util.setOptions(this, options);
-        }
-        const myd = new MyClassDefaults();
-        t.deepEqual(myd.options, { foo: 'bar' });
-        const myd2 = new MyClassDefaults({ foo: 'baz' });
-        t.deepEqual(myd2.options, { foo: 'baz' });
-        t.end();
-    });
-
-    t.test('bindHandlers', (t) => {
-        function MyClass() {
-            util.bindHandlers(this);
-            this.name = 'Tom';
-        }
-        MyClass.prototype.otherMethod = function() {
-            t.equal(this, undefined);
-        };
-        MyClass.prototype._onClick = function() {
-            t.equal(this.name, 'Tom');
-            t.end();
-        };
-        const my = new MyClass();
-        my.otherMethod.call(undefined);
-        setTimeout(my._onClick, 0);
     });
 
     t.test('asyncAll - sync', (t) => {
@@ -136,14 +84,6 @@ test('util', (t) => {
         t.end();
     });
 
-    t.test('coalesce', (t) => {
-        t.equal(util.coalesce(undefined, 1), 1);
-        t.equal(util.coalesce(2, 1), 2);
-        t.equal(util.coalesce(null, undefined, 4), 4);
-        t.equal(util.coalesce(), undefined);
-        t.end();
-    });
-
     t.test('clamp', (t) => {
         t.equal(util.clamp(0, 0, 1), 0);
         t.equal(util.clamp(1, 0, 1), 1);
@@ -181,25 +121,6 @@ test('util', (t) => {
         }, () => {
             t.end();
         });
-    });
-
-    t.test('debounce', (t) => {
-        const ender = function(number) {
-            t.equal(number, 3, 'passes argument');
-            t.pass('calls function');
-            t.end();
-        };
-        const debounced = util.debounce(ender, 100);
-        t.ok(debounced, 'creates function');
-        debounced(1);
-        debounced(2);
-        debounced(3);
-    });
-
-    t.test('startsWith', (t) => {
-        t.ok(util.startsWith('mapbox', 'map'));
-        t.notOk(util.startsWith('mapbox', 'box'));
-        t.end();
     });
 
     t.test('endsWith', (t) => {
@@ -294,28 +215,6 @@ test('util', (t) => {
 
         t.end();
     });
-
-    if (process.browser) {
-        t.test('timed: no duration', (t) => {
-            const context = { foo: 'bar' };
-            util.timed(function(step) {
-                t.deepEqual(this, context);
-                t.equal(step, 1);
-                t.end();
-            }, 0, context);
-        });
-        t.test('timed: duration', (t) => {
-            const context = { foo: 'bax' };
-            util.timed(function(step) {
-                t.deepEqual(this, context);
-                if (step === 1) {
-                    t.end();
-                } else {
-                    t.ok(step < 1);
-                }
-            }, 100, context);
-        });
-    }
 
     t.end();
 });

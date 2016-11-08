@@ -34,6 +34,9 @@ exports.getArrayBuffer = function(url, callback) {
         callback(e);
     };
     xhr.onload = function() {
+        if (xhr.response.byteLength === 0 && xhr.status === 200) {
+            return callback(new Error('http status 200 returned without content.'));
+        }
         if (xhr.status >= 200 && xhr.status < 300 && xhr.response) {
             callback(null, xhr.response);
         } else {
@@ -50,25 +53,17 @@ function sameOrigin(url) {
     return a.protocol === window.document.location.protocol && a.host === window.document.location.host;
 }
 
+const transparentPngUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII=';
+
 exports.getImage = function(url, callback) {
     return exports.getArrayBuffer(url, (err, imgData) => {
         if (err) return callback(err);
         const img = new window.Image();
-        img.onload = function() {
-            callback(null, img);
-            (window.URL || window.webkitURL).revokeObjectURL(img.src);
-        };
-        const blob = new window.Blob([new Uint8Array(imgData)], { type: 'image/png' });
-        img.src = (window.URL || window.webkitURL).createObjectURL(blob);
-        img.getData = function() {
-            const canvas = window.document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            context.drawImage(img, 0, 0);
-            return context.getImageData(0, 0, img.width, img.height).data;
-        };
-        return img;
+        img.onload = () => callback(null, img);
+        if (!sameOrigin(url)) {
+            img.crossOrigin = "Anonymous";
+        }
+        img.src = imgData.byteLength ? url : transparentPngUrl;
     });
 };
 
@@ -85,6 +80,5 @@ exports.getVideo = function(urls, callback) {
         s.src = urls[i];
         video.appendChild(s);
     }
-    video.getData = function() { return video; };
     return video;
 };

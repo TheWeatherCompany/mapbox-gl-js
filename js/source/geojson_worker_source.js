@@ -1,6 +1,5 @@
 'use strict';
 
-const util = require('../util/util');
 const ajax = require('../util/ajax');
 const rewind = require('geojson-rewind');
 const GeoJSONWrapper = require('./geojson_wrapper');
@@ -10,32 +9,32 @@ const geojsonvt = require('geojson-vt');
 
 const VectorTileWorkerSource = require('./vector_tile_worker_source');
 
-module.exports = GeoJSONWorkerSource;
-
 /**
  * The {@link WorkerSource} implementation that supports {@link GeoJSONSource}.
  * This class is designed to be easily reused to support custom source types
  * for data formats that can be parsed/converted into an in-memory GeoJSON
  * representation.  To do so, create it with
- * `new GeoJSONWorkerSource(actor, styleLayers, customLoadGeoJSONFunction)`.  For a full example, see [mapbox-gl-topojson](https://github.com/developmentseed/mapbox-gl-topojson).
+ * `new GeoJSONWorkerSource(actor, layerIndex, customLoadGeoJSONFunction)`.  For a full example, see [mapbox-gl-topojson](https://github.com/developmentseed/mapbox-gl-topojson).
  *
- * @class GeoJSONWorkerSource
  * @private
- * @param {Function} [loadGeoJSON] Optional method for custom loading/parsing of GeoJSON based on parameters passed from the main-thread Source.  See {@link GeoJSONWorkerSource#loadGeoJSON}.
  */
-function GeoJSONWorkerSource (actor, styleLayers, loadGeoJSON) {
-    if (loadGeoJSON) { this.loadGeoJSON = loadGeoJSON; }
-    VectorTileWorkerSource.call(this, actor, styleLayers);
-}
-
-GeoJSONWorkerSource.prototype = util.inherit(VectorTileWorkerSource, /** @lends GeoJSONWorkerSource.prototype */ {
-    // object mapping source ids to geojson-vt-like tile indexes
-    _geoJSONIndexes: {},
+class GeoJSONWorkerSource extends VectorTileWorkerSource {
+    /**
+     * @param {Function} [loadGeoJSON] Optional method for custom loading/parsing of GeoJSON based on parameters passed from the main-thread Source.  See {@link GeoJSONWorkerSource#loadGeoJSON}.
+     */
+    constructor (actor, layerIndex, loadGeoJSON) {
+        super(actor, layerIndex);
+        if (loadGeoJSON) {
+            this.loadGeoJSON = loadGeoJSON;
+        }
+        // object mapping source ids to geojson-vt-like tile indexes
+        this._geoJSONIndexes = {};
+    }
 
     /**
      * See {@link VectorTileWorkerSource#loadTile}.
      */
-    loadVectorData: function (params, callback) {
+    loadVectorData(params, callback) {
         const source = params.source,
             coord = params.coord;
 
@@ -57,7 +56,7 @@ GeoJSONWorkerSource.prototype = util.inherit(VectorTileWorkerSource, /** @lends 
         }
         geojsonWrapper.rawData = pbf.buffer;
         callback(null, geojsonWrapper);
-    },
+    }
 
     /**
      * Fetches (if appropriate), parses, and index geojson data into tiles. This
@@ -67,11 +66,11 @@ GeoJSONWorkerSource.prototype = util.inherit(VectorTileWorkerSource, /** @lends 
      * Defers to {@link GeoJSONWorkerSource#loadGeoJSON} for the fetching/parsing,
      * expecting `callback(error, data)` to be called with either an error or a
      * parsed GeoJSON object.
-     * @param {object} params
+     * @param {Object} params
      * @param {string} params.source The id of the source.
      * @param {Function} callback
      */
-    loadData: function (params, callback) {
+    loadData(params, callback) {
         const handleData = function(err, data) {
             if (err) return callback(err);
             if (typeof data != 'object') {
@@ -86,7 +85,7 @@ GeoJSONWorkerSource.prototype = util.inherit(VectorTileWorkerSource, /** @lends 
         }.bind(this);
 
         this.loadGeoJSON(params, handleData);
-    },
+    }
 
     /**
      * Fetch and parse GeoJSON according to the given params.  Calls `callback`
@@ -95,11 +94,11 @@ GeoJSONWorkerSource.prototype = util.inherit(VectorTileWorkerSource, /** @lends 
      * GeoJSON is loaded and parsed from `params.url` if it exists, or else
      * expected as a literal (string or object) `params.data`.
      *
-     * @param {object} params
+     * @param {Object} params
      * @param {string} [params.url] A URL to the remote GeoJSON data.
-     * @param {object} [params.data] Literal GeoJSON data. Must be provided if `params.url` is not.
+     * @param {Object} [params.data] Literal GeoJSON data. Must be provided if `params.url` is not.
      */
-    loadGeoJSON: function (params, callback) {
+    loadGeoJSON(params, callback) {
         // Because of same origin issues, urls must either include an explicit
         // origin or absolute path.
         // ie: /foo/bar.json or http://example.com/bar.json
@@ -115,16 +114,16 @@ GeoJSONWorkerSource.prototype = util.inherit(VectorTileWorkerSource, /** @lends 
         } else {
             return callback(new Error("Input data is not a valid GeoJSON object."));
         }
-    },
+    }
 
     /**
      * Index the data using either geojson-vt or supercluster
      * @param {GeoJSON} data
-     * @param {object} params forwarded from loadTile.
+     * @param {Object} params forwarded from loadTile.
      * @param {callback} (err, indexedData)
      * @private
      */
-    _indexData: function (data, params, callback) {
+    _indexData(data, params, callback) {
         try {
             if (params.cluster) {
                 callback(null, supercluster(params.superclusterOptions).load(data.features));
@@ -135,4 +134,6 @@ GeoJSONWorkerSource.prototype = util.inherit(VectorTileWorkerSource, /** @lends 
             return callback(err);
         }
     }
-});
+}
+
+module.exports = GeoJSONWorkerSource;

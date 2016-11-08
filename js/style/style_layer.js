@@ -8,26 +8,20 @@ const validateStyle = require('./validate_style');
 const parseColor = require('./parse_color');
 const Evented = require('../util/evented');
 
-module.exports = StyleLayer;
-
 const TRANSITION_SUFFIX = '-transition';
 
-function StyleLayer(layer, refLayer) {
-    this.set(layer, refLayer);
-}
+class StyleLayer extends Evented {
+    constructor(layer) {
+        super();
 
-StyleLayer.prototype = util.inherit(Evented, {
-
-    set: function(layer, refLayer) {
         this.id = layer.id;
-        this.ref = layer.ref;
         this.metadata = layer.metadata;
-        this.type = (refLayer || layer).type;
-        this.source = (refLayer || layer).source;
-        this.sourceLayer = (refLayer || layer)['source-layer'];
-        this.minzoom = (refLayer || layer).minzoom;
-        this.maxzoom = (refLayer || layer).maxzoom;
-        this.filter = (refLayer || layer).filter;
+        this.type = layer.type;
+        this.source = layer.source;
+        this.sourceLayer = layer['source-layer'];
+        this.minzoom = layer.minzoom;
+        this.maxzoom = layer.maxzoom;
+        this.filter = layer.filter;
 
         this.paint = {};
         this.layout = {};
@@ -56,12 +50,8 @@ StyleLayer.prototype = util.inherit(Evented, {
         }
 
         // Resolve layout declarations
-        if (this.ref) {
-            this._layoutDeclarations = refLayer._layoutDeclarations;
-        } else {
-            for (layoutName in layer.layout) {
-                this.setLayoutProperty(layoutName, layer.layout[layoutName], options);
-            }
+        for (layoutName in layer.layout) {
+            this.setLayoutProperty(layoutName, layer.layout[layoutName], options);
         }
 
         // set initial layout/paint values
@@ -71,9 +61,9 @@ StyleLayer.prototype = util.inherit(Evented, {
         for (layoutName in this._layoutSpecifications) {
             this._updateLayoutValue(layoutName);
         }
-    },
+    }
 
-    setLayoutProperty: function(name, value, options) {
+    setLayoutProperty(name, value, options) {
 
         if (value == null) {
             delete this._layoutDeclarations[name];
@@ -83,16 +73,16 @@ StyleLayer.prototype = util.inherit(Evented, {
             this._layoutDeclarations[name] = new StyleDeclaration(this._layoutSpecifications[name], value);
         }
         this._updateLayoutValue(name);
-    },
+    }
 
-    getLayoutProperty: function(name) {
+    getLayoutProperty(name) {
         return (
             this._layoutDeclarations[name] &&
             this._layoutDeclarations[name].value
         );
-    },
+    }
 
-    getLayoutValue: function(name, globalProperties, featureProperties) {
+    getLayoutValue(name, globalProperties, featureProperties) {
         const specification = this._layoutSpecifications[name];
         const declaration = this._layoutDeclarations[name];
 
@@ -101,9 +91,9 @@ StyleLayer.prototype = util.inherit(Evented, {
         } else {
             return specification.default;
         }
-    },
+    }
 
-    setPaintProperty: function(name, value, klass, options) {
+    setPaintProperty(name, value, klass, options) {
         const validateStyleKey = `layers.${this.id}${klass ? `["paint.${klass}"].` : '.paint.'}${name}`;
 
         if (util.endsWith(name, TRANSITION_SUFFIX)) {
@@ -127,9 +117,9 @@ StyleLayer.prototype = util.inherit(Evented, {
                 this._paintDeclarations[klass || ''][name] = new StyleDeclaration(this._paintSpecifications[name], value);
             }
         }
-    },
+    }
 
-    getPaintProperty: function(name, klass) {
+    getPaintProperty(name, klass) {
         klass = klass || '';
         if (util.endsWith(name, TRANSITION_SUFFIX)) {
             return (
@@ -143,9 +133,9 @@ StyleLayer.prototype = util.inherit(Evented, {
                 this._paintDeclarations[klass][name].value
             );
         }
-    },
+    }
 
-    getPaintValue: function(name, globalProperties, featureProperties) {
+    getPaintValue(name, globalProperties, featureProperties) {
         const specification = this._paintSpecifications[name];
         const transition = this._paintTransitions[name];
 
@@ -156,23 +146,23 @@ StyleLayer.prototype = util.inherit(Evented, {
         } else {
             return specification.default;
         }
-    },
+    }
 
-    getPaintValueStopZoomLevels: function(name) {
+    getPaintValueStopZoomLevels(name) {
         const transition = this._paintTransitions[name];
         if (transition) {
             return transition.declaration.stopZoomLevels;
         } else {
             return [];
         }
-    },
+    }
 
-    getPaintInterpolationT: function(name, zoom) {
+    getPaintInterpolationT(name, globalProperties) {
         const transition = this._paintTransitions[name];
-        return transition.declaration.calculateInterpolationT({ zoom: zoom });
-    },
+        return transition.declaration.calculateInterpolationT(globalProperties);
+    }
 
-    isPaintValueFeatureConstant: function(name) {
+    isPaintValueFeatureConstant(name) {
         const transition = this._paintTransitions[name];
 
         if (transition) {
@@ -180,9 +170,9 @@ StyleLayer.prototype = util.inherit(Evented, {
         } else {
             return true;
         }
-    },
+    }
 
-    isLayoutValueFeatureConstant: function(name) {
+    isLayoutValueFeatureConstant(name) {
         const declaration = this._layoutDeclarations[name];
 
         if (declaration) {
@@ -190,9 +180,9 @@ StyleLayer.prototype = util.inherit(Evented, {
         } else {
             return true;
         }
-    },
+    }
 
-    isPaintValueZoomConstant: function(name) {
+    isPaintValueZoomConstant(name) {
         const transition = this._paintTransitions[name];
 
         if (transition) {
@@ -200,18 +190,17 @@ StyleLayer.prototype = util.inherit(Evented, {
         } else {
             return true;
         }
-    },
+    }
 
-
-    isHidden: function(zoom) {
+    isHidden(zoom) {
         if (this.minzoom && zoom < this.minzoom) return true;
         if (this.maxzoom && zoom >= this.maxzoom) return true;
         if (this.layout['visibility'] === 'none') return true;
 
         return false;
-    },
+    }
 
-    updatePaintTransitions: function(classes, options, globalOptions, animationLoop) {
+    updatePaintTransitions(classes, options, globalOptions, animationLoop, zoomHistory) {
         const declarations = util.extend({}, this._paintDeclarations['']);
         for (let i = 0; i < classes.length; i++) {
             util.extend(declarations, this._paintDeclarations[classes[i]]);
@@ -219,15 +208,15 @@ StyleLayer.prototype = util.inherit(Evented, {
 
         let name;
         for (name in declarations) { // apply new declarations
-            this._applyPaintDeclaration(name, declarations[name], options, globalOptions, animationLoop);
+            this._applyPaintDeclaration(name, declarations[name], options, globalOptions, animationLoop, zoomHistory);
         }
         for (name in this._paintTransitions) {
             if (!(name in declarations)) // apply removed declarations
-                this._applyPaintDeclaration(name, null, options, globalOptions, animationLoop);
+                this._applyPaintDeclaration(name, null, options, globalOptions, animationLoop, zoomHistory);
         }
-    },
+    }
 
-    updatePaintTransition: function(name, classes, options, globalOptions, animationLoop) {
+    updatePaintTransition(name, classes, options, globalOptions, animationLoop, zoomHistory) {
         let declaration = this._paintDeclarations[''][name];
         for (let i = 0; i < classes.length; i++) {
             const classPaintDeclarations = this._paintDeclarations[classes[i]];
@@ -235,26 +224,30 @@ StyleLayer.prototype = util.inherit(Evented, {
                 declaration = classPaintDeclarations[name];
             }
         }
-        this._applyPaintDeclaration(name, declaration, options, globalOptions, animationLoop);
-    },
+        this._applyPaintDeclaration(name, declaration, options, globalOptions, animationLoop, zoomHistory);
+    }
 
     // update all zoom-dependent layout/paint values
-    recalculate: function(zoom, zoomHistory) {
+    recalculate(zoom) {
         for (const paintName in this._paintTransitions) {
-            this.paint[paintName] = this.getPaintValue(paintName, {zoom: zoom, zoomHistory: zoomHistory});
+            this.paint[paintName] = this.getPaintValue(paintName, {zoom: zoom});
         }
         for (const layoutName in this._layoutFunctions) {
-            this.layout[layoutName] = this.getLayoutValue(layoutName, {zoom: zoom, zoomHistory: zoomHistory});
+            this.layout[layoutName] = this.getLayoutValue(layoutName, {zoom: zoom});
         }
-    },
+    }
 
-    serialize: function(options) {
+    serialize() {
         const output = {
             'id': this.id,
-            'ref': this.ref,
+            'type': this.type,
+            'source': this.source,
+            'source-layer': this.sourceLayer,
             'metadata': this.metadata,
             'minzoom': this.minzoom,
-            'maxzoom': this.maxzoom
+            'maxzoom': this.maxzoom,
+            'filter': this.filter,
+            'layout': util.mapObject(this._layoutDeclarations, getDeclarationValue)
         };
 
         for (const klass in this._paintDeclarations) {
@@ -262,23 +255,13 @@ StyleLayer.prototype = util.inherit(Evented, {
             output[key] = util.mapObject(this._paintDeclarations[klass], getDeclarationValue);
         }
 
-        if (!this.ref || (options && options.includeRefProperties)) {
-            util.extend(output, {
-                'type': this.type,
-                'source': this.source,
-                'source-layer': this.sourceLayer,
-                'filter': this.filter,
-                'layout': util.mapObject(this._layoutDeclarations, getDeclarationValue)
-            });
-        }
-
         return util.filterObject(output, (value, key) => {
             return value !== undefined && !(key === 'layout' && !Object.keys(value).length);
         });
-    },
+    }
 
     // set paint transition based on a given paint declaration
-    _applyPaintDeclaration: function (name, declaration, options, globalOptions, animationLoop) {
+    _applyPaintDeclaration(name, declaration, options, globalOptions, animationLoop, zoomHistory) {
         const oldTransition = options.transition ? this._paintTransitions[name] : undefined;
         const spec = this._paintSpecifications[name];
 
@@ -294,7 +277,7 @@ StyleLayer.prototype = util.inherit(Evented, {
         }, globalOptions, this.getPaintProperty(name + TRANSITION_SUFFIX));
 
         const newTransition = this._paintTransitions[name] =
-            new StyleTransition(spec, declaration, oldTransition, transitionOptions);
+            new StyleTransition(spec, declaration, oldTransition, transitionOptions, zoomHistory);
 
         if (!newTransition.instant()) {
             newTransition.loopID = animationLoop.set(newTransition.endTime - Date.now());
@@ -302,10 +285,10 @@ StyleLayer.prototype = util.inherit(Evented, {
         if (oldTransition) {
             animationLoop.cancel(oldTransition.loopID);
         }
-    },
+    }
 
     // update layout value if it's constant, or mark it as zoom-dependent
-    _updateLayoutValue: function(name) {
+    _updateLayoutValue(name) {
         const declaration = this._layoutDeclarations[name];
 
         if (declaration && declaration.isFunction) {
@@ -314,9 +297,9 @@ StyleLayer.prototype = util.inherit(Evented, {
             delete this._layoutFunctions[name];
             this.layout[name] = this.getLayoutValue(name);
         }
-    },
+    }
 
-    _validate: function(validate, key, name, value, options) {
+    _validate(validate, key, name, value, options) {
         if (options && options.validate === false) {
             return false;
         }
@@ -330,21 +313,23 @@ StyleLayer.prototype = util.inherit(Evented, {
             style: {glyphs: true, sprite: true}
         }));
     }
-});
+}
+
+module.exports = StyleLayer;
+
+const subclasses = {
+    'circle': require('./style_layer/circle_style_layer'),
+    'fill': require('./style_layer/fill_style_layer'),
+    'fill-extrusion': require('./style_layer/fill_extrusion_style_layer'),
+    'line': require('./style_layer/line_style_layer'),
+    'symbol': require('./style_layer/symbol_style_layer')
+};
+
+StyleLayer.create = function(layer) {
+    const LayerClass = subclasses[layer.type] || StyleLayer;
+    return new LayerClass(layer);
+};
 
 function getDeclarationValue(declaration) {
     return declaration.value;
 }
-
-const Classes = {
-    background: require('./style_layer/background_style_layer'),
-    circle: require('./style_layer/circle_style_layer'),
-    fill: require('./style_layer/fill_style_layer'),
-    line: require('./style_layer/line_style_layer'),
-    raster: require('./style_layer/raster_style_layer'),
-    symbol: require('./style_layer/symbol_style_layer')
-};
-
-StyleLayer.create = function(layer, refLayer) {
-    return new Classes[(refLayer || layer).type](layer, refLayer);
-};

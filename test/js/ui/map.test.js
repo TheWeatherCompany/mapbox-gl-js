@@ -382,9 +382,14 @@ test('Map', (t) => {
         function toFixed(bounds) {
             const n = 10;
             return [
-                [bounds[0][0].toFixed(n), bounds[0][1].toFixed(n)],
-                [bounds[1][0].toFixed(n), bounds[1][1].toFixed(n)]
+                [normalizeFixed(bounds[0][0], n), normalizeFixed(bounds[0][1], n)],
+                [normalizeFixed(bounds[1][0], n), normalizeFixed(bounds[1][1], n)]
             ];
+        }
+
+        function normalizeFixed(num, n) {
+            // workaround for "-0.0000000000" ≠ "0.0000000000"
+            return parseFloat(num.toFixed(n)).toFixed(n);
         }
     });
 
@@ -668,51 +673,11 @@ test('Map', (t) => {
 
             map.on('style.load', () => {
                 map.style.dispatcher.broadcast = function(key, value) {
-                    t.equal(key, 'update layers');
+                    t.equal(key, 'updateLayers');
                     t.deepEqual(value.map((layer) => { return layer.id; }), ['symbol']);
                 };
 
                 map.setLayoutProperty('symbol', 'text-transform', 'lowercase');
-                map.style.update();
-                t.deepEqual(map.getLayoutProperty('symbol', 'text-transform'), 'lowercase');
-                t.end();
-            });
-        });
-
-        t.test('sets property on parent layer', (t) => {
-            const map = createMap({
-                style: {
-                    "version": 8,
-                    "sources": {
-                        "geojson": {
-                            "type": "geojson",
-                            "data": {
-                                "type": "FeatureCollection",
-                                "features": []
-                            }
-                        }
-                    },
-                    "layers": [{
-                        "id": "symbol",
-                        "type": "symbol",
-                        "source": "geojson",
-                        "layout": {
-                            "text-transform": "uppercase"
-                        }
-                    }, {
-                        "id": "symbol-ref",
-                        "ref": "symbol"
-                    }]
-                }
-            });
-
-            map.on('style.load', () => {
-                map.style.dispatcher.broadcast = function(key, value) {
-                    t.equal(key, 'update layers');
-                    t.deepEqual(value.map((layer) => { return layer.id; }), ['symbol']);
-                };
-
-                map.setLayoutProperty('symbol-ref', 'text-transform', 'lowercase');
                 map.style.update();
                 t.deepEqual(map.getLayoutProperty('symbol', 'text-transform'), 'lowercase');
                 t.end();
