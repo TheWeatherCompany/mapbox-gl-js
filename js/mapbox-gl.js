@@ -25,6 +25,8 @@ mapboxgl.Point = require('point-geometry');
 mapboxgl.Evented = require('./util/evented');
 mapboxgl.util = require('./util/util');
 
+mapboxgl.layerGroups = require('./../shim/mapbox-gl-layer-groups');
+
 mapboxgl.supported = require('./util/browser').supported;
 
 const ajax = require('./util/ajax');
