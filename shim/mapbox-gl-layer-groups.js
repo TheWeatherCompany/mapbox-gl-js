@@ -130,5 +130,8 @@ module.exports = {
     removeGroup,
     moveGroup,
     getGroupFirstLayer,
-    getGroupLastLayer
+    getGroupLastLayer,
+		getLayerGroup,
+		getGroupFirstIndex,
+		getGroupLastIndex
 };
