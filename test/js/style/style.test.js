@@ -196,7 +196,7 @@ test('Style#_remove', (t) => {
 
 });
 
-test('Style#_updateWorkerLayers', (t) => {
+test('Style#update', (t) => {
     const style = new Style({
         'version': 8,
         'sources': {
@@ -217,42 +217,16 @@ test('Style#_updateWorkerLayers', (t) => {
     style.on('style.load', () => {
         style.addLayer({id: 'first', source: 'source', type: 'fill', 'source-layer': 'source-layer' }, 'second');
         style.addLayer({id: 'third', source: 'source', type: 'fill', 'source-layer': 'source-layer' });
+        style.removeLayer('second');
 
-        style.dispatcher.broadcast = function(key, value) {
-            t.equal(key, 'setLayers');
-            t.deepEqual(value.map((layer) => { return layer.id; }), ['first', 'second', 'third']);
-            t.end();
-        };
-
-        style._updateWorkerLayers();
-    });
-});
-
-test('Style#_updateWorkerLayers with specific ids', (t) => {
-    const style = new Style({
-        'version': 8,
-        'sources': {
-            'source': {
-                'type': 'vector'
-            }
-        },
-        'layers': [
-            {id: 'first', source: 'source', type: 'fill', 'source-layer': 'source-layer'},
-            {id: 'second', source: 'source', type: 'fill', 'source-layer': 'source-layer'},
-            {id: 'third', source: 'source', type: 'fill', 'source-layer': 'source-layer'}
-        ]
-    });
-
-    style.on('error', (error) => { t.error(error); });
-
-    style.on('style.load', () => {
         style.dispatcher.broadcast = function(key, value) {
             t.equal(key, 'updateLayers');
-            t.deepEqual(value.map((layer) => { return layer.id; }), ['second', 'third']);
+            t.deepEqual(value.layers.map((layer) => { return layer.id; }), ['first', 'third']);
+            t.deepEqual(value.removedIds, ['second']);
             t.end();
         };
 
-        style._updateWorkerLayers(['second', 'third']);
+        style.update();
     });
 });
 
@@ -315,16 +289,61 @@ test('Style#_resolve', (t) => {
     t.end();
 });
 
-test('Style#addSource', (t) => {
-    t.test('returns self', (t) => {
-        const style = new Style(createStyleJSON()),
-            source = createSource();
+test('Style#setState', (t) => {
+    t.test('throw before loaded', (t) => {
+        const style = new Style(createStyleJSON());
+        t.throws(() => {
+            style.setState(style.serialize());
+        }, Error, /load/i);
         style.on('style.load', () => {
-            t.equal(style.addSource('source-id', source), style);
             t.end();
         });
     });
 
+    t.test('do nothing if there are no changes', (t) => {
+        const style = new Style(createStyleJSON());
+        [
+            'addLayer',
+            'removeLayer',
+            'setPaintProperty',
+            'setLayoutProperty',
+            'setFilter',
+            'addSource',
+            'removeSource',
+            'setLayerZoomRange',
+            'setLight'
+        ].forEach((method) => t.stub(style, method, () => t.fail(`${method} called`)));
+        style.on('style.load', () => {
+            const didChange = style.setState(createStyleJSON());
+            t.notOk(didChange, 'return false');
+            t.end();
+        });
+    });
+
+    t.test('return true if there is a change', (t) => {
+        const initialState = createStyleJSON();
+        const nextState = createStyleJSON({
+            sources: {
+                foo: {
+                    type: 'geojson',
+                    data: { type: 'FeatureCollection', features: [] }
+                }
+            }
+        });
+
+        const style = new Style(initialState);
+        style.on('style.load', () => {
+            const didChange = style.setState(nextState);
+            t.ok(didChange);
+            t.same(style.stylesheet, nextState);
+            t.end();
+        });
+    });
+
+    t.end();
+});
+
+test('Style#addSource', (t) => {
     t.test('throw before loaded', (t) => {
         const style = new Style(createStyleJSON()),
             source = createSource();
@@ -415,16 +434,6 @@ test('Style#addSource', (t) => {
 });
 
 test('Style#removeSource', (t) => {
-    t.test('returns self', (t) => {
-        const style = new Style(createStyleJSON()),
-            source = createSource();
-        style.on('style.load', () => {
-            style.addSource('source-id', source);
-            t.equal(style.removeSource('source-id'), style);
-            t.end();
-        });
-    });
-
     t.test('throw before loaded', (t) => {
         const style = new Style(createStyleJSON({
             "sources": {
@@ -513,16 +522,6 @@ test('Style#removeSource', (t) => {
 });
 
 test('Style#addLayer', (t) => {
-    t.test('returns self', (t) => {
-        const style = new Style(createStyleJSON()),
-            layer = {id: 'background', type: 'background'};
-
-        style.on('style.load', () => {
-            t.equal(style.addLayer(layer), style);
-            t.end();
-        });
-    });
-
     t.test('throw before loaded', (t) => {
         const style = new Style(createStyleJSON()),
             layer = {id: 'background', type: 'background'};
@@ -697,17 +696,6 @@ test('Style#addLayer', (t) => {
 });
 
 test('Style#removeLayer', (t) => {
-    t.test('returns self', (t) => {
-        const style = new Style(createStyleJSON()),
-            layer = {id: 'background', type: 'background'};
-
-        style.on('style.load', () => {
-            style.addLayer(layer);
-            t.equal(style.removeLayer('background'), style);
-            t.end();
-        });
-    });
-
     t.test('throw before loaded', (t) => {
         const style = new Style(createStyleJSON({
             "layers": [{id: 'background', type: 'background'}]
@@ -763,7 +751,7 @@ test('Style#removeLayer', (t) => {
         style.on('style.load', () => {
             t.throws(() => {
                 style.removeLayer('background');
-            }, /There is no layer with this ID/);
+            }, /Layer not found: background/);
             t.end();
         });
     });
@@ -808,6 +796,63 @@ test('Style#removeLayer', (t) => {
     t.end();
 });
 
+test('Style#moveLayer', (t) => {
+
+    t.test('throw before loaded', (t) => {
+        const style = new Style(createStyleJSON({
+            "layers": [{id: 'background', type: 'background'}]
+        }));
+        t.throws(() => {
+            style.moveLayer('background');
+        }, Error, /load/i);
+        style.on('style.load', () => {
+            t.end();
+        });
+    });
+
+    t.test('fires "data" event', (t) => {
+        const style = new Style(createStyleJSON()),
+            layer = {id: 'background', type: 'background'};
+
+        style.once('data', t.end);
+
+        style.on('style.load', () => {
+            style.addLayer(layer);
+            style.moveLayer('background');
+            style.update();
+        });
+    });
+
+    t.test('throws on non-existence', (t) => {
+        const style = new Style(createStyleJSON());
+
+        style.on('style.load', () => {
+            t.throws(() => {
+                style.moveLayer('background');
+            }, /Layer not found: background/);
+            t.end();
+        });
+    });
+
+    t.test('changes the order', (t) => {
+        const style = new Style(createStyleJSON({
+            layers: [
+                {id: 'a', type: 'background'},
+                {id: 'b', type: 'background'},
+                {id: 'c', type: 'background'}
+            ]
+        }));
+
+        style.on('style.load', () => {
+            style.moveLayer('a', 'c');
+            t.deepEqual(style._order, ['b', 'a', 'c']);
+            t.end();
+        });
+    });
+
+    t.end();
+});
+
 test('Style#setFilter', (t) => {
     function createStyle() {
         return new Style({
@@ -827,8 +872,8 @@ test('Style#setFilter', (t) => {
         style.on('style.load', () => {
             style.dispatcher.broadcast = function(key, value) {
                 t.equal(key, 'updateLayers');
-                t.deepEqual(value[0].id, 'symbol');
-                t.deepEqual(value[0].filter, ['==', 'id', 1]);
+                t.deepEqual(value.layers[0].id, 'symbol');
+                t.deepEqual(value.layers[0].filter, ['==', 'id', 1]);
                 t.end();
             };
 
@@ -865,8 +910,8 @@ test('Style#setFilter', (t) => {
 
             style.dispatcher.broadcast = function(key, value) {
                 t.equal(key, 'updateLayers');
-                t.deepEqual(value[0].id, 'symbol');
-                t.deepEqual(value[0].filter, ['==', 'id', 2]);
+                t.deepEqual(value.layers[0].id, 'symbol');
+                t.deepEqual(value.layers[0].filter, ['==', 'id', 2]);
                 t.end();
             };
             filter[2] = 2;
@@ -1116,7 +1161,6 @@ test('Style defers expensive methods', (t) => {
         t.spy(style, 'fire');
         t.spy(style, '_reloadSource');
         t.spy(style, '_updateWorkerLayers');
-        t.spy(style, '_groupLayers');
 
         style.addLayer({ id: 'first', type: 'symbol', source: 'streets' });
         style.addLayer({ id: 'second', type: 'symbol', source: 'streets' });
@@ -1128,7 +1172,6 @@ test('Style defers expensive methods', (t) => {
         t.notOk(style.fire.called, 'fire is deferred');
         t.notOk(style._reloadSource.called, '_reloadSource is deferred');
         t.notOk(style._updateWorkerLayers.called, '_updateWorkerLayers is deferred');
-        t.notOk(style._groupLayers.called, '_groupLayers is deferred');
 
         style.update();
 
@@ -1141,7 +1184,6 @@ test('Style defers expensive methods', (t) => {
 
         // called once
         t.ok(style._updateWorkerLayers.calledOnce, '_updateWorkerLayers is called once');
-        t.ok(style._groupLayers.calledOnce, '_groupLayers is called once');
 
         t.end();
     });

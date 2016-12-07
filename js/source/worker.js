@@ -33,12 +33,12 @@ class Worker {
         };
     }
 
-    setLayers(mapId, layerDefinitions) {
-        this.getLayerIndex(mapId).replace(layerDefinitions);
+    setLayers(mapId, layers) {
+        this.getLayerIndex(mapId).replace(layers);
     }
 
-    updateLayers(mapId, layerDefinitions) {
-        this.getLayerIndex(mapId).update(layerDefinitions);
+    updateLayers(mapId, params) {
+        this.getLayerIndex(mapId).update(params.layers, params.removedIds, params.symbolOrder);
     }
 
     loadTile(mapId, params, callback) {
@@ -59,6 +59,14 @@ class Worker {
     removeTile(mapId, params) {
         assert(params.type);
         this.getWorkerSource(mapId, params.type).removeTile(params);
+    }
+
+    removeSource(mapId, params) {
+        assert(params.type);
+        const worker = this.getWorkerSource(mapId, params.type);
+        if (worker.removeSource !== undefined) {
+            worker.removeSource(params);
+        }
     }
 
     redoPlacement(mapId, params, callback) {

@@ -34,10 +34,9 @@ class WorkerTile {
         this.collisionBoxArray = new CollisionBoxArray();
         this.symbolInstancesArray = new SymbolInstancesArray();
         this.symbolQuadsArray = new SymbolQuadsArray();
-        const collisionTile = new CollisionTile(this.angle, this.pitch, this.collisionBoxArray);
         const sourceLayerCoder = new DictionaryCoder(Object.keys(data.layers).sort());
 
-        const featureIndex = new FeatureIndex(this.coord, this.overscaling, collisionTile, data.layers);
+        const featureIndex = new FeatureIndex(this.coord, this.overscaling);
         featureIndex.bucketLayerIDs = {};
 
         const buckets = {};
@@ -103,13 +102,9 @@ class WorkerTile {
             }
         }
 
-        const done = () => {
-            this.status = 'done';
 
-            if (this.redoPlacementAfterDone) {
-                this.redoPlacement(this.angle, this.pitch, null);
-                this.redoPlacementAfterDone = false;
-            }
+        const done = (collisionTile) => {
+            this.status = 'done';
 
             const transferables = [];
             callback(null, {
@@ -124,16 +119,15 @@ class WorkerTile {
 
         // Symbol buckets must be placed in reverse order.
         this.symbolBuckets = [];
-        for (let i = layerIndex.order.length - 1; i >= 0; i--) {
-            const id = layerIndex.order[i];
-            const bucket = buckets[id];
-            if (bucket && bucket.layers[0].type === 'symbol') {
+        for (let i = layerIndex.symbolOrder.length - 1; i >= 0; i--) {
+            const bucket = buckets[layerIndex.symbolOrder[i]];
+            if (bucket) {
                 this.symbolBuckets.push(bucket);
             }
         }
 
         if (this.symbolBuckets.length === 0) {
-            return done();
+            return done(new CollisionTile(this.angle, this.pitch, this.collisionBoxArray));
         }
 
         let deps = 0;
@@ -144,16 +138,16 @@ class WorkerTile {
             if (err) return callback(err);
             deps++;
             if (deps === 2) {
+                const collisionTile = new CollisionTile(this.angle, this.pitch, this.collisionBoxArray);
+
                 for (const bucket of this.symbolBuckets) {
-                    // Layers are shared and may have been used by a WorkerTile with a different zoom.
-                    for (const layer of bucket.layers) {
-                        layer.recalculate(this.zoom);
-                    }
+                    recalculateLayers(bucket, this.zoom);
 
                     bucket.prepare(stacks, icons);
                     bucket.place(collisionTile, this.showCollisionBoxes);
                 }
-                done();
+
+                done(collisionTile);
             }
         };
 
@@ -177,19 +171,17 @@ class WorkerTile {
     }
 
     redoPlacement(angle, pitch, showCollisionBoxes) {
+        this.angle = angle;
+        this.pitch = pitch;
+
         if (this.status !== 'done') {
-            this.redoPlacementAfterDone = true;
-            this.angle = angle;
             return {};
         }
 
-        const collisionTile = new CollisionTile(angle, pitch, this.collisionBoxArray);
+        const collisionTile = new CollisionTile(this.angle, this.pitch, this.collisionBoxArray);
 
         for (const bucket of this.symbolBuckets) {
-            // Layers are shared and may have been used by a WorkerTile with a different zoom.
-            for (const layer of bucket.layers) {
-                layer.recalculate(this.zoom);
-            }
+            recalculateLayers(bucket, this.zoom);
 
             bucket.place(collisionTile, showCollisionBoxes);
         }
@@ -202,6 +194,13 @@ class WorkerTile {
             },
             transferables: transferables
         };
+    }
+}
+
+function recalculateLayers(bucket, zoom) {
+    // Layers are shared and may have been used by a WorkerTile with a different zoom.
+    for (const layer of bucket.layers) {
+        layer.recalculate(zoom);
     }
 }
 

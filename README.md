@@ -10,6 +10,8 @@ It is part of the [Mapbox GL ecosystem](https://github.com/mapbox/mapbox-gl) whi
 - [API Examples](https://www.mapbox.com/mapbox-gl-js/examples/)
 - [Style Specification](https://www.mapbox.com/mapbox-gl-style-spec)
 - [Gallery](https://www.mapbox.com/gallery/)
+- [Roadmap](https://www.mapbox.com/mapbox-gl-js/roadmap/)
+- [Top Github Issues](https://mapbox.github.io/top-issues/#!mapbox/mapbox-gl-js)
 
 [<img width="981" alt="Mapbox GL JS gallery" src="https://cloud.githubusercontent.com/assets/281306/14547142/a3c98294-025f-11e6-92f4-d6b0f50c8e89.png">](https://www.mapbox.com/gallery/)
 
@@ -23,8 +25,8 @@ To use the [vector tiles](https://www.mapbox.com/maps/) and styles hosted on htt
 <!DOCTYPE html>
 <html>
 <head>
-    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.27.0/mapbox-gl.js'></script>
-    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.27.0/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.28.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.28.0/mapbox-gl.css' rel='stylesheet' />
 </head>
 
 <body>
@@ -79,7 +81,8 @@ import mapboxgl from 'mapbox-gl/dist/mapbox-gl.js';
 These projects are written and maintained by the GL JS community. Feel free to open a PR add your own projects to this list. We :heart: third party projects!
 
  - [Typescript Definitions on DefinitelyTyped](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/mapbox-gl)
- - [Webtoolkit Integration](https://github.com/yvanvds/wtMapbox)
+ - [wtMapbox: Webtoolkit Integration](https://github.com/yvanvds/wtMapbox)
+ - [deck.gl: Advanced WebGL visualization layers](https://github.com/uber/deck.gl)
 
 ## Using Mapbox GL JS with [CSP](https://developer.mozilla.org/en-US/docs/Web/Security/CSP)
 
