@@ -117,7 +117,7 @@ function getLayerFromIndex(map, index) {
 
 function getLayerGroup(map, id) {
 	var layer = map.getLayer(id);
-	if ("metadata" in layer && "group" in layer.metadata)	return map.getLayer(id).metadata.group;
+	if (layer && layer.metadata && layer.metadata.group) return layer.metadata.group;
 }
 
 function isLayer(map, id) {
