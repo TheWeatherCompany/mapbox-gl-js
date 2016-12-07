@@ -1,7 +1,7 @@
 'use strict';
 
 const browser = require('../util/browser');
-const mat4 = require('gl-matrix').mat4;
+const mat4 = require('@mapbox/gl-matrix').mat4;
 const FrameHistory = require('./frame_history');
 const SourceCache = require('../source/source_cache');
 const EXTENT = require('../data/extent');
@@ -197,7 +197,7 @@ class Painter {
 
         this.glyphSource = style.glyphSource;
 
-        this.frameHistory.record(this.transform.zoom);
+        this.frameHistory.record(Date.now(), this.transform.zoom, style.getTransition().duration);
 
         this.prepareBuffers();
         this.clearColor();
@@ -207,53 +207,52 @@ class Painter {
 
         this.depthRange = (style._order.length + 2) * this.numSublayers * this.depthEpsilon;
 
-        this.renderPass({isOpaquePass: true});
-        this.renderPass({isOpaquePass: false});
+        this.isOpaquePass = true;
+        this.renderPass();
+        this.isOpaquePass = false;
+        this.renderPass();
+
+        if (this.options.showTileBoundaries) {
+            const sourceCache = this.style.sourceCaches[Object.keys(this.style.sourceCaches)[0]];
+            draw.debug(this, sourceCache, sourceCache.getVisibleCoordinates());
+        }
     }
 
-    renderPass(options) {
-        const groups = this.style._groups;
-        const isOpaquePass = options.isOpaquePass;
-        this.currentLayer = isOpaquePass ? this.style._order.length : -1;
+    renderPass() {
+        const layerIds = this.style._order;
 
-        for (let i = 0; i < groups.length; i++) {
-            const group = groups[isOpaquePass ? groups.length - 1 - i : i];
-            const sourceCache = this.style.sourceCaches[group.source];
+        let sourceCache, coords;
 
-            let j;
-            let coords = [];
-            if (sourceCache) {
-                if (sourceCache.prepare) sourceCache.prepare();
-                coords = sourceCache.getVisibleCoordinates();
-                for (j = 0; j < coords.length; j++) {
-                    coords[j].posMatrix = this.transform.calculatePosMatrix(coords[j], sourceCache.getSource().maxzoom);
+        this.currentLayer = this.isOpaquePass ? layerIds.length - 1 : 0;
+
+        for (let i = 0; i < layerIds.length; i++) {
+            const layer = this.style._layers[layerIds[this.currentLayer]];
+
+            if (layer.source !== (sourceCache && sourceCache.id)) {
+                sourceCache = this.style.sourceCaches[layer.source];
+                coords = [];
+
+                if (sourceCache) {
+                    if (sourceCache.prepare) sourceCache.prepare();
+                    this.clearStencil();
+                    coords = sourceCache.getVisibleCoordinates();
+                    if (sourceCache.getSource().isTileClipped) {
+                        this._renderTileClippingMasks(coords);
+                    }
                 }
-                this.clearStencil();
-                if (sourceCache.getSource().isTileClipped) {
-                    this._renderTileClippingMasks(coords);
+
+                if (this.isOpaquePass) {
+                    if (!this._showOverdrawInspector) {
+                        this.gl.disable(this.gl.BLEND);
+                    }
+                } else {
+                    this.gl.enable(this.gl.BLEND);
+                    coords.reverse();
                 }
             }
 
-            if (isOpaquePass) {
-                if (!this._showOverdrawInspector) {
-                    this.gl.disable(this.gl.BLEND);
-                }
-                this.isOpaquePass = true;
-            } else {
-                this.gl.enable(this.gl.BLEND);
-                this.isOpaquePass = false;
-                coords.reverse();
-            }
-
-            for (j = 0; j < group.length; j++) {
-                const layer = group[isOpaquePass ? group.length - 1 - j : j];
-                this.currentLayer += isOpaquePass ? -1 : 1;
-                this.renderLayer(this, sourceCache, layer, coords);
-            }
-
-            if (sourceCache) {
-                draw.debug(this, sourceCache, coords);
-            }
+            this.renderLayer(this, sourceCache, layer, coords);
+            this.currentLayer += this.isOpaquePass ? -1 : 1;
         }
     }
 
@@ -363,7 +362,7 @@ class Painter {
         const program = gl.createProgram();
         const definition = shaders[name];
 
-        let definesSource = '#define MAPBOX_GL_JS;\n';
+        let definesSource = `#define MAPBOX_GL_JS\n#define DEVICE_PIXEL_RATIO ${browser.devicePixelRatio.toFixed(1)}\n`;
         if (this._showOverdrawInspector) {
             definesSource += '#define OVERDRAW_INSPECTOR;\n';
         }

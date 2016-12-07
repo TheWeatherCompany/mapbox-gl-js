@@ -83,9 +83,6 @@ function drawLineTile(program, painter, tile, buffers, layer, coord, layerData, 
     }
 
     if (programChanged) {
-        if (!image) {
-            gl.uniform4fv(program.u_color, layer.paint['line-color']);
-        }
 
         if (dasharray) {
             gl.uniform1i(program.u_image, 0);
@@ -107,18 +104,9 @@ function drawLineTile(program, painter, tile, buffers, layer, coord, layerData, 
             gl.uniform2fv(program.u_pattern_br_b, imagePosB.br);
             gl.uniform1f(program.u_fade, image.t);
         }
+        gl.uniform1f(program.u_width, layer.paint['line-width']);
 
-        // the distance over which the line edge fades out.
-        // Retina devices need a smaller distance to avoid aliasing.
-        const antialiasing = 1 / browser.devicePixelRatio;
-
-        gl.uniform1f(program.u_linewidth, layer.paint['line-width'] / 2);
-        gl.uniform1f(program.u_gapwidth, layer.paint['line-gap-width'] / 2);
-        gl.uniform1f(program.u_antialiasing, antialiasing / 2);
-        gl.uniform1f(program.u_blur, layer.paint['line-blur'] + antialiasing);
-        gl.uniform1f(program.u_opacity, layer.paint['line-opacity']);
         gl.uniformMatrix2fv(program.u_antialiasingmatrix, false, painter.transform.lineAntialiasingMatrix);
-        gl.uniform1f(program.u_offset, -layer.paint['line-offset']);
         gl.uniform1f(program.u_extra, painter.transform.lineStretch);
     }
 

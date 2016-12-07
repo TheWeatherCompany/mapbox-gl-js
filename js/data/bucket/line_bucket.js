@@ -45,7 +45,11 @@ const lineInterface = {
         {name: 'a_data', components: 4, type: 'Uint8'}
     ]),
     paintAttributes: [
-        {property: 'line-color', type: 'Uint8'}
+        {property: 'line-color', type: 'Uint8'},
+        {property: 'line-blur', multiplier: 10, type: 'Uint8'},
+        {property: 'line-opacity', multiplier: 10, type: 'Uint8'},
+        {property: 'line-gap-width', multiplier: 10, type: 'Uint8', name: 'a_gapwidth'},
+        {property: 'line-offset', multiplier: 1, type: 'Int8'},
     ],
     elementArrayType: createElementArrayType()
 };
@@ -110,7 +114,7 @@ class LineBucket extends Bucket {
         const arrays = this.arrays;
 
         // we could be more precise, but it would only save a negligible amount of space
-        const segment = arrays.prepareSegment('line', len * 10);
+        const segment = arrays.prepareSegment(len * 10);
 
         // a line may not have coincident points
         if (len === 2 && closed) return;

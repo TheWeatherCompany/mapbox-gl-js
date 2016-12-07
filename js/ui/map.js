@@ -138,6 +138,7 @@ class Map extends Camera {
 
         if (typeof options.container === 'string') {
             this._container = window.document.getElementById(options.container);
+            if (!this._container) throw new Error(`Container '${options.container}' not found.`);
         } else {
             this._container = options.container;
         }
@@ -154,7 +155,9 @@ class Map extends Camera {
             '_contextLost',
             '_contextRestored',
             '_update',
-            '_render'
+            '_render',
+            '_onData',
+            '_onDataLoading'
         ], this);
 
         this._setupContainer();
@@ -201,19 +204,14 @@ class Map extends Camera {
             this.style.update(this._classes, {transition: false});
         });
 
-        this.on('data', function(event) {
-            if (event.dataType === 'style') {
-                this._update(true);
-            } else {
-                this._update();
-            }
-        });
+        this.on('data', this._onData);
+        this.on('dataloading', this._onDataLoading);
     }
 
     /**
-     * Adds a [`Control`](#Control) to the map, calling `control.onAdd(this)`.
+     * Adds a [`IControl`](#IControl) to the map, calling `control.onAdd(this)`.
      *
-     * @param {Control} control The [`Control`](#Control) to add.
+     * @param {IControl} control The [`IControl`](#IControl) to add.
      * @param {string} [position='top-right'] position on the map to which the control will be added.
      * valid values are 'top-left', 'top-right', 'bottom-left', and 'bottom-right'
      * @returns {Map} `this`
@@ -239,7 +237,7 @@ class Map extends Camera {
     /**
      * Removes the control from the map.
      *
-     * @param {Control} control The [`Control`](#Control) to add.
+     * @param {IControl} control The [`IControl`](#IControl) to remove.
      * @returns {Map} `this`
      */
     removeControl(control) {
@@ -433,7 +431,7 @@ class Map extends Camera {
      * If the map's current zoom level is higher than the new maximum,
      * the map will zoom to the new maximum.
      *
-     * @param {?number} maxZoom The maximum zoom level to set (0-20).
+     * @param {?number} maxZoom The maximum zoom level to set.
      *   If `null` or `undefined` is provided, the function removes the current maximum zoom (sets it to 20).
      * @returns {Map} `this`
      */
@@ -441,7 +439,7 @@ class Map extends Camera {
 
         maxZoom = maxZoom === null || maxZoom === undefined ? defaultMaxZoom : maxZoom;
 
-        if (maxZoom >= this.transform.minZoom && maxZoom <= defaultMaxZoom) {
+        if (maxZoom >= this.transform.minZoom) {
             this.transform.maxZoom = maxZoom;
             this._update();
 
@@ -449,7 +447,7 @@ class Map extends Camera {
 
             return this;
 
-        } else throw new Error(`maxZoom must be between the current minZoom and ${defaultMaxZoom}, inclusive`);
+        } else throw new Error(`maxZoom must be greater than the current minZoom`);
     }
 
     /**
@@ -644,18 +642,36 @@ class Map extends Camera {
     }
 
     /**
-     * Replaces the map's Mapbox style object with a new value.
+     * Updates the map's Mapbox style object with a new value.  If the given
+     * value is style JSON object, compares it against the the map's current
+     * state and perform only the changes necessary to make the map style match
+     * the desired state.
      *
      * @param {Object|string} style A JSON object conforming to the schema described in the
      *   [Mapbox Style Specification](https://mapbox.com/mapbox-gl-style-spec/), or a URL to such JSON.
+     * @param {Object} [options]
+     * @param {boolean} [options.diff=true] If false, force a 'full' update, removing the current style
+     *   and adding building the given one instead of attempting a diff-based update.
      * @returns {Map} `this`
      * @see [Change a map's style](https://www.mapbox.com/mapbox-gl-js/example/setstyle/)
      */
-    setStyle(style) {
+    setStyle(style, options) {
+        const shouldTryDiff = (!options || options.diff !== false) && this.style && style &&
+            !(style instanceof Style) && typeof style !== 'string';
+        if (shouldTryDiff) {
+            try {
+                if (this.style.setState(style)) {
+                    this._update(true);
+                }
+                return this;
+            } catch (e) {
+                util.warnOnce(`Unable to perform style diff: ${e.message || e.error || e}.  Rebuilding the style from scratch.`);
+            }
+        }
+
         if (this.style) {
             this.style.setEventedParent(null);
             this.style._remove();
-
             this.off('rotate', this.style._redoPlacement);
             this.off('pitch', this.style._redoPlacement);
         }
@@ -762,6 +778,20 @@ class Map extends Camera {
      */
     addLayer(layer, before) {
         this.style.addLayer(layer, before);
+        this._update(true);
+        return this;
+    }
+
+    /**
+     * Moves a layer to a different z-position.
+     *
+     * @param {string} id The ID of the layer to move.
+     * @param {string} [before] The ID of an existing layer to insert the new layer before.
+     *   If this argument is omitted, the layer will be appended to the end of the layers array.
+     * @returns {Map} `this`
+     */
+    moveLayer(layerId, before) {
+        this.style.moveLayer(layerId, before);
         this._update(true);
         return this;
     }
@@ -1111,9 +1141,8 @@ class Map extends Camera {
         }
 
         this.painter.render(this.style, {
-            debug: this.showTileBoundaries,
+            showTileBoundaries: this.showTileBoundaries,
             showOverdrawInspector: this._showOverdrawInspector,
-            vertices: this.vertices,
             rotating: this.rotating,
             zooming: this.zooming
         });
@@ -1242,6 +1271,15 @@ class Map extends Camera {
     // show vertices
     get vertices() { return !!this._vertices; }
     set vertices(value) { this._vertices = value; this._update(); }
+
+    _onData(event) {
+        this._update(event.dataType === 'style');
+        this.fire(`${event.dataType}data`, event);
+    }
+
+    _onDataLoading(event) {
+        this.fire(`${event.dataType}dataloading`, event);
+    }
 }
 
 module.exports = Map;
@@ -1336,7 +1374,6 @@ function removeNode(node) {
  * @memberof IControl
  * @instance
  * @name getDefaultPosition
- * @param {Map} map the Map this control will be added to
  * @returns {string} a control position, one of the values valid in addControl.
  */
 
@@ -1564,8 +1601,8 @@ function removeNode(node) {
   */
 
 /**
- * Fired when any map data (style, source, tile, etc) loads or changes. See
- * [`MapDataEvent`](#MapDataEvent) for more information.
+ * Fired when any map data loads or changes. See [`MapDataEvent`](#MapDataEvent)
+ * for more information.
  *
  * @event data
  * @memberof Map
@@ -1573,16 +1610,82 @@ function removeNode(node) {
  * @property {MapDataEvent} data
  */
 
+/**
+ * Fired when the map's style loads or changes. See
+ * [`MapDataEvent`](#MapDataEvent) for more information.
+ *
+ * @event styledata
+ * @memberof Map
+ * @instance
+ * @property {MapDataEvent} data
+ */
+
+/**
+ * Fired when one of the map's sources loads or changes. This event is not fired
+ * if a tile belonging to a source loads or changes (that is handled by
+ * `tiledata`). See [`MapDataEvent`](#MapDataEvent) for more information.
+ *
+ * @event sourcedata
+ * @memberof Map
+ * @instance
+ * @property {MapDataEvent} data
+ */
+
  /**
-  * Fired when any map data (style, source, tile, etc) begins loading or
-  * changing asyncronously. All `dataloading` events are followed by a `data`
-  * or `error` event. See [`MapDataEvent`](#MapDataEvent) for more information.
+  * Fired when one of the map's sources' tiles loads or changes. See
+  * [`MapDataEvent`](#MapDataEvent) for more information.
   *
-  * @event dataloading
+  * @event tiledata
   * @memberof Map
   * @instance
   * @property {MapDataEvent} data
   */
+
+/**
+ * Fired when any map data (style, source, tile, etc) begins loading or
+ * changing asyncronously. All `dataloading` events are followed by a `data`
+ * or `error` event. See [`MapDataEvent`](#MapDataEvent) for more information.
+ *
+ * @event dataloading
+ * @memberof Map
+ * @instance
+ * @property {MapDataEvent} data
+ */
+
+/**
+ * Fired when the map's style begins loading or changing asyncronously.
+ * All `styledataloading` events are followed by a `styledata`
+ * or `error` event. See [`MapDataEvent`](#MapDataEvent) for more information.
+ *
+ * @event styledataloading
+ * @memberof Map
+ * @instance
+ * @property {MapDataEvent} data
+ */
+
+/**
+ * Fired when one of the map's sources begins loading or changing asyncronously.
+ * This event is not fired if a tile belonging to a source begins loading or
+ * changing (that is handled by `tiledataloading`). All `sourcedataloading`
+ * events are followed by a `sourcedata` or `error` event. See
+ * [`MapDataEvent`](#MapDataEvent) for more information.
+ *
+ * @event sourcedataloading
+ * @memberof Map
+ * @instance
+ * @property {MapDataEvent} data
+ */
+
+/**
+ * Fired when one of the map's sources' tiles begins loading or changing
+ * asyncronously. All `tiledataloading` events are followed by a `tiledata`
+ * or `error` event. See [`MapDataEvent`](#MapDataEvent) for more information.
+ *
+ * @event tiledataloading
+ * @memberof Map
+ * @instance
+ * @property {MapDataEvent} data
+ */
 
  /**
   * A `MapDataEvent` object is emitted with the [`Map#data`](#Map.event:data)
@@ -1595,7 +1698,10 @@ function removeNode(node) {
   *
   * @typedef {Object} MapDataEvent
   * @property {string} type The event type.
-  * @property {string} dataType The type of data that has changed. One of `'source'`, `'style'`, or `'tile'`.
+  * @property {string} dataType The type of data that has changed. One of `'source'`, `'style'`.
+  * @property {boolean} [isSourceLoaded] True if the event has a `dataType` of `source` and the source has no outstanding network requests.
+  * @property {Object} [source] The [style spec representation of the source](https://www.mapbox.com/mapbox-gl-style-spec/#sources) if the event has a `dataType` of `source`.
+  * @property {Coordinate} [coord] The coordinate of the tile if the event has a `dataType` of `tile`.
   */
 
  /**

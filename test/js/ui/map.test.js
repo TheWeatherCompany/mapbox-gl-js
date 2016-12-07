@@ -56,6 +56,11 @@ test('Map', (t) => {
         t.ok(map.keyboard.isEnabled());
         t.ok(map.scrollZoom.isEnabled());
         t.ok(map.touchZoomRotate.isEnabled());
+        t.throws(() => {
+            new Map({
+                container: 'anElementIdWhichDoesNotExistInTheDocument'
+            });
+        }, new Error("Container 'anElementIdWhichDoesNotExistInTheDocument' not found"), 'throws on invalid map container id');
         t.end();
     });
 
@@ -133,20 +138,51 @@ test('Map', (t) => {
                 function recordEvent(event) { events.push(event.type); }
 
                 map.on('error', recordEvent);
-                map.on('source.load', recordEvent);
                 map.on('data', recordEvent);
                 map.on('dataloading', recordEvent);
 
                 map.style.fire('error');
-                map.style.fire('source.load');
                 map.style.fire('data');
                 map.style.fire('dataloading');
 
                 t.deepEqual(events, [
                     'error',
-                    'source.load',
                     'data',
                     'dataloading',
+                ]);
+
+                t.end();
+            });
+        });
+
+        t.test('fires *data and *dataloading events', (t) => {
+            createMap({}, (error, map) => {
+                t.error(error);
+
+                const events = [];
+                function recordEvent(event) { events.push(event.type); }
+
+                map.on('styledata', recordEvent);
+                map.on('styledataloading', recordEvent);
+                map.on('sourcedata', recordEvent);
+                map.on('sourcedataloading', recordEvent);
+                map.on('tiledata', recordEvent);
+                map.on('tiledataloading', recordEvent);
+
+                map.style.fire('data', {dataType: 'style'});
+                map.style.fire('dataloading', {dataType: 'style'});
+                map.style.fire('data', {dataType: 'source'});
+                map.style.fire('dataloading', {dataType: 'source'});
+                map.style.fire('data', {dataType: 'tile'});
+                map.style.fire('dataloading', {dataType: 'tile'});
+
+                t.deepEqual(events, [
+                    'styledata',
+                    'styledataloading',
+                    'sourcedata',
+                    'sourcedataloading',
+                    'tiledata',
+                    'tiledataloading'
                 ]);
 
                 t.end();
@@ -206,6 +242,16 @@ test('Map', (t) => {
                 t.equal(fixedNum(map.transform.pitch), 0);
                 t.end();
             });
+        });
+
+        t.test('passing null removes style', (t) => {
+            const map = createMap();
+            const style = map.style;
+            t.ok(style);
+            t.spy(style, '_remove');
+            map.setStyle(null);
+            t.equal(style._remove.callCount, 1);
+            t.end();
         });
 
         t.end();
@@ -275,6 +321,32 @@ test('Map', (t) => {
                 }));
                 t.end();
             });
+        });
+
+        t.test('creates a new Style if diff fails', (t) => {
+            const style = createStyle();
+            const map = createMap({ style: style });
+            t.stub(map.style, 'setState', () => {
+                throw new Error('Dummy error');
+            });
+
+            const previousStyle = map.style;
+            map.setStyle(style);
+            t.ok(map.style && map.style !== previousStyle);
+            t.end();
+        });
+
+        t.test('creates a new Style if diff option is false', (t) => {
+            const style = createStyle();
+            const map = createMap({ style: style });
+            t.stub(map.style, 'setState', () => {
+                t.fail();
+            });
+
+            const previousStyle = map.style;
+            map.setStyle(style, {diff: false});
+            t.ok(map.style && map.style !== previousStyle);
+            t.end();
         });
 
         t.end();
@@ -706,7 +778,7 @@ test('Map', (t) => {
             map.on('style.load', () => {
                 map.style.dispatcher.broadcast = function(key, value) {
                     t.equal(key, 'updateLayers');
-                    t.deepEqual(value.map((layer) => { return layer.id; }), ['symbol']);
+                    t.deepEqual(value.layers.map((layer) => { return layer.id; }), ['symbol']);
                 };
 
                 map.setLayoutProperty('symbol', 'text-transform', 'lowercase');

@@ -2,7 +2,7 @@
 
 const textVertices = require('../lib/debugtext');
 const browser = require('../util/browser');
-const mat4 = require('gl-matrix').mat4;
+const mat4 = require('@mapbox/gl-matrix').mat4;
 const EXTENT = require('../data/extent');
 const Buffer = require('../data/buffer');
 const VertexArrayObject = require('./vertex_array_object');
@@ -11,9 +11,6 @@ const PosArray = require('../data/pos_array');
 module.exports = drawDebug;
 
 function drawDebug(painter, sourceCache, coords) {
-    if (painter.isOpaquePass) return;
-    if (!painter.options.debug) return;
-
     for (let i = 0; i < coords.length; i++) {
         drawDebugTile(painter, sourceCache, coords[i]);
     }
