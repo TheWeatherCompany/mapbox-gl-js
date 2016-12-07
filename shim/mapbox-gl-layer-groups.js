@@ -59,8 +59,11 @@ function moveGroup(map, id, beforeId) {
 
     var layers = map.getStyle().layers;
     for (var i = 0; i < layers.length; i++) {
-        if (layers[i].metadata.group === id) {
-            map.moveLayer(layers[i].id, beforeId);
+        var layer = layers[i];
+        if ("metadata" in layer && "group" in layer.metadata) {
+					if (layer.metadata.group === id) {
+						map.moveLayer(layer.id, beforeId);
+					}
         }
     }
 }
