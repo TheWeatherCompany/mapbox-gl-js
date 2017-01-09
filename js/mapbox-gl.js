@@ -41,6 +41,13 @@ Object.defineProperty(mapboxgl, 'accessToken', {
     set: function(token) { config.ACCESS_TOKEN = token; }
 });
 
+const old_mapboxgl = window['mapboxgl'];
+
+mapboxgl.noConflict = function() {
+	window['mapboxgl'] = old_mapboxgl;
+	return this;
+};
+
 /**
  * Gets and sets the map's [access token](https://www.mapbox.com/help/define-access-token/).
  *
