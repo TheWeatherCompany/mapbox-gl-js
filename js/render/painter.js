@@ -12,7 +12,7 @@ const VertexArrayObject = require('./vertex_array_object');
 const RasterBoundsArray = require('../data/raster_bounds_array');
 const PosArray = require('../data/pos_array');
 const ProgramConfiguration = require('../data/program_configuration');
-const shaders = require('mapbox-gl-shaders');
+const shaders = require('./shaders');
 const assert = require('assert');
 
 const draw = {
@@ -214,7 +214,9 @@ class Painter {
 
         if (this.options.showTileBoundaries) {
             const sourceCache = this.style.sourceCaches[Object.keys(this.style.sourceCaches)[0]];
-            draw.debug(this, sourceCache, sourceCache.getVisibleCoordinates());
+            if (sourceCache) {
+                draw.debug(this, sourceCache, sourceCache.getVisibleCoordinates());
+            }
         }
     }
 
@@ -224,6 +226,14 @@ class Painter {
         let sourceCache, coords;
 
         this.currentLayer = this.isOpaquePass ? layerIds.length - 1 : 0;
+
+        if (this.isOpaquePass) {
+            if (!this._showOverdrawInspector) {
+                this.gl.disable(this.gl.BLEND);
+            }
+        } else {
+            this.gl.enable(this.gl.BLEND);
+        }
 
         for (let i = 0; i < layerIds.length; i++) {
             const layer = this.style._layers[layerIds[this.currentLayer]];
@@ -241,12 +251,7 @@ class Painter {
                     }
                 }
 
-                if (this.isOpaquePass) {
-                    if (!this._showOverdrawInspector) {
-                        this.gl.disable(this.gl.BLEND);
-                    }
-                } else {
-                    this.gl.enable(this.gl.BLEND);
+                if (!this.isOpaquePass) {
                     coords.reverse();
                 }
             }

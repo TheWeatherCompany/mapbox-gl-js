@@ -27,10 +27,7 @@ class SourceCache extends Evented {
         this.id = id;
         this.dispatcher = dispatcher;
 
-        this._source = Source.create(id, options, dispatcher, this);
-
         this.on('source.load', function() {
-            if (this.map && this._source.onAdd) { this._source.onAdd(this.map); }
             this._sourceLoaded = true;
         });
 
@@ -46,6 +43,8 @@ class SourceCache extends Evented {
                 }
             }
         });
+
+        this._source = Source.create(id, options, dispatcher, this);
 
         this._tiles = {};
         this._cache = new Cache(0, this.unloadTile.bind(this));
@@ -255,9 +254,8 @@ class SourceCache extends Evented {
                 return tile;
             }
             if (this._cache.has(coord.id)) {
-                this.addTile(coord);
                 retain[coord.id] = true;
-                return this._tiles[coord.id];
+                return this._cache.get(coord.id);
             }
         }
     }
@@ -289,6 +287,7 @@ class SourceCache extends Evented {
         let i;
         let coord;
         let tile;
+        let parentTile;
 
         this.updateCacheSize(transform);
 
@@ -333,7 +332,10 @@ class SourceCache extends Evented {
             // The tile we require is not yet loaded.
             // Retain child or parent tiles that cover the same area.
             if (!this.findLoadedChildren(coord, maxCoveringZoom, retain)) {
-                this.findLoadedParent(coord, minCoveringZoom, retain);
+                parentTile = this.findLoadedParent(coord, minCoveringZoom, retain);
+                if (parentTile) {
+                    this.addTile(parentTile.coord);
+                }
             }
         }
 
@@ -344,12 +346,15 @@ class SourceCache extends Evented {
             const id = ids[k];
             coord = TileCoord.fromID(id);
             tile = this._tiles[id];
-            if (tile && tile.animationLoopEndTime >= Date.now()) {
+            if (tile && tile.fadeEndTime >= Date.now()) {
                 // This tile is still fading in. Find tiles to cross-fade with it.
                 if (this.findLoadedChildren(coord, maxCoveringZoom, retain)) {
                     retain[id] = true;
                 }
-                this.findLoadedParent(coord, minCoveringZoom, parentsForFading);
+                parentTile = this.findLoadedParent(coord, minCoveringZoom, parentsForFading);
+                if (parentTile) {
+                    this.addTile(parentTile.coord);
+                }
             }
         }
 

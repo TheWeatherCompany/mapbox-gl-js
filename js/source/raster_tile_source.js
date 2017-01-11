@@ -12,6 +12,7 @@ class RasterTileSource extends Evented {
         super();
         this.id = id;
         this.dispatcher = dispatcher;
+        this.setEventedParent(eventedParent);
 
         this.minzoom = 0;
         this.maxzoom = 22;
@@ -19,11 +20,13 @@ class RasterTileSource extends Evented {
         this.scheme = 'xyz';
         this.tileSize = 512;
         this._loaded = false;
+        this.options = options;
         util.extend(this, util.pick(options, ['url', 'scheme', 'tileSize']));
+    }
 
-        this.setEventedParent(eventedParent);
+    load() {
         this.fire('dataloading', {dataType: 'source'});
-        loadTileJSON(options, (err, tileJSON) => {
+        loadTileJSON(this.options, (err, tileJSON) => {
             if (err) {
                 return this.fire('error', err);
             }
@@ -34,6 +37,7 @@ class RasterTileSource extends Evented {
     }
 
     onAdd(map) {
+        this.load();
         this.map = map;
     }
 
@@ -76,7 +80,6 @@ class RasterTileSource extends Evented {
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
                 tile.texture.size = img.width;
             }

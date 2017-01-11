@@ -51,7 +51,9 @@ const defaultOptions = {
     failIfMajorPerformanceCaveat: false,
     preserveDrawingBuffer: false,
 
-    trackResize: true
+    trackResize: true,
+
+    renderWorldCopies: true
 };
 
 /**
@@ -113,6 +115,7 @@ const defaultOptions = {
  * @param {number} [options.zoom=0] The initial zoom level of the map. If `zoom` is not specified in the constructor options, Mapbox GL JS will look for it in the map's style object. If it is not specified in the style, either, it will default to `0`.
  * @param {number} [options.bearing=0] The initial bearing (rotation) of the map, measured in degrees counter-clockwise from north. If `bearing` is not specified in the constructor options, Mapbox GL JS will look for it in the map's style object. If it is not specified in the style, either, it will default to `0`.
  * @param {number} [options.pitch=0] The initial pitch (tilt) of the map, measured in degrees away from the plane of the screen (0-60). If `pitch` is not specified in the constructor options, Mapbox GL JS will look for it in the map's style object. If it is not specified in the style, either, it will default to `0`.
+ * @param {boolean} [options.renderWorldCopies=true]  If `true`, multiple copies of the world will be rendered, when zoomed out.
  * @example
  * var map = new mapboxgl.Map({
  *   container: 'map',
@@ -127,7 +130,7 @@ class Map extends Camera {
     constructor(options) {
         options = util.extend({}, defaultOptions, options);
 
-        const transform = new Transform(options.minZoom, options.maxZoom);
+        const transform = new Transform(options.minZoom, options.maxZoom, options.renderWorldCopies);
         super(transform, options);
 
         this._interactive = options.interactive;
@@ -212,8 +215,8 @@ class Map extends Camera {
      * Adds a [`IControl`](#IControl) to the map, calling `control.onAdd(this)`.
      *
      * @param {IControl} control The [`IControl`](#IControl) to add.
-     * @param {string} [position='top-right'] position on the map to which the control will be added.
-     * valid values are 'top-left', 'top-right', 'bottom-left', and 'bottom-right'
+     * @param {string} [position] position on the map to which the control will be added.
+     * Valid values are `'top-left'`, `'top-right'`, `'bottom-left'`, and `'bottom-right'`. Defaults to `'top-right'`.
      * @returns {Map} `this`
      * @see [Display map navigation controls](https://www.mapbox.com/mapbox-gl-js/example/navigation/)
      */
@@ -506,9 +509,15 @@ class Map extends Camera {
      * which the feature belongs. Layout and paint properties in this object contain values which are fully evaluated
      * for the given zoom level and feature.
      *
-     * Only visible features are returned. The topmost rendered feature appears first in the returned array, and
-     * subsequent features are sorted by descending z-order. Features that are rendered multiple times (due to wrapping
-     * across the antimeridian at low zoom levels) are returned only once (though subject to the following caveat).
+     * Features from layers whose `visibility` property is `"none"`, or from layers whose zoom range excludes the
+     * current zoom level are not included. Symbol features that have been hidden due to text or icon collision are
+     * not included. Features from all other layers are included, including features that may have no visible
+     * contribution to the rendered result; for example, because the layer's opacity or color alpha component is set to
+     * 0.
+     *
+     * The topmost rendered feature appears first in the returned array, and subsequent features are sorted by
+     * descending z-order. Features that are rendered multiple times (due to wrapping across the antimeridian at low
+     * zoom levels) are returned only once (though subject to the following caveat).
      *
      * Because features come from tiled vector data or GeoJSON data that is converted to tiles internally, feature
      * geometries may be split or duplicated across tile boundaries and, as a result, features may appear multiple
@@ -786,12 +795,12 @@ class Map extends Camera {
      * Moves a layer to a different z-position.
      *
      * @param {string} id The ID of the layer to move.
-     * @param {string} [before] The ID of an existing layer to insert the new layer before.
+     * @param {string} [beforeId] The ID of an existing layer to insert the new layer before.
      *   If this argument is omitted, the layer will be appended to the end of the layers array.
      * @returns {Map} `this`
      */
-    moveLayer(layerId, before) {
-        this.style.moveLayer(layerId, before);
+    moveLayer(id, beforeId) {
+        this.style.moveLayer(id, beforeId);
         this._update(true);
         return this;
     }
@@ -1012,6 +1021,7 @@ class Map extends Camera {
         this._canvas.addEventListener('webglcontextlost', this._contextLost, false);
         this._canvas.addEventListener('webglcontextrestored', this._contextRestored, false);
         this._canvas.setAttribute('tabindex', 0);
+        this._canvas.setAttribute('aria-label', 'Map');
 
         const dimensions = this._containerDimensions();
         this._resizeCanvas(dimensions[0], dimensions[1]);
@@ -1047,6 +1057,13 @@ class Map extends Camera {
         if (!gl) {
             this.fire('error', { error: new Error('Failed to initialize WebGL') });
             return;
+        }
+
+        const MAX_RENDERBUFFER_SIZE = gl.getParameter(gl.MAX_RENDERBUFFER_SIZE) / 2;
+        if (this._canvas.width > MAX_RENDERBUFFER_SIZE ||
+            this._canvas.height > MAX_RENDERBUFFER_SIZE) {
+            throw new Error(`Map canvas (${this._canvas.width}x${this._canvas.height}) ` +
+            `is larger than half of gl.MAX_RENDERBUFFER_SIZE (${MAX_RENDERBUFFER_SIZE})`);
         }
 
         this.painter = new Painter(gl, this.transform);
@@ -1401,13 +1418,13 @@ function removeNode(node) {
 
 /**
  * A [`Point` geometry](https://github.com/mapbox/point-geometry) object, which has
- * `x` and `y` properties representing coordinates.
+ * `x` and `y` properties representing screen coordinates in pixels.
  *
  * @typedef {Object} Point
  */
 
 /**
- * A [`Point`](#Point) or an array of two numbers representing `x` and `y` coordinates.
+ * A [`Point`](#Point) or an array of two numbers representing `x` and `y` screen coordinates in pixels.
  *
  * @typedef {(Point | Array<number>)} PointLike
  */
