@@ -2,8 +2,15 @@
 
 const browser = require('./util/browser');
 
+const old_mapboxgl = window['mapboxgl'];
+
 // jshint -W079
-const mapboxgl = module.exports = {};
+const mapboxgl = module.exports = window.mapboxgl = {};
+
+mapboxgl.noConflict = function() {
+	window['mapboxgl'] = old_mapboxgl;
+	return this;
+};
 
 mapboxgl.version = require('../package.json').version;
 mapboxgl.workerCount = Math.max(Math.floor(browser.hardwareConcurrency / 2), 1);
@@ -40,13 +47,6 @@ Object.defineProperty(mapboxgl, 'accessToken', {
     get: function() { return config.ACCESS_TOKEN; },
     set: function(token) { config.ACCESS_TOKEN = token; }
 });
-
-const old_mapboxgl = window['mapboxgl'];
-
-mapboxgl.noConflict = function() {
-	window['mapboxgl'] = old_mapboxgl;
-	return this;
-};
 
 /**
  * Gets and sets the map's [access token](https://www.mapbox.com/help/define-access-token/).
