@@ -78,7 +78,7 @@ function moveGroup(map, id, beforeId) {
         var layer = layers[i];
         if (getLayerGroup(map, layer.id)) {
             if (layer.metadata.group === id) {
-                map.moveLayer(layer.id, beforeId);
+                map.moveLayer(layer.id, beforeLayerId);
             }
         }
     }
@@ -121,7 +121,7 @@ function getGroupLastLayerIndex(map, id) {
     var layers = map.getStyle().layers;
     var i = getGroupFirstLayerIndex(map, id);
     if (i === -1) return -1;
-    while (i < layers.length && (layers[i].id === id || layers[i].metadata.group === id)) i++;
+    while (i < layers.length && (layers[i].id === id || (layers[i].metadata && layers[i].metadata.group === id))) i++;
     return i - 1;
 }
 
