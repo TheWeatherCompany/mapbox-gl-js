@@ -42,6 +42,10 @@ function addLayerToGroup(map, groupId, layer, beforeId) {
     map.addLayer(groupedLayer, beforeId);
 }
 
+function hasGroup(map, groupId) {
+    return (getGroupFirstLayerIndex(map, groupId) >= 0);
+}
+
 /**
  * Remove a layer group and all of its layers from the map.
  *
@@ -155,5 +159,6 @@ module.exports = {
     getGroupLastLayer: getGroupLastLayerId,
     getGroupFirstLayerIndex,
     getGroupLastLayerIndex,
-    getLayerGroup
+    getLayerGroup,
+    hasGroup
 };
