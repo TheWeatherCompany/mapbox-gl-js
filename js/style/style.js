@@ -373,6 +373,7 @@ class Style extends Evented {
         if (shouldValidate && this._validate(validateStyle.source, `sources.${id}`, source, null, options)) return;
 
         const sourceCache = this.sourceCaches[id] = new SourceCache(id, source, this.dispatcher);
+        sourceCache.options = source;
         sourceCache.style = this;
         sourceCache.setEventedParent(this, () => ({
             isSourceLoaded: sourceCache.loaded(),
