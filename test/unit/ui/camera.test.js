@@ -10,16 +10,13 @@ const fixedNum = fixed.Num;
 
 test('camera', (t) => {
     function createCamera(options) {
-        const transform = new Transform(0, 20);
+        options = options || {};
+
+        const transform = new Transform(0, 20, options.renderWorldCopies);
         transform.resize(512, 512);
 
-        const camera = new Camera(transform, {});
-
-        if (options) {
-            camera.jumpTo(options);
-        }
-
-        return camera;
+        return new Camera(transform, {})
+            .jumpTo(options);
     }
 
     t.test('#jumpTo', (t) => {
@@ -859,6 +856,41 @@ test('camera', (t) => {
                 eventData);
         });
 
+        t.test('for short flights, emits (solely) move events, preserving eventData', (t) => {
+            //As I type this, the code path for guiding super-short flights is (and will probably remain) different.
+            //As such; it deserves a separate test case. This test case flies the map from A to A.
+            const fromTo = { center: [100, 0] };
+            const camera = createCamera(fromTo);
+            let movestarted, moved, rotated, pitched, zoomstarted, zoomed, zoomended;
+            const eventData = { data: 'ok' };
+
+            camera
+                .on('movestart', (d) => { movestarted = d.data; })
+                .on('move', (d) => { moved = d.data; })
+                .on('rotate', (d) => { rotated = d.data; })
+                .on('pitch', (d) => { pitched = d.data; })
+                .on('zoomstart', (d) => { zoomstarted = d.data; })
+                .on('zoom', (d) => { zoomed = d.data; })
+                .on('zoomend', (d) => { zoomended = d.data; })
+                .on('moveend', function(d) {
+                    t.notOk(this.zooming);
+                    t.notOk(this.panning);
+                    t.notOk(this.rotating);
+
+                    t.equal(movestarted, 'ok');
+                    t.equal(moved, 'ok');
+                    t.equal(zoomstarted, undefined);
+                    t.equal(zoomed, undefined);
+                    t.equal(zoomended, undefined);
+                    t.equal(rotated, undefined);
+                    t.equal(pitched, undefined);
+                    t.equal(d.data, 'ok');
+                    t.end();
+                });
+
+            camera.flyTo(fromTo, eventData);
+        });
+
         t.test('stops existing ease', (t) => {
             const camera = createCamera();
             camera.flyTo({ center: [200, 0], duration: 100 });
@@ -970,6 +1002,62 @@ test('camera', (t) => {
 
             camera.on('moveend', () => {
                 t.ok(crossedAntimeridian);
+                t.end();
+            });
+
+            camera.flyTo({ center: [170, 0], duration: 10 });
+        });
+
+        t.test('does not pan eastward across the antimeridian if no world copies', (t) => {
+            const camera = createCamera({renderWorldCopies: false});
+            camera.setCenter([170, 0]);
+            let crossedAntimeridian;
+
+            camera.on('move', () => {
+                if (camera.getCenter().lng > 170) {
+                    crossedAntimeridian = true;
+                }
+            });
+
+            camera.on('moveend', () => {
+                t.notOk(crossedAntimeridian);
+                t.end();
+            });
+
+            camera.flyTo({ center: [-170, 0], duration: 10 });
+        });
+
+        t.test('does not pan westward across the antimeridian if no world copies', (t) => {
+            const camera = createCamera({renderWorldCopies: false});
+            camera.setCenter([-170, 0]);
+            let crossedAntimeridian;
+
+            camera.on('move', () => {
+                if (camera.getCenter().lng < -170) {
+                    crossedAntimeridian = true;
+                }
+            });
+
+            camera.on('moveend', () => {
+                t.notOk(crossedAntimeridian);
+                t.end();
+            });
+
+            camera.flyTo({ center: [170, 0], duration: 10 });
+        });
+
+        t.test('jumps back to world 0 when crossing the antimeridian', (t) => {
+            const camera = createCamera();
+            camera.setCenter([-170, 0]);
+
+            let leftWorld0 = false;
+
+            camera.on('move', () => {
+                leftWorld0 = leftWorld0 || (camera.getCenter().lng < -180);
+            });
+
+            camera.on('moveend', () => {
+                t.false(leftWorld0);
                 t.end();
             });
 
@@ -1131,6 +1219,39 @@ test('camera', (t) => {
             });
 
             camera.panTo([100, 0], {duration: 1}, eventData);
+        });
+
+        t.end();
+    });
+
+    t.test('#fitBounds', (t) => {
+        t.test('no padding passed', (t) => {
+            const camera = createCamera();
+            const bb = [[-133, 16], [-68, 50]];
+
+            camera.fitBounds(bb, {duration:0});
+            t.deepEqual(fixedLngLat(camera.getCenter(), 4), { lng: -100.5, lat: 34.7171 }, 'pans to coordinates based on fitBounds');
+            t.equal(fixedNum(camera.getZoom(), 3), 2.469);
+            t.end();
+        });
+
+        t.test('padding number', (t) => {
+            const camera = createCamera();
+            const bb = [[-133, 16], [-68, 50]];
+
+            camera.fitBounds(bb, { padding: 15, duration:0 });
+            t.deepEqual(fixedLngLat(camera.getCenter(), 4), { lng: -100.5, lat: 34.7171 }, 'pans to coordinates based on fitBounds with padding option as number applied');
+            t.equal(fixedNum(camera.getZoom(), 3), 2.382);
+            t.end();
+        });
+
+        t.test('padding object', (t) => {
+            const camera = createCamera();
+            const bb = [[-133, 16], [-68, 50]];
+
+            camera.fitBounds(bb, { padding: {top: 10, right: 75, bottom: 50, left: 25}, duration:0 });
+            t.deepEqual(fixedLngLat(camera.getCenter(), 4), { lng: -91.5221, lat: 28.6089 }, 'pans to coordinates based on fitBounds with padding option as object applied');
+            t.end();
         });
 
         t.end();

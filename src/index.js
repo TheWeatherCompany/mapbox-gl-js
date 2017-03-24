@@ -17,10 +17,10 @@ mapboxgl.workerCount = Math.max(Math.floor(browser.hardwareConcurrency / 2), 1);
 
 mapboxgl.Map = require('./ui/map');
 mapboxgl.NavigationControl = require('./ui/control/navigation_control');
-mapboxgl.LogoControl = require('./ui/control/logo_control');
 mapboxgl.GeolocateControl = require('./ui/control/geolocate_control');
 mapboxgl.AttributionControl = require('./ui/control/attribution_control');
 mapboxgl.ScaleControl = require('./ui/control/scale_control');
+mapboxgl.FullscreenControl = require('./ui/control/fullscreen_control');
 mapboxgl.Popup = require('./ui/popup');
 mapboxgl.Marker = require('./ui/marker');
 
@@ -31,15 +31,10 @@ mapboxgl.LngLatBounds = require('./geo/lng_lat_bounds');
 mapboxgl.Point = require('point-geometry');
 
 mapboxgl.Evented = require('./util/evented');
-mapboxgl.util = require('./util/util');
+mapboxgl.supported = require('./util/browser').supported;
 
 mapboxgl.layerGroups = require('./../shim/mapbox-gl-layer-groups');
 
-mapboxgl.supported = require('./util/browser').supported;
-
-const ajax = require('./util/ajax');
-mapboxgl.util.getJSON = ajax.getJSON;
-mapboxgl.util.getArrayBuffer = ajax.getArrayBuffer;
 
 const config = require('./util/config');
 mapboxgl.config = config;

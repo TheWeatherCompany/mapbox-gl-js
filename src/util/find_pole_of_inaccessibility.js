@@ -36,6 +36,8 @@ module.exports = function (polygonRings, precision, debug) {
     // a priority queue of cells in order of their "potential" (max distance to polygon)
     const cellQueue = new Queue(null, compareMax);
 
+    if (cellSize === 0) return [minX, minY];
+
     // cover polygon with initial cells
     for (let x = minX; x < maxX; x += cellSize) {
         for (let y = minY; y < maxY; y += cellSize) {
@@ -52,7 +54,7 @@ module.exports = function (polygonRings, precision, debug) {
         const cell = cellQueue.pop();
 
         // update the best cell if we found a better one
-        if (cell.d > bestCell.d) {
+        if (cell.d > bestCell.d || !bestCell.d) {
             bestCell = cell;
             if (debug) console.log('found best %d after %d probes', Math.round(1e4 * cell.d) / 1e4, numProbes);
         }

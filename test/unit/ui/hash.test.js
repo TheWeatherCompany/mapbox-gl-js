@@ -12,8 +12,8 @@ test('hash', (t) => {
 
     function createMap() {
         const container = window.document.createElement('div');
-        container.offsetWidth = 512;
-        container.offsetHeight = 512;
+        Object.defineProperty(container, 'offsetWidth', {value: 512});
+        Object.defineProperty(container, 'offsetHeight', {value: 512});
         return new Map({container: container});
     }
 
@@ -69,6 +69,34 @@ test('hash', (t) => {
         t.equal(map.getPitch(), 60);
 
         window.location.hash = '';
+
+        t.end();
+    });
+
+    t.test('#_onHashChange empty', (t) => {
+        const map = createMap();
+        const hash = createHash()
+            .addTo(map);
+
+        window.location.hash = '#10/3.00/-1.00';
+
+        hash._onHashChange();
+
+        t.equal(map.getCenter().lng, -1);
+        t.equal(map.getCenter().lat, 3);
+        t.equal(map.getZoom(), 10);
+        t.equal(map.getBearing(), 0);
+        t.equal(map.getPitch(), 0);
+
+        window.location.hash = '';
+
+        hash._onHashChange();
+
+        t.equal(map.getCenter().lng, -1);
+        t.equal(map.getCenter().lat, 3);
+        t.equal(map.getZoom(), 10);
+        t.equal(map.getBearing(), 0);
+        t.equal(map.getPitch(), 0);
 
         t.end();
     });

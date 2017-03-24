@@ -29,9 +29,21 @@ const Evented = require('../util/evented');
  *
  * @typedef {Object} AnimationOptions
  * @property {number} duration The animation's duration, measured in milliseconds.
- * @property {Function} easing The animation's easing function.
+ * @property {Function} easing A function taking a time in the range 0..1 and returning a number where 0 is
+ *   the initial state and 1 is the final state.
  * @property {PointLike} offset `x` and `y` coordinates representing the animation's origin of movement relative to the map's center.
  * @property {boolean} animate If `false`, no animation will occur.
+ */
+
+/**
+ * Options for setting padding on a call to {@link Map#fitBounds}. All properties of this object must be
+ * non-negative integers.
+ *
+ * @typedef {Object} PaddingOptions
+ * @property {number} top Padding in pixels from the top of the map canvas.
+ * @property {number} bottom Padding in pixels from the bottom of the map canvas.
+ * @property {number} left Padding in pixels from the left of the map canvas.
+ * @property {number} right Padding in pixels from the right of the map canvas.
  */
 
 class Camera extends Evented {
@@ -56,7 +68,7 @@ class Camera extends Evented {
      *
      * @memberof Map#
      * @param {LngLatLike} center The centerpoint to set.
-     * @param {Object} [eventData] Data to propagate to any event listeners.
+     * @param {Object} [eventData] Additional properties to be added to event objects of events triggered by this method.
      * @fires movestart
      * @fires moveend
      * @returns {Map} `this`
@@ -75,7 +87,7 @@ class Camera extends Evented {
      * @memberof Map#
      * @param {Array<number>} offset `x` and `y` coordinates by which to pan the map.
      * @param {AnimationOptions} [options]
-     * @param {Object} [eventData] Data to propagate to any event listeners.
+     * @param {Object} [eventData] Additional properties to be added to event objects of events triggered by this method.
      * @fires movestart
      * @fires moveend
      * @returns {Map} `this`
@@ -93,7 +105,7 @@ class Camera extends Evented {
      * @memberof Map#
      * @param {LngLatLike} lnglat The location to pan the map to.
      * @param {AnimationOptions} [options]
-     * @param {Object} [eventData] Data to propagate to any event listeners.
+     * @param {Object} [eventData] Additional properties to be added to event objects of events triggered by this method.
      * @fires movestart
      * @fires moveend
      * @returns {Map} `this`
@@ -117,7 +129,7 @@ class Camera extends Evented {
      *
      * @memberof Map#
      * @param {number} zoom The zoom level to set (0-20).
-     * @param {Object} [eventData] Data to propagate to any event listeners.
+     * @param {Object} [eventData] Additional properties to be added to event objects of events triggered by this method.
      * @fires movestart
      * @fires zoomstart
      * @fires move
@@ -140,7 +152,7 @@ class Camera extends Evented {
      * @memberof Map#
      * @param {number} zoom The zoom level to transition to.
      * @param {AnimationOptions} [options]
-     * @param {Object} [eventData] Data to propagate to any event listeners.
+     * @param {Object} [eventData] Additional properties to be added to event objects of events triggered by this method.
      * @fires movestart
      * @fires zoomstart
      * @fires move
@@ -160,7 +172,7 @@ class Camera extends Evented {
      *
      * @memberof Map#
      * @param {AnimationOptions} [options]
-     * @param {Object} [eventData] Data to propagate to any event listeners.
+     * @param {Object} [eventData] Additional properties to be added to event objects of events triggered by this method.
      * @fires movestart
      * @fires zoomstart
      * @fires move
@@ -179,7 +191,7 @@ class Camera extends Evented {
      *
      * @memberof Map#
      * @param {AnimationOptions} [options]
-     * @param {Object} [eventData] Data to propagate to any event listeners.
+     * @param {Object} [eventData] Additional properties to be added to event objects of events triggered by this method.
      * @fires movestart
      * @fires zoomstart
      * @fires move
@@ -207,7 +219,7 @@ class Camera extends Evented {
      *
      * @memberof Map#
      * @param {number} bearing The bearing to set, measured in degrees counter-clockwise from north.
-     * @param {Object} [eventData] Data to propagate to any event listeners.
+     * @param {Object} [eventData] Additional properties to be added to event objects of events triggered by this method.
      * @fires movestart
      * @fires moveend
      * @returns {Map} `this`
@@ -226,7 +238,7 @@ class Camera extends Evented {
      * @memberof Map#
      * @param {number} bearing The bearing to rotate the map to, measured in degrees counter-clockwise from north.
      * @param {AnimationOptions} [options]
-     * @param {Object} [eventData] Data to propagate to any event listeners.
+     * @param {Object} [eventData] Additional properties to be added to event objects of events triggered by this method.
      * @fires movestart
      * @fires moveend
      * @returns {Map} `this`
@@ -242,7 +254,7 @@ class Camera extends Evented {
      *
      * @memberof Map#
      * @param {AnimationOptions} [options]
-     * @param {Object} [eventData] Data to propagate to any event listeners.
+     * @param {Object} [eventData] Additional properties to be added to event objects of events triggered by this method.
      * @fires movestart
      * @fires moveend
      * @returns {Map} `this`
@@ -257,7 +269,7 @@ class Camera extends Evented {
      *
      * @memberof Map#
      * @param {AnimationOptions} [options]
-     * @param {Object} [eventData] Data to propagate to any event listeners.
+     * @param {Object} [eventData] Additional properties to be added to event objects of events triggered by this method.
      * @fires movestart
      * @fires moveend
      * @returns {Map} `this`
@@ -282,7 +294,7 @@ class Camera extends Evented {
      *
      * @memberof Map#
      * @param {number} pitch The pitch to set, measured in degrees away from the plane of the screen (0-60).
-     * @param {Object} [eventData] Data to propagate to any event listeners.
+     * @param {Object} [eventData] Additional properties to be added to event objects of events triggered by this method.
      * @fires movestart
      * @fires moveend
      * @returns {Map} `this`
@@ -295,41 +307,84 @@ class Camera extends Evented {
 
     /**
      * Pans and zooms the map to contain its visible area within the specified geographical bounds.
+     * This function will also reset the map's bearing to 0 if bearing is nonzero.
      *
      * @memberof Map#
      * @param {LngLatBoundsLike} bounds Center these bounds in the viewport and use the highest
      *      zoom level up to and including `Map#getMaxZoom()` that fits them in the viewport.
-     * @param {Object} [options]
+     * @param {AnimationOptions | CameraOptions } [options]
+     * @param {number | PaddingOptions} [options.padding] The amount of padding in pixels to add to the given bounds.
      * @param {boolean} [options.linear=false] If `true`, the map transitions using
      *     {@link Map#easeTo}. If `false`, the map transitions using {@link Map#flyTo}. See
-     *     {@link Map#flyTo} for information about the options specific to that animated transition.
-     * @param {Function} [options.easing] An easing function for the animated transition.
-     * @param {number} [options.padding=0] The amount of padding, in pixels, to allow around the specified bounds.
+     *     those functions and @{link AnimationOptions} for information about options available.
+     * @param {Function} [options.easing] An easing function for the animated transition. See [AnimationOptions](#AnimationOptions).
      * @param {PointLike} [options.offset=[0, 0]] The center of the given bounds relative to the map's center, measured in pixels.
      * @param {number} [options.maxZoom] The maximum zoom level to allow when the map view transitions to the specified bounds.
-     * @param {Object} [eventData] Data to propagate to any event listeners.
+     * @param {Object} [eventData] Additional properties to be added to event objects of events triggered by this method.
      * @fires movestart
      * @fires moveend
      * @returns {Map} `this`
+	 * @example
+     * var bbox = [[-79, 43], [-73, 45]];
+     * map.fitBounds(bbox, {
+     *   padding: {top: 10, bottom:25, left: 15, right: 5}
+     * });
      * @see [Fit a map to a bounding box](https://www.mapbox.com/mapbox-gl-js/example/fitbounds/)
      */
     fitBounds(bounds, options, eventData) {
 
         options = util.extend({
-            padding: 0,
+            padding: {
+                top: 0,
+                bottom: 0,
+                right: 0,
+                left: 0
+            },
             offset: [0, 0],
-            maxZoom: this.getMaxZoom()
+            maxZoom: this.transform.maxZoom
         }, options);
 
+        if (typeof options.padding === 'number') {
+            const p = options.padding;
+            options.padding = {
+                top: p,
+                bottom: p,
+                right: p,
+                left: p
+            };
+        }
+        if (!util.deepEqual(Object.keys(options.padding).sort((a, b) => {
+            if (a < b) return -1;
+            if (a > b) return 1;
+            return 0;
+        }), ["bottom", "left", "right", "top"])) {
+            util.warnOnce("options.padding must be a positive number, or an Object with keys 'bottom', 'left', 'right', 'top'");
+            return;
+        }
+
         bounds = LngLatBounds.convert(bounds);
+
+        // we separate the passed padding option into two parts, the part that does not affect the map's center
+        // (lateral and vertical padding), and the part that does (paddingOffset). We add the padding offset
+        // to the options `offset` object where it can alter the map's center in the subsequent calls to
+        // `easeTo` and `flyTo`.
+        const paddingOffset = [options.padding.left - options.padding.right, options.padding.top - options.padding.bottom],
+            lateralPadding = Math.min(options.padding.right, options.padding.left),
+            verticalPadding = Math.min(options.padding.top, options.padding.bottom);
+        options.offset = [options.offset[0] + paddingOffset[0], options.offset[1] + paddingOffset[1]];
 
         const offset = Point.convert(options.offset),
             tr = this.transform,
             nw = tr.project(bounds.getNorthWest()),
             se = tr.project(bounds.getSouthEast()),
             size = se.sub(nw),
-            scaleX = (tr.width - options.padding * 2 - Math.abs(offset.x) * 2) / size.x,
-            scaleY = (tr.height - options.padding * 2 - Math.abs(offset.y) * 2) / size.y;
+            scaleX = (tr.width - lateralPadding * 2 - Math.abs(offset.x) * 2) / size.x,
+            scaleY = (tr.height - verticalPadding * 2 - Math.abs(offset.y) * 2) / size.y;
+
+        if (scaleY < 0 || scaleX < 0) {
+            util.warnOnce('Map cannot fit within canvas with the given bounds, padding, and/or offset.');
+            return;
+        }
 
         options.center = tr.unproject(nw.add(se).div(2));
         options.zoom = Math.min(tr.scaleZoom(tr.scale * Math.min(scaleX, scaleY)), options.maxZoom);
@@ -347,7 +402,7 @@ class Camera extends Evented {
      *
      * @memberof Map#
      * @param {CameraOptions} options
-     * @param {Object} [eventData] Data to propagate to any event listeners.
+     * @param {Object} [eventData] Additional properties to be added to event objects of events triggered by this method.
      * @fires movestart
      * @fires zoomstart
      * @fires move
@@ -411,8 +466,9 @@ class Camera extends Evented {
      * details not specified in `options`.
      *
      * @memberof Map#
-     * @param {CameraOptions|AnimationOptions} options Options describing the destination and animation of the transition.
-     * @param {Object} [eventData] Data to propagate to any event listeners.
+     * @param {Object} options Options describing the destination and animation of the transition.
+    *            Accepts [CameraOptions](#CameraOptions) and [AnimationOptions](#AnimationOptions).
+     * @param {Object} [eventData] Additional properties to be added to event objects of events triggered by this method.
      * @fires movestart
      * @fires zoomstart
      * @fires move
@@ -553,8 +609,7 @@ class Camera extends Evented {
      *     It does not correspond to a fixed physical distance, but varies by zoom level.
      * @param {number} [options.screenSpeed] The average speed of the animation measured in screenfuls
      *     per second, assuming a linear timing curve. If `options.speed` is specified, this option is ignored.
-     * @param {Function} [options.easing] An easing function for the animated transition.
-     * @param {Object} [eventData] Data to propagate to any event listeners.
+     * @param {Object} [eventData] Additional properties to be added to event objects of events triggered by this method.
      * @fires movestart
      * @fires zoomstart
      * @fires move
@@ -612,7 +667,7 @@ class Camera extends Evented {
 
         // If a path crossing the antimeridian would be shorter, extend the final coordinate so that
         // interpolating between the two endpoints will cross it.
-        if (Math.abs(tr.center.lng) + Math.abs(center.lng) > 180) {
+        if (tr.renderWorldCopies && Math.abs(tr.center.lng) + Math.abs(center.lng) > 180) {
             if (tr.center.lng > 0 && center.lng < 0) {
                 center.lng += 360;
             } else if (tr.center.lng < 0 && center.lng > 0) {
@@ -682,7 +737,7 @@ class Camera extends Evented {
         // When u₀ = u₁, the optimal path doesn’t require both ascent and descent.
         if (Math.abs(u1) < 0.000001) {
             // Perform a more or less instantaneous transition if the path is too short.
-            if (Math.abs(w0 - w1) < 0.000001) return this.easeTo(options);
+            if (Math.abs(w0 - w1) < 0.000001) return this.easeTo(options, eventData);
 
             const k = w1 < w0 ? -1 : 1;
             S = Math.abs(Math.log(w1 / w0)) / rho;
@@ -714,6 +769,9 @@ class Camera extends Evented {
             const scale = 1 / w(s);
             tr.zoom = startZoom + tr.scaleZoom(scale);
             tr.center = tr.unproject(from.add(to.sub(from).mult(us)).mult(scale));
+            if (tr.renderWorldCopies) {
+                tr.center = tr.center.wrap();
+            }
 
             if (this.rotating) {
                 tr.bearing = interpolate(startBearing, bearing, k);

@@ -36,7 +36,7 @@ test('AttributionControl appears in the position specified by the position optio
 
 test('AttributionControl appears in compact mode if compact option is used', (t) => {
     const map = createMap();
-    map.getCanvasContainer().offsetWidth = 700;
+    Object.defineProperty(map.getCanvasContainer(), 'offsetWidth', {value: 700, configurable: true});
 
     let attributionControl = new AttributionControl({
         compact: true
@@ -48,7 +48,7 @@ test('AttributionControl appears in compact mode if compact option is used', (t)
     t.equal(container.querySelectorAll('.mapboxgl-ctrl-attrib.compact').length, 1);
     map.removeControl(attributionControl);
 
-    map.getCanvasContainer().offsetWidth = 600;
+    Object.defineProperty(map.getCanvasContainer(), 'offsetWidth', {value: 600, configurable: true});
     attributionControl = new AttributionControl({
         compact: false
     });
@@ -60,14 +60,14 @@ test('AttributionControl appears in compact mode if compact option is used', (t)
 
 test('AttributionControl appears in compact mode if container is less then 640 pixel wide', (t) => {
     const map = createMap();
-    map.getCanvasContainer().offsetWidth = 700;
+    Object.defineProperty(map.getCanvasContainer(), 'offsetWidth', {value: 700, configurable: true});
     map.addControl(new AttributionControl());
 
     const container = map.getContainer();
 
     t.equal(container.querySelectorAll('.mapboxgl-ctrl-attrib:not(.compact)').length, 1);
 
-    map.getCanvasContainer().offsetWidth = 600;
+    Object.defineProperty(map.getCanvasContainer(), 'offsetWidth', {value: 600, configurable: true});
     map.resize();
 
     t.equal(container.querySelectorAll('.mapboxgl-ctrl-attrib.compact').length, 1);
@@ -89,10 +89,12 @@ test('AttributionControl dedupes attributions that are substrings of others', (t
     });
 
     let times = 0;
-    map.on('data', (event) => {
-        if (event.dataType === 'source' && ++times === 5) {
-            t.equal(attribution._container.innerHTML, 'Hello World | Another Source');
-            t.end();
+    map.on('data', (e) => {
+        if (e.dataType === 'source' && e.sourceDataType === 'metadata') {
+            if (++times === 5) {
+                t.equal(attribution._container.innerHTML, 'Hello World | Another Source');
+                t.end();
+            }
         }
     });
 });
@@ -104,8 +106,8 @@ test('AttributionControl has the correct edit map link', (t) => {
 
     map.on('load', () => {
         map.addSource('1', {type: 'vector', attribution: '<a class="mapbox-improve-map" href="https://www.mapbox.com/map-feedback/" target="_blank">Improve this map</a>'});
-        map.on('data', (event) => {
-            if (event.dataType === 'source') {
+        map.on('data', (e) => {
+            if (e.dataType === 'source' && e.sourceDataType === 'metadata') {
                 t.equal(attribution._editLink.href, 'https://www.mapbox.com/map-feedback/#/0/0/1', 'edit link contains map location data');
                 map.setZoom(2);
                 t.equal(attribution._editLink.href, 'https://www.mapbox.com/map-feedback/#/0/0/3', 'edit link updates on mapmove');

@@ -897,7 +897,7 @@
       "type": "string",
       "function": "piecewise-constant",
       "zoom-function": true,
-      "doc": "A string with {tokens} replaced, referencing the data property to pull from.",
+      "doc": "Name of image in sprite to use for drawing an image background. A string with {tokens} replaced, referencing the data property to pull from.",
       "tokens": true,
       "sdk-support": {
         "basic functionality": {
@@ -1085,7 +1085,7 @@
       "property-function": true,
       "default": "",
       "tokens": true,
-      "doc": "Value to use for a text label. Feature properties are specified using tokens like {field_name}.  (Token replacement is only supported for literal text-field values--not for data-driven property functions.)",
+      "doc": "Value to use for a text label. Feature properties are specified using tokens like {field_name}.  (Token replacement is only supported for literal `text-field` values--not for property functions.)",
       "sdk-support": {
         "basic functionality": {
           "js": "0.10.0",
@@ -1093,7 +1093,9 @@
           "ios": "2.0.0",
           "macos": "0.1.0"
         },
-        "data-driven styling": {}
+        "data-driven styling": {
+          "js": "0.33.0"
+        }
       }
     },
     "text-font": {
@@ -1394,7 +1396,9 @@
           "ios": "2.0.0",
           "macos": "0.1.0"
         },
-        "data-driven styling": {}
+        "data-driven styling": {
+          "js": "0.33.0"
+        }
       }
     },
     "text-offset": {
@@ -2000,6 +2004,7 @@
       "property-function": true,
       "default": 0,
       "minimum": 0,
+      "maximum": 65535,
       "units": "meters",
       "doc": "The height with which to extrude this layer.",
       "transition": true,
@@ -2019,6 +2024,7 @@
       "property-function": true,
       "default": 0,
       "minimum": 0,
+      "maximum": 65535,
       "units": "meters",
       "doc": "The height with which to extrude the base of this layer. Must be less than or equal to `fill-extrusion-height`.",
       "transition": true,
@@ -2491,7 +2497,9 @@
           "ios": "2.0.0",
           "macos": "0.1.0"
         },
-        "data-driven styling": {}
+        "data-driven styling": {
+          "js": "0.33.0"
+        }
       }
     },
     "icon-color": {
@@ -2512,7 +2520,9 @@
           "ios": "2.0.0",
           "macos": "0.1.0"
         },
-        "data-driven styling": {}
+        "data-driven styling": {
+          "js": "0.33.0"
+        }
       }
     },
     "icon-halo-color": {
@@ -2533,7 +2543,9 @@
           "ios": "2.0.0",
           "macos": "0.1.0"
         },
-        "data-driven styling": {}
+        "data-driven styling": {
+          "js": "0.33.0"
+        }
       }
     },
     "icon-halo-width": {
@@ -2556,7 +2568,9 @@
           "ios": "2.0.0",
           "macos": "0.1.0"
         },
-        "data-driven styling": {}
+        "data-driven styling": {
+          "js": "0.33.0"
+        }
       }
     },
     "icon-halo-blur": {
@@ -2579,7 +2593,9 @@
           "ios": "2.0.0",
           "macos": "0.1.0"
         },
-        "data-driven styling": {}
+        "data-driven styling": {
+          "js": "0.33.0"
+        }
       }
     },
     "icon-translate": {
@@ -2656,7 +2672,9 @@
           "ios": "2.0.0",
           "macos": "0.1.0"
         },
-        "data-driven styling": {}
+        "data-driven styling": {
+          "js": "0.33.0"
+        }
       }
     },
     "text-color": {
@@ -2677,7 +2695,9 @@
           "ios": "2.0.0",
           "macos": "0.1.0"
         },
-        "data-driven styling": {}
+        "data-driven styling": {
+          "js": "0.33.0"
+        }
       }
     },
     "text-halo-color": {
@@ -2698,7 +2718,9 @@
           "ios": "2.0.0",
           "macos": "0.1.0"
         },
-        "data-driven styling": {}
+        "data-driven styling": {
+          "js": "0.33.0"
+        }
       }
     },
     "text-halo-width": {
@@ -2721,7 +2743,9 @@
           "ios": "2.0.0",
           "macos": "0.1.0"
         },
-        "data-driven styling": {}
+        "data-driven styling": {
+          "js": "0.33.0"
+        }
       }
     },
     "text-halo-blur": {
@@ -2744,7 +2768,9 @@
           "ios": "2.0.0",
           "macos": "0.1.0"
         },
-        "data-driven styling": {}
+        "data-driven styling": {
+          "js": "0.33.0"
+        }
       }
     },
     "text-translate": {

@@ -18,6 +18,10 @@ const util = require('../util/util');
  * into the shader source code, create and link a program, and bind the uniforms and
  * vertex attributes in preparation for drawing.
  *
+ * When a vector tile is parsed, this same configuration information is used to
+ * populate the attribute buffers needed for data-driven styling using the zoom
+ * level and feature property data.
+ *
  * @private
  */
 class ProgramConfiguration {
@@ -160,7 +164,21 @@ class ProgramConfiguration {
         });
     }
 
-    populatePaintArray(layer, paintArray, length, globalProperties, featureProperties) {
+    // Since this object is accessed frequently during populatePaintArray, it
+    // is helpful to initialize it ahead of time to avoid recalculating
+    // 'hidden class' optimizations to take effect
+    createPaintPropertyStatistics() {
+        const paintPropertyStatistics = {};
+        for (const attribute of this.attributes) {
+            if (attribute.dimensions !== 1) continue;
+            paintPropertyStatistics[attribute.property] = {
+                max: -Infinity
+            };
+        }
+        return paintPropertyStatistics;
+    }
+
+    populatePaintArray(layer, paintArray, paintPropertyStatistics, length, globalProperties, featureProperties) {
         const start = paintArray.length;
         paintArray.resize(length);
 
@@ -175,6 +193,11 @@ class ProgramConfiguration {
                     }
                 } else {
                     vertex[attribute.name] = value * attribute.multiplier;
+                }
+                if (attribute.dimensions === 1) {
+                    const stats = paintPropertyStatistics[attribute.property];
+                    stats.max = Math.max(stats.max,
+                        attribute.components === 1 ? value : Math.max.apply(Math, value));
                 }
             }
         }
@@ -224,7 +247,10 @@ function normalizePaintAttribute(attribute, layer) {
     return util.extend({
         name: `a_${name}`,
         components: isColor ? 4 : 1,
-        multiplier: isColor ? 255 : 1
+        multiplier: isColor ? 255 : 1,
+        // distinct from `components`, because components can be overridden for
+        // zoom interpolation
+        dimensions: isColor ? 4 : 1
     }, attribute);
 }
 

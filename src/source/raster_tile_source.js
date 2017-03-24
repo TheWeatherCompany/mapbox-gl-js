@@ -32,8 +32,13 @@ class RasterTileSource extends Evented {
                 return this.fire('error', err);
             }
             util.extend(this, tileJSON);
-            this.fire('data', {dataType: 'source'});
-            this.fire('source.load');
+
+            // `content` is included here to prevent a race condition where `Style#_updateSources` is called
+            // before the TileJSON arrives. this makes sure the tiles needed are loaded once TileJSON arrives
+            // ref: https://github.com/mapbox/mapbox-gl-js/pull/4347#discussion_r104418088
+            this.fire('data', {dataType: 'source', sourceDataType: 'metadata'});
+            this.fire('data', {dataType: 'source', sourceDataType: 'content'});
+
         });
     }
 
@@ -69,7 +74,7 @@ class RasterTileSource extends Evented {
                 return callback(err);
             }
 
-            tile.setExpiryData(img);
+            if (!this.map._refreshExpiredTiles) tile.setExpiryData(img);
             delete img.cacheControl;
             delete img.expires;
 
@@ -85,6 +90,11 @@ class RasterTileSource extends Evented {
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+                if (this.map.painter.extTextureFilterAnisotropic) {
+                    gl.texParameterf(gl.TEXTURE_2D, this.map.painter.extTextureFilterAnisotropic.TEXTURE_MAX_ANISOTROPY_EXT, this.map.painter.extTextureFilterAnisotropicMax);
+                }
+
                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
                 tile.texture.size = img.width;
             }
