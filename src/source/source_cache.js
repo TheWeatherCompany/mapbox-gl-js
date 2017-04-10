@@ -327,7 +327,7 @@ class SourceCache extends Evented {
         if (!this.used) {
             visibleCoords = [];
         } else if (this._source.coord) {
-            visibleCoords = [this._source.coord];
+            visibleCoords = transform.getVisibleWrappedCoordinates(this._source.coord);
         } else {
             visibleCoords = transform.coveringTiles({
                 tileSize: this._source.tileSize,
@@ -336,6 +336,10 @@ class SourceCache extends Evented {
                 roundZoom: this._source.roundZoom,
                 reparseOverscaled: this._source.reparseOverscaled
             });
+
+            if (this._source.hasTile) {
+                visibleCoords = visibleCoords.filter((coord) => this._source.hasTile(coord));
+            }
         }
 
         for (i = 0; i < visibleCoords.length; i++) {
