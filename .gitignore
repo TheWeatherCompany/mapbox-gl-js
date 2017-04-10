@@ -16,3 +16,4 @@ test/integration/**/index.html
 test/integration/**/actual.png
 test/integration/**/diff.png
 .idea/
+.eslintcache
