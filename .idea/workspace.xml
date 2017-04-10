@@ -1,105 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="abccecf1-7af2-4613-8dd5-c4e252188943" name="Default" comment="integrating v0.35">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/symbol/resolve_text.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/test/unit/symbol/resolve_text.test.js" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/integration/render-tests/text-font/chinese/expected.png" afterPath="$PROJECT_DIR$/test/integration/render-tests/text-font/chinese/expected.png" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/anchor-bottom/expected.png" afterPath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/anchor-bottom/expected.png" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/anchor-left/expected.png" afterPath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/anchor-left/expected.png" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/anchor-right/expected.png" afterPath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/anchor-right/expected.png" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/anchor-top/expected.png" afterPath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/anchor-top/expected.png" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/function/expected.png" afterPath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/function/expected.png" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/literal/expected.png" afterPath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/literal/expected.png" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.flowconfig" afterPath="$PROJECT_DIR$/.flowconfig" />
+    <list default="true" id="abccecf1-7af2-4613-8dd5-c4e252188943" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CHANGELOG.md" afterPath="$PROJECT_DIR$/CHANGELOG.md" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/_config.mb-pages.yml" afterPath="$PROJECT_DIR$/_config.mb-pages.yml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/circle.yml" afterPath="$PROJECT_DIR$/circle.yml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/mapbox-gl.css" afterPath="$PROJECT_DIR$/dist/mapbox-gl.css" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_data/plugins.yml" afterPath="$PROJECT_DIR$/docs/_data/plugins.yml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_layouts/default.html" afterPath="$PROJECT_DIR$/docs/_layouts/default.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_layouts/pages.html" afterPath="$PROJECT_DIR$/docs/_layouts/pages.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/.eslintrc" afterPath="$PROJECT_DIR$/docs/_posts/examples/.eslintrc" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-04-center-on-symbol.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-04-center-on-symbol.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-04-hover-styles.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-04-hover-styles.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-06-polygon-popup-on-click.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-06-polygon-popup-on-click.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-06-popup-on-click.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-06-popup-on-click.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-06-popup-on-hover.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-06-popup-on-hover.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-14-filter-features-within-map-view.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-14-filter-features-within-map-view.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-24-drag-a-point.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-24-drag-a-point.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-24-query-similar-features.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-24-query-similar-features.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_posts/examples/3400-01-25-mapbox-gl-draw.html" afterPath="$PROJECT_DIR$/docs/_posts/examples/3400-01-25-mapbox-gl-draw.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_theme/index.hbs" afterPath="$PROJECT_DIR$/docs/_theme/index.hbs" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_theme/note.hbs" afterPath="$PROJECT_DIR$/docs/_theme/note.hbs" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_theme/section.hbs" afterPath="$PROJECT_DIR$/docs/_theme/section.hbs" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/_theme/section_list.hbs" afterPath="$PROJECT_DIR$/docs/_theme/section_list.hbs" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/style-spec/_generate/index.html" afterPath="$PROJECT_DIR$/docs/style-spec/_generate/index.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/package.json" afterPath="$PROJECT_DIR$/package.json" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/data/array_group.js" afterPath="$PROJECT_DIR$/src/data/array_group.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/data/bucket/circle_bucket.js" afterPath="$PROJECT_DIR$/src/data/bucket/circle_bucket.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/data/bucket/fill_bucket.js" afterPath="$PROJECT_DIR$/src/data/bucket/fill_bucket.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/data/bucket/fill_extrusion_bucket.js" afterPath="$PROJECT_DIR$/src/data/bucket/fill_extrusion_bucket.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/data/bucket/line_bucket.js" afterPath="$PROJECT_DIR$/src/data/bucket/line_bucket.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/data/bucket/symbol_bucket.js" afterPath="$PROJECT_DIR$/src/data/bucket/symbol_bucket.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/data/buffer.js" afterPath="$PROJECT_DIR$/src/data/buffer.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/data/buffer_group.js" afterPath="$PROJECT_DIR$/src/data/buffer_group.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/data/program_configuration.js" afterPath="$PROJECT_DIR$/src/data/program_configuration.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/geo/transform.js" afterPath="$PROJECT_DIR$/src/geo/transform.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/render/draw_fill_extrusion.js" afterPath="$PROJECT_DIR$/src/render/draw_fill_extrusion.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/render/draw_symbol.js" afterPath="$PROJECT_DIR$/src/render/draw_symbol.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/render/vertex_array_object.js" afterPath="$PROJECT_DIR$/src/render/vertex_array_object.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/shaders/_prelude.vertex.glsl" afterPath="$PROJECT_DIR$/src/shaders/_prelude.vertex.glsl" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/shaders/extrusion_texture.fragment.glsl" afterPath="$PROJECT_DIR$/src/shaders/extrusion_texture.fragment.glsl" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/shaders/extrusion_texture.vertex.glsl" afterPath="$PROJECT_DIR$/src/shaders/extrusion_texture.vertex.glsl" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/shaders/fill_extrusion.vertex.glsl" afterPath="$PROJECT_DIR$/src/shaders/fill_extrusion.vertex.glsl" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/shaders/fill_extrusion_pattern.vertex.glsl" afterPath="$PROJECT_DIR$/src/shaders/fill_extrusion_pattern.vertex.glsl" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/shaders/symbol_icon.vertex.glsl" afterPath="$PROJECT_DIR$/src/shaders/symbol_icon.vertex.glsl" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/shaders/symbol_sdf.fragment.glsl" afterPath="$PROJECT_DIR$/src/shaders/symbol_sdf.fragment.glsl" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/shaders/symbol_sdf.vertex.glsl" afterPath="$PROJECT_DIR$/src/shaders/symbol_sdf.vertex.glsl" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/source/image_source.js" afterPath="$PROJECT_DIR$/src/source/image_source.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/source/load_tilejson.js" afterPath="$PROJECT_DIR$/src/source/load_tilejson.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/source/raster_tile_source.js" afterPath="$PROJECT_DIR$/src/source/raster_tile_source.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/source/source_cache.js" afterPath="$PROJECT_DIR$/src/source/source_cache.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/source/vector_tile_source.js" afterPath="$PROJECT_DIR$/src/source/vector_tile_source.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/style-spec/README.md" afterPath="$PROJECT_DIR$/src/style-spec/README.md" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/style-spec/function/index.js" afterPath="$PROJECT_DIR$/src/style-spec/function/index.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/style-spec/migrate/v7.js" afterPath="$PROJECT_DIR$/src/style-spec/migrate/v7.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/style-spec/migrate/v8.js" afterPath="$PROJECT_DIR$/src/style-spec/migrate/v8.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/style-spec/reference/v8.json" afterPath="$PROJECT_DIR$/src/style-spec/reference/v8.json" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/style/style.js" afterPath="$PROJECT_DIR$/src/style/style.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/style/style_declaration.js" afterPath="$PROJECT_DIR$/src/style/style_declaration.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/style/style_layer.js" afterPath="$PROJECT_DIR$/src/style/style_layer.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/symbol/quads.js" afterPath="$PROJECT_DIR$/src/symbol/quads.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ui/camera.js" afterPath="$PROJECT_DIR$/src/ui/camera.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ui/handler/drag_pan.js" afterPath="$PROJECT_DIR$/src/ui/handler/drag_pan.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ui/handler/drag_rotate.js" afterPath="$PROJECT_DIR$/src/ui/handler/drag_rotate.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ui/handler/keyboard.js" afterPath="$PROJECT_DIR$/src/ui/handler/keyboard.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ui/handler/touch_zoom_rotate.js" afterPath="$PROJECT_DIR$/src/ui/handler/touch_zoom_rotate.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ui/map.js" afterPath="$PROJECT_DIR$/src/ui/map.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/util/browser.js" afterPath="$PROJECT_DIR$/src/util/browser.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/integration/render-tests/regressions/mapbox-gl-js#4150/style.json" afterPath="$PROJECT_DIR$/test/integration/render-tests/regressions/mapbox-gl-js#4150/style.json" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/integration/render-tests/text-font/chinese/style.json" afterPath="$PROJECT_DIR$/test/integration/render-tests/text-font/chinese/style.json" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/anchor-bottom/style.json" afterPath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/anchor-bottom/style.json" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/anchor-left/style.json" afterPath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/anchor-left/style.json" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/anchor-right/style.json" afterPath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/anchor-right/style.json" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/anchor-top/style.json" afterPath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/anchor-top/style.json" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/function/style.json" afterPath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/function/style.json" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/literal/style.json" afterPath="$PROJECT_DIR$/test/integration/render-tests/text-rotate/literal/style.json" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/node_modules/mapbox-gl-js-test.js" afterPath="$PROJECT_DIR$/test/node_modules/mapbox-gl-js-test.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/node_modules/mapbox-gl-js-test/simulate_interaction.js" afterPath="$PROJECT_DIR$/test/node_modules/mapbox-gl-js-test/simulate_interaction.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/suite_implementation.js" afterPath="$PROJECT_DIR$/test/suite_implementation.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/unit/data/bucket.test.js" afterPath="$PROJECT_DIR$/test/unit/data/bucket.test.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/unit/source/source_cache.test.js" afterPath="$PROJECT_DIR$/test/unit/source/source_cache.test.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/unit/source/vector_tile_source.test.js" afterPath="$PROJECT_DIR$/test/unit/source/vector_tile_source.test.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/unit/style-spec/function.test.js" afterPath="$PROJECT_DIR$/test/unit/style-spec/function.test.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/unit/style/style.test.js" afterPath="$PROJECT_DIR$/test/unit/style/style.test.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/unit/ui/camera.test.js" afterPath="$PROJECT_DIR$/test/unit/ui/camera.test.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/unit/ui/map.test.js" afterPath="$PROJECT_DIR$/test/unit/ui/map.test.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/unit/ui/popup.test.js" afterPath="$PROJECT_DIR$/test/unit/ui/popup.test.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/unit/util/struct_array.test.js" afterPath="$PROJECT_DIR$/test/unit/util/struct_array.test.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/unit/util/token.test.js" afterPath="$PROJECT_DIR$/test/unit/util/token.test.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/yarn.lock" afterPath="$PROJECT_DIR$/yarn.lock" />
     </list>
     <ignored path="mapbox-gl-js.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -144,8 +47,8 @@
       <file leaf-file-name="workspace.xml" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/.idea/workspace.xml">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="491">
-              <caret line="201" column="21" lean-forward="false" selection-start-line="201" selection-start-column="21" selection-end-line="201" selection-end-column="21" />
+            <state relative-caret-position="-379">
+              <caret line="143" column="21" lean-forward="false" selection-start-line="143" selection-start-column="21" selection-end-line="143" selection-end-column="21" />
               <folding />
             </state>
           </provider>
@@ -328,7 +231,7 @@
       <workItem from="1484771200332" duration="226000" />
       <workItem from="1490366543749" duration="74000" />
       <workItem from="1491842620756" duration="720000" />
-      <workItem from="1491843353965" duration="282000" />
+      <workItem from="1491843353965" duration="316000" />
     </task>
     <task id="LOCAL-00001" summary="after building">
       <created>1475690737967</created>
@@ -344,11 +247,18 @@
       <option name="project" value="LOCAL" />
       <updated>1484322697335</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="integrating v0.35">
+      <created>1491843646428</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1491843646428</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="9673000" />
+    <option name="totallyTimeSpent" value="9707000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="921" y="-1057" width="1920" height="1057" extended-state="6" />
@@ -560,8 +470,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/.idea/workspace.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="491">
-          <caret line="201" column="21" lean-forward="false" selection-start-line="201" selection-start-column="21" selection-end-line="201" selection-end-column="21" />
+        <state relative-caret-position="-379">
+          <caret line="143" column="21" lean-forward="false" selection-start-line="143" selection-start-column="21" selection-end-line="143" selection-end-column="21" />
           <folding />
         </state>
       </provider>
