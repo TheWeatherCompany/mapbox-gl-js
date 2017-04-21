@@ -4,14 +4,27 @@
     "test": {
       "width": 64,
       "height": 64,
-      "queryGeometry": [
-        32,
-        16
+      "operations": [
+        [
+          "wait"
+        ],
+        [
+          "setPaintProperty",
+          "circle",
+          "circle-radius",
+          3
+        ],
+        [
+          "wait"
+        ]
       ]
     }
   },
+  "transition": {
+    "duration": 0
+  },
   "sources": {
-    "mapbox": {
+    "geojson": {
       "type": "geojson",
       "data": {
         "type": "FeatureCollection",
@@ -19,12 +32,12 @@
           {
             "type": "Feature",
             "properties": {
-              "radius": 20
+              "radius": 10
             },
             "geometry": {
               "type": "Point",
               "coordinates": [
-                0,
+                -10,
                 0
               ]
             }
@@ -32,13 +45,13 @@
           {
             "type": "Feature",
             "properties": {
-              "radius": 5
+              "radius": 15
             },
             "geometry": {
               "type": "Point",
               "coordinates": [
-                5,
-                15
+                10,
+                0
               ]
             }
           }
@@ -50,11 +63,14 @@
     {
       "id": "circle",
       "type": "circle",
-      "source": "mapbox",
+      "source": "geojson",
       "paint": {
         "circle-radius": {
-          "type": "identity",
-          "property": "radius"
+          "property": "radius",
+          "stops": [
+            [{"value": 10, "zoom": 0}, 10],
+            [{"value": 15, "zoom": 0}, 15]
+          ]
         }
       }
     }

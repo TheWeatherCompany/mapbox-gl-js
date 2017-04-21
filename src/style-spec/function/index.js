@@ -4,6 +4,7 @@ const colorSpaces = require('./color_spaces');
 const parseColor = require('../util/parse_color');
 const extend = require('../util/extend');
 const getType = require('../util/get_type');
+const interpolate = require('../util/interpolate');
 
 function identityFunction(x) {
     return x;
@@ -184,15 +185,28 @@ function evaluateExponentialFunction(parameters, propertySpec, input) {
     if (input >= parameters.stops[n - 1][0]) return parameters.stops[n - 1][1];
 
     const index = findStopLessThanOrEqualTo(parameters.stops, input);
+    const t = interpolationFactor(
+        input, base,
+        parameters.stops[index][0],
+        parameters.stops[index + 1][0]);
 
-    return interpolate(
-            input,
-            base,
-            parameters.stops[index][0],
-            parameters.stops[index + 1][0],
-            parameters.stops[index][1],
-            parameters.stops[index + 1][1]
-    );
+    const outputLower = parameters.stops[index][1];
+    const outputUpper = parameters.stops[index + 1][1];
+    const interp = interpolate[propertySpec.type] || identityFunction;
+
+    if (typeof outputLower === 'function') {
+        return function() {
+            const evaluatedLower = outputLower.apply(undefined, arguments);
+            const evaluatedUpper = outputUpper.apply(undefined, arguments);
+            // Special case for fill-outline-color, which has no spec default.
+            if (evaluatedLower === undefined || evaluatedUpper === undefined) {
+                return undefined;
+            }
+            return interp(evaluatedLower, evaluatedUpper, t);
+        };
+    }
+
+    return interp(outputLower, outputUpper, t);
 }
 
 function evaluateIdentityFunction(parameters, propertySpec, input) {
@@ -230,37 +244,6 @@ function findStopLessThanOrEqualTo(stops, input) {
     }
 
     return Math.max(currentIndex - 1, 0);
-}
-
-function interpolate(input, base, inputLower, inputUpper, outputLower, outputUpper) {
-    if (typeof outputLower === 'function') {
-        return function() {
-            const evaluatedLower = outputLower.apply(undefined, arguments);
-            const evaluatedUpper = outputUpper.apply(undefined, arguments);
-            // Special case for fill-outline-color, which has no spec default.
-            if (evaluatedLower === undefined || evaluatedUpper === undefined) {
-                return undefined;
-            }
-            return interpolate(input, base, inputLower, inputUpper, evaluatedLower, evaluatedUpper);
-        };
-    } else if (outputLower.length) {
-        return interpolateArray(input, base, inputLower, inputUpper, outputLower, outputUpper);
-    } else {
-        return interpolateNumber(input, base, inputLower, inputUpper, outputLower, outputUpper);
-    }
-}
-
-function interpolateNumber(input, base, inputLower, inputUpper, outputLower, outputUpper) {
-    const ratio = interpolationFactor(input, base, inputLower, inputUpper);
-    return outputLower + ratio * (outputUpper - outputLower);
-}
-
-function interpolateArray(input, base, inputLower, inputUpper, outputLower, outputUpper) {
-    const output = [];
-    for (let i = 0; i < outputLower.length; i++) {
-        output[i] = interpolateNumber(input, base, inputLower, inputUpper, outputLower[i], outputUpper[i]);
-    }
-    return output;
 }
 
 function isFunctionDefinition(value) {
