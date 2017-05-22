@@ -1327,6 +1327,7 @@ class Map extends Camera {
         event.preventDefault();
         if (this._frameId) {
             browser.cancelFrame(this._frameId);
+            this._frameId = null;
         }
         this.fire('webglcontextlost', {originalEvent: event});
     }
@@ -1459,6 +1460,7 @@ class Map extends Camera {
     remove() {
         if (this._hash) this._hash.remove();
         browser.cancelFrame(this._frameId);
+        this._frameId = null;
         this.setStyle(null);
         if (typeof window !== 'undefined') {
             window.removeEventListener('resize', this._onWindowResize, false);

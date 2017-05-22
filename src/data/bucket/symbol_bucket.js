@@ -77,8 +77,8 @@ function addVertex(array, x, y, ox, oy, tx, ty, sizeVertex, minzoom, maxzoom, la
         Math.round(oy * 64),
 
         // a_data
-        tx / 4, // x coordinate of symbol on glyph atlas texture
-        ty / 4, // y coordinate of symbol on glyph atlas texture
+        tx, // x coordinate of symbol on glyph atlas texture
+        ty, // y coordinate of symbol on glyph atlas texture
         packUint8ToFloat(
             (labelminzoom || 0) * 10, // labelminzoom
             labelangle % 256 // labelangle
@@ -360,10 +360,11 @@ class SymbolBucket {
             if (feature.text) {
                 const allowsVerticalWritingMode = scriptDetection.allowsVerticalWritingMode(feature.text);
                 const textOffset = this.layers[0].getLayoutValue('text-offset', {zoom: this.zoom}, feature.properties).map((t)=> t * oneEm);
+                const spacingIfAllowed = scriptDetection.allowsLetterSpacing(feature.text) ? spacing : 0;
 
                 shapedTextOrientations = {
-                    [WritingMode.horizontal]: shapeText(feature.text, stacks[fontstack], maxWidth, lineHeight, horizontalAlign, verticalAlign, justify, spacing, textOffset, oneEm, WritingMode.horizontal),
-                    [WritingMode.vertical]: allowsVerticalWritingMode && textAlongLine && shapeText(feature.text, stacks[fontstack], maxWidth, lineHeight, horizontalAlign, verticalAlign, justify, spacing, textOffset, oneEm, WritingMode.vertical)
+                    [WritingMode.horizontal]: shapeText(feature.text, stacks[fontstack], maxWidth, lineHeight, horizontalAlign, verticalAlign, justify, spacingIfAllowed, textOffset, oneEm, WritingMode.horizontal),
+                    [WritingMode.vertical]: allowsVerticalWritingMode && textAlongLine && shapeText(feature.text, stacks[fontstack], maxWidth, lineHeight, horizontalAlign, verticalAlign, justify, spacingIfAllowed, textOffset, oneEm, WritingMode.vertical)
                 };
             } else {
                 shapedTextOrientations = {};

@@ -1,19 +1,34 @@
 'use strict';
 
+const assert = require('assert');
+
 const pixelsToTileUnits = require('../source/pixels_to_tile_units');
+
+/**
+ * Checks whether a pattern image is needed, and if it is, whether it is not loaded.
+ *
+ * @returns {boolean} true if a needed image is missing and rendering needs to be skipped.
+ */
+exports.isPatternMissing = function(image, painter) {
+    if (!image) return false;
+    const imagePosA = painter.spriteAtlas.getPosition(image.from, true);
+    const imagePosB = painter.spriteAtlas.getPosition(image.to, true);
+    return !imagePosA || !imagePosB;
+};
 
 exports.prepare = function (image, painter, program) {
     const gl = painter.gl;
 
     const imagePosA = painter.spriteAtlas.getPosition(image.from, true);
     const imagePosB = painter.spriteAtlas.getPosition(image.to, true);
-    if (!imagePosA || !imagePosB) return;
+    assert(imagePosA && imagePosB);
 
     gl.uniform1i(program.u_image, 0);
     gl.uniform2fv(program.u_pattern_tl_a, imagePosA.tl);
     gl.uniform2fv(program.u_pattern_br_a, imagePosA.br);
     gl.uniform2fv(program.u_pattern_tl_b, imagePosB.tl);
     gl.uniform2fv(program.u_pattern_br_b, imagePosB.br);
+    gl.uniform2f(program.u_texsize, painter.spriteAtlas.width, painter.spriteAtlas.height);
     gl.uniform1f(program.u_mix, image.t);
     gl.uniform2fv(program.u_pattern_size_a, imagePosA.size);
     gl.uniform2fv(program.u_pattern_size_b, imagePosB.size);
