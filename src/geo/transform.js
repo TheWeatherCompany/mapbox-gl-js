@@ -1,7 +1,7 @@
 // @flow
 
 const LngLat = require('./lng_lat'),
-    Point = require('point-geometry'),
+    Point = require('@mapbox/point-geometry'),
     Coordinate = require('./coordinate'),
     util = require('../util/util'),
     interp = require('../style-spec/util/interpolate'),
@@ -196,14 +196,14 @@ class Transform {
      * @returns {Array<Tile>} tiles
      */
     coveringTiles(
-      options: {
-        tileSize: number,
-        minzoom: number,
-        maxzoom: number,
-        roundZoom: boolean,
-        reparseOverscaled: boolean,
-        renderWorldCopies: boolean
-      }
+        options: {
+            tileSize: number,
+            minzoom: number,
+            maxzoom: number,
+            roundZoom: boolean,
+            reparseOverscaled: boolean,
+            renderWorldCopies: boolean
+        }
     ) {
         let z = this.coveringZoomLevel(options);
         const actualZ = z;

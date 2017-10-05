@@ -12,10 +12,10 @@ const VectorTileWorkerSource = require('./vector_tile_worker_source');
 import type {
     WorkerTileParameters,
     WorkerTileCallback,
-} from '../source/source';
+} from '../source/worker_source';
 
 import type {Actor} from '../util/actor';
-import type {StyleLayerIndex} from '../style/style_layer_index';
+import type StyleLayerIndex from '../style/style_layer_index';
 
 import type {LoadVectorDataCallback} from './vector_tile_worker_source';
 
@@ -29,7 +29,7 @@ export type LoadGeoJSONParameters = {
     geojsonVtOptions?: Object
 };
 
-export type LoadGeoJSON = (params: LoadGeoJSONParameters, callback: Callback<GeoJSON>) => void;
+export type LoadGeoJSON = (params: LoadGeoJSONParameters, callback: Callback<mixed>) => void;
 
 export interface GeoJSONIndex {
 }
@@ -47,18 +47,21 @@ function loadGeoJSONTile(params: WorkerTileParameters, callback: LoadVectorDataC
         return callback(null, null); // nothing in the given tile
     }
 
+    const geojsonWrapper = new GeoJSONWrapper(geoJSONTile.features);
+
     // Encode the geojson-vt tile into binary vector tile form form.  This
     // is a convenience that allows `FeatureIndex` to operate the same way
     // across `VectorTileSource` and `GeoJSONSource` data.
-    const geojsonWrapper = new GeoJSONWrapper(geoJSONTile.features);
-    geojsonWrapper.name = '_geojsonTileLayer';
-    let pbf = vtpbf({ layers: { '_geojsonTileLayer': geojsonWrapper }});
+    let pbf = vtpbf(geojsonWrapper);
     if (pbf.byteOffset !== 0 || pbf.byteLength !== pbf.buffer.byteLength) {
         // Compatibility with node Buffer (https://github.com/mapbox/pbf/issues/35)
         pbf = new Uint8Array(pbf);
     }
-    geojsonWrapper.rawData = pbf.buffer;
-    callback(null, geojsonWrapper);
+
+    callback(null, {
+        vectorTile: geojsonWrapper,
+        rawData: pbf.buffer
+    });
 }
 
 /**
@@ -156,7 +159,7 @@ class GeoJSONWorkerSource extends VectorTileWorkerSource {
      * @param [params.url] A URL to the remote GeoJSON data.
      * @param [params.data] Literal GeoJSON data. Must be provided if `params.url` is not.
      */
-    loadGeoJSON(params: LoadGeoJSONParameters, callback: Callback<GeoJSON>) {
+    loadGeoJSON(params: LoadGeoJSONParameters, callback: Callback<mixed>) {
         // Because of same origin issues, urls must either include an explicit
         // origin or absolute path.
         // ie: /foo/bar.json or http://example.com/bar.json

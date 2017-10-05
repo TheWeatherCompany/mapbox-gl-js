@@ -3,7 +3,7 @@ const util = require('../util/util');
 const Evented = require('../util/evented');
 const DOM = require('../util/dom');
 const LngLat = require('../geo/lng_lat');
-const Point = require('point-geometry');
+const Point = require('@mapbox/point-geometry');
 const window = require('../util/window');
 const smartWrap = require('../util/smart_wrap');
 
@@ -56,10 +56,7 @@ class Popup extends Evented {
     constructor(options) {
         super();
         this.options = util.extend(Object.create(defaultOptions), options);
-        util.bindAll([
-            '_update',
-            '_onClickClose'],
-            this);
+        util.bindAll(['_update', '_onClickClose'], this);
     }
 
     /**

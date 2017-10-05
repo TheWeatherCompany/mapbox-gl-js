@@ -41,10 +41,7 @@ test('Bucket', (t) => {
             elementArrayType: createElementArrayType(),
             elementArrayType2: createElementArrayType(2),
 
-            paintAttributes: options.paintAttributes || [{
-                property: 'circle-opacity',
-                type: 'Int16'
-            }]
+            paintAttributes: options.paintAttributes || [{ property: 'circle-opacity' }]
         };
 
         class Class extends Bucket {
@@ -84,13 +81,14 @@ test('Bucket', (t) => {
     t.test('add features', (t) => {
         const bucket = create();
 
-        bucket.populate([createFeature(17, 42)], createOptions());
+        bucket.populate([{feature: createFeature(17, 42)}], createOptions());
 
         const testVertex = bucket.arrays.layoutVertexArray;
         t.equal(testVertex.length, 1);
         const v0 = testVertex.get(0);
         t.equal(v0.a_box0, 34);
         t.equal(v0.a_box1, 84);
+
         const paintVertex = bucket.arrays.layerData.layerid.paintVertexArray;
         t.equal(paintVertex.length, 1);
         const p0 = paintVertex.get(0);
@@ -118,7 +116,7 @@ test('Bucket', (t) => {
             { id: 'two', type: 'circle', paint: dataDrivenPaint }
         ]});
 
-        bucket.populate([createFeature(17, 42)], createOptions());
+        bucket.populate([{feature: createFeature(17, 42)}], createOptions());
 
         const v0 = bucket.arrays.layoutVertexArray.get(0);
         const a0 = bucket.arrays.layerData.one.paintVertexArray.get(0);
@@ -133,17 +131,14 @@ test('Bucket', (t) => {
 
     t.test('add features, disabled attribute', (t) => {
         const bucket = create({
-            paintAttributes: [{
-                property: 'circle-opacity',
-                type: 'Int16'
-            }],
+            paintAttributes: [{ property: 'circle-opacity' }],
             layoutAttributes: [],
             layers: [
                 { id: 'one', type: 'circle', paint: constantPaint }
             ]
         });
 
-        bucket.populate([createFeature(17, 42)], createOptions());
+        bucket.populate([{feature: createFeature(17, 42)}], createOptions());
 
         t.equal(bucket.arrays.layoutVertexArray.bytesPerElement, 0);
         t.end();
@@ -158,7 +153,7 @@ test('Bucket', (t) => {
             }]
         });
 
-        bucket.populate([createFeature(17, 42)], createOptions());
+        bucket.populate([{feature: createFeature(17, 42)}], createOptions());
 
         const v0 = bucket.arrays.layoutVertexArray.get(0);
         t.equal(v0.a_map, 34);
@@ -170,7 +165,7 @@ test('Bucket', (t) => {
         const bucket = create();
         t.ok(bucket.isEmpty());
 
-        bucket.populate([createFeature(17, 42)], createOptions());
+        bucket.populate([{feature: createFeature(17, 42)}], createOptions());
         t.ok(!bucket.isEmpty());
 
         t.end();
@@ -178,7 +173,7 @@ test('Bucket', (t) => {
 
     t.test('serialize', (t) => {
         const bucket = create();
-        bucket.populate([createFeature(17, 42)], createOptions());
+        bucket.populate([{feature: createFeature(17, 42)}], createOptions());
 
         const transferables = [];
         bucket.serialize(transferables);

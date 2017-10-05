@@ -857,8 +857,8 @@ test('Style#addLayer', (t) => {
 
         const layer = {
             id: 'dummy',
+            type: 'fill',
             source: 'dummy',
-            type: 'background',
             'source-layer': 'dummy'
         };
 
@@ -1411,8 +1411,9 @@ test('Style#queryRenderedFeatures', (t) => {
             t.stub(style, 'fire').callsFake((type, data) => {
                 if (data.error && data.error.includes('does not exist in the map\'s style and cannot be queried for features.')) errors++;
             });
-            style.queryRenderedFeatures([{column: 1, row: 1, zoom: 1}], {layers:['merp']});
+            const results = style.queryRenderedFeatures([{column: 1, row: 1, zoom: 1}], {layers:['merp']});
             t.equals(errors, 1);
+            t.equals(results.length, 0);
             t.end();
         });
 

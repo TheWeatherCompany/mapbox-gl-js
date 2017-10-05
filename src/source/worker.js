@@ -16,7 +16,7 @@ import type {
     TileParameters,
     RedoPlacementParameters,
     RedoPlacementCallback
-} from '../source/source';
+} from '../source/worker_source';
 
 /**
  * @private
@@ -61,11 +61,11 @@ class Worker {
         };
     }
 
-    setLayers(mapId: string, layers: any) {
+    setLayers(mapId: string, layers: Array<LayerSpecification>) {
         this.getLayerIndex(mapId).replace(layers);
     }
 
-    updateLayers(mapId: string, params: {layers: any, removedIds: any, symbolOrder: any}) {
+    updateLayers(mapId: string, params: {layers: Array<LayerSpecification>, removedIds: Array<string>, symbolOrder: ?Array<string>}) {
         this.getLayerIndex(mapId).update(params.layers, params.removedIds, params.symbolOrder);
     }
 

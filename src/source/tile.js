@@ -3,7 +3,7 @@
 const util = require('../util/util');
 const Bucket = require('../data/bucket');
 const FeatureIndex = require('../data/feature_index');
-const vt = require('vector-tile');
+const vt = require('@mapbox/vector-tile');
 const Protobuf = require('pbf');
 const GeoJSONFeature = require('../util/vectortile_to_geojson');
 const featureFilter = require('../style-spec/feature_filter');
@@ -13,6 +13,9 @@ const Throttler = require('../util/throttler');
 
 const CLOCK_SKEW_RETRY_TIMEOUT = 30000;
 
+import type TileCoord from './tile_coord';
+import type {WorkerTileResult} from './worker_source';
+
 /**
  * A tile object is the combination of a Coordinate, which defines
  * its place, as well as a unique ID and data tracking for its content
@@ -20,12 +23,12 @@ const CLOCK_SKEW_RETRY_TIMEOUT = 30000;
  * @private
  */
 class Tile {
-    coord: any;
+    coord: TileCoord;
     uid: number;
     uses: number;
     tileSize: number;
     sourceMaxZoom: number;
-    buckets: any;
+    buckets: {[string]: Bucket};
     expirationTime: any;
     expiredRequestCount: number;
     state: 'loading'   // Tile data is in the process of loading.
@@ -33,15 +36,15 @@ class Tile {
          | 'reloading' // Tile data has been loaded and is being updated. Tile can be rendered.
          | 'unloaded'  // Tile data has been deleted.
          | 'errored'   // Tile data was not loaded because of an error.
-         | 'expired';  // Tile data was previously loaded, but has expired per its
-                       // HTTP headers and is in the process of refreshing.
+         | 'expired';  /* Tile data was previously loaded, but has expired per its
+                        * HTTP headers and is in the process of refreshing. */
     placementThrottler: any;
     timeAdded: any;
     fadeEndTime: any;
-    rawTileData: any;
-    collisionBoxArray: any;
+    rawTileData: ArrayBuffer;
+    collisionBoxArray: ?CollisionBoxArray;
     collisionTile: ?CollisionTile;
-    featureIndex: any;
+    featureIndex: ?FeatureIndex;
     redoWhenDone: boolean;
     angle: number;
     pitch: number;
@@ -50,7 +53,16 @@ class Tile {
     showCollisionBoxes: boolean;
     placementSource: any;
     workerID: number;
-    vtLayers: any;
+    vtLayers: {[string]: VectorTileLayer};
+
+    aborted: ?boolean;
+    boundsBuffer: any;
+    boundsVAO: any;
+    request: any;
+    texture: any;
+    sourceCache: any;
+    refreshedUponExpiration: boolean;
+    reloadCallback: any;
 
     /**
      * @param {TileCoord} coord
@@ -96,7 +108,7 @@ class Tile {
      * @returns {undefined}
      * @private
      */
-    loadVectorData(data: any, painter: any) {
+    loadVectorData(data: WorkerTileResult, painter: any) {
         if (this.hasData()) {
             this.unloadVectorData();
         }
@@ -115,7 +127,7 @@ class Tile {
 
         this.collisionBoxArray = new CollisionBoxArray(data.collisionBoxArray);
         this.collisionTile = CollisionTile.deserialize(data.collisionTile, this.collisionBoxArray);
-        this.featureIndex = new FeatureIndex(data.featureIndex, this.rawTileData, this.collisionTile);
+        this.featureIndex = FeatureIndex.deserialize(data.featureIndex, this.rawTileData, this.collisionTile);
         this.buckets = Bucket.deserialize(data.buckets, painter.style);
     }
 
@@ -126,11 +138,14 @@ class Tile {
      * @returns {undefined}
      * @private
      */
-    reloadSymbolData(data: any, style: any) {
+    reloadSymbolData(data: WorkerTileResult, style: any) {
         if (this.state === 'unloaded') return;
 
         this.collisionTile = CollisionTile.deserialize(data.collisionTile, this.collisionBoxArray);
-        this.featureIndex.setCollisionTile(this.collisionTile);
+
+        if (this.featureIndex) {
+            this.featureIndex.setCollisionTile(this.collisionTile);
+        }
 
         for (const id in this.buckets) {
             const bucket = this.buckets[id];
@@ -213,12 +228,11 @@ class Tile {
             cameraToTileDistance: this.cameraToTileDistance,
             showCollisionBoxes: this.showCollisionBoxes
         }, (_, data) => {
+            this.state = 'loaded';
             this.reloadSymbolData(data, this.placementSource.map.style);
-            if (this.placementSource.map.showCollisionBoxes) this.placementSource.fire('data', {tile: this, coord: this.coord, dataType: 'source'});
+            this.placementSource.fire('data', {tile: this, coord: this.coord, dataType: 'source'});
             // HACK this is nescessary to fix https://github.com/mapbox/mapbox-gl-js/issues/2986
             if (this.placementSource.map) this.placementSource.map.painter.tileExtentVAO.vao = null;
-
-            this.state = 'loaded';
 
             if (this.redoWhenDone) {
                 this.redoWhenDone = false;
@@ -238,7 +252,7 @@ class Tile {
             this.vtLayers = new vt.VectorTile(new Protobuf(this.rawTileData)).layers;
         }
 
-        const sourceLayer = params ? params.sourceLayer : undefined;
+        const sourceLayer = params ? params.sourceLayer : '';
         const layer = this.vtLayers._geojsonTileLayer || this.vtLayers[sourceLayer];
 
         if (!layer) return;

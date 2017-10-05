@@ -7,15 +7,14 @@ const DictionaryCoder = require('../util/dictionary_coder');
 const util = require('../util/util');
 const assert = require('assert');
 
-import type {TileCoord} from './tile_coord';
-import type {SymbolBucket} from '../data/bucket/symbol_bucket';
+import type TileCoord from './tile_coord';
+import type SymbolBucket from '../data/bucket/symbol_bucket';
 import type {Actor} from '../util/actor';
-import type {StyleLayerIndex} from '../style/style_layer_index';
+import type StyleLayerIndex from '../style/style_layer_index';
 import type {
     WorkerTileParameters,
     WorkerTileCallback,
-    VectorTile
-} from '../source/source';
+} from '../source/worker_source';
 
 class WorkerTile {
     coord: TileCoord;
@@ -54,11 +53,6 @@ class WorkerTile {
     }
 
     parse(data: VectorTile, layerIndex: StyleLayerIndex, actor: Actor, callback: WorkerTileCallback) {
-        // Normalize GeoJSON data.
-        if (!data.layers) {
-            data = { layers: { '_geojsonTileLayer': data } };
-        }
-
         this.status = 'parsing';
         this.data = data;
 
@@ -66,10 +60,9 @@ class WorkerTile {
         const sourceLayerCoder = new DictionaryCoder(Object.keys(data.layers).sort());
 
         const featureIndex = new FeatureIndex(this.coord, this.overscaling);
-        featureIndex.bucketLayerIDs = {};
+        featureIndex.bucketLayerIDs = [];
 
         const buckets = {};
-        let bucketIndex = 0;
 
         const options = {
             featureIndex: featureIndex,
@@ -85,20 +78,15 @@ class WorkerTile {
             }
 
             if (sourceLayer.version === 1) {
-                util.warnOnce(
-                    `Vector tile source "${this.source}" layer "${
-                    sourceLayerId}" does not use vector tile spec v2 ` +
-                    `and therefore may have some rendering errors.`
-                );
+                util.warnOnce(`Vector tile source "${this.source}" layer "${sourceLayerId}" ` +
+                    `does not use vector tile spec v2 and therefore may have some rendering errors.`);
             }
 
             const sourceLayerIndex = sourceLayerCoder.encode(sourceLayerId);
             const features = [];
-            for (let i = 0; i < sourceLayer.length; i++) {
-                const feature = sourceLayer.feature(i);
-                feature.index = i;
-                feature.sourceLayerIndex = sourceLayerIndex;
-                features.push(feature);
+            for (let index = 0; index < sourceLayer.length; index++) {
+                const feature = sourceLayer.feature(index);
+                features.push({ feature, index, sourceLayerIndex });
             }
 
             for (const family of layerFamilies[sourceLayerId]) {
@@ -115,7 +103,7 @@ class WorkerTile {
                 }
 
                 const bucket = buckets[layer.id] = layer.createBucket({
-                    index: bucketIndex,
+                    index: featureIndex.bucketLayerIDs.length,
                     layers: family,
                     zoom: this.zoom,
                     overscaling: this.overscaling,
@@ -123,9 +111,7 @@ class WorkerTile {
                 });
 
                 bucket.populate(features, options);
-                featureIndex.bucketLayerIDs[bucketIndex] = family.map((l) => l.id);
-
-                bucketIndex++;
+                featureIndex.bucketLayerIDs.push(family.map((l) => l.id));
             }
         }
 
@@ -170,11 +156,12 @@ class WorkerTile {
             if (err) return callback(err);
             deps++;
             if (deps === 2) {
-                const collisionTile = new CollisionTile(this.angle,
-                                                        this.pitch,
-                                                        this.cameraToCenterDistance,
-                                                        this.cameraToTileDistance,
-                                                        this.collisionBoxArray);
+                const collisionTile = new CollisionTile(
+                    this.angle,
+                    this.pitch,
+                    this.cameraToCenterDistance,
+                    this.cameraToTileDistance,
+                    this.collisionBoxArray);
 
                 for (const bucket of this.symbolBuckets) {
                     recalculateLayers(bucket, this.zoom);
@@ -216,11 +203,12 @@ class WorkerTile {
             return {};
         }
 
-        const collisionTile = new CollisionTile(this.angle,
-                                                this.pitch,
-                                                this.cameraToCenterDistance,
-                                                this.cameraToTileDistance,
-                                                this.collisionBoxArray);
+        const collisionTile = new CollisionTile(
+            this.angle,
+            this.pitch,
+            this.cameraToCenterDistance,
+            this.cameraToTileDistance,
+            this.collisionBoxArray);
 
         for (const bucket of this.symbolBuckets) {
             recalculateLayers(bucket, this.zoom);
