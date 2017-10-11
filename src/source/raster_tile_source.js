@@ -46,18 +46,19 @@ class RasterTileSource extends Evented implements Source {
         this.scheme = 'xyz';
         this.tileSize = 512;
         this._loaded = false;
+
         this._options = util.extend({}, options);
         util.extend(this, util.pick(options, ['url', 'scheme', 'tileSize']));
     }
 
     load() {
         this.fire('dataloading', {dataType: 'source'});
-        loadTileJSON(this._options, (err, tileJSON) => {
+        loadTileJSON(this._options, this.map._transformRequest, (err, tileJSON) => {
             if (err) {
                 this.fire('error', err);
             } else if (tileJSON) {
                 util.extend(this, tileJSON);
-                this.setBounds(tileJSON.bounds);
+                if (tileJSON.bounds) this.tileBounds = new TileBounds(tileJSON.bounds, this.minzoom, this.maxzoom);
 
                 // `content` is included here to prevent a race condition where `Style#_updateSources` is called
                 // before the TileJSON arrives. this makes sure the tiles needed are loaded once TileJSON arrives
@@ -69,15 +70,8 @@ class RasterTileSource extends Evented implements Source {
     }
 
     onAdd(map: Map) {
-        this.load();
         this.map = map;
-    }
-
-    setBounds(bounds?: [number, number, number, number]) {
-        this.bounds = bounds;
-        if (bounds) {
-            this.tileBounds = new TileBounds(bounds, this.minzoom, this.maxzoom);
-        }
+        this.load();
     }
 
     serialize() {
@@ -91,7 +85,7 @@ class RasterTileSource extends Evented implements Source {
     loadTile(tile: Tile, callback: Callback<void>) {
         const url = normalizeURL(tile.coord.url(this.tiles, null, this.scheme), this.url, this.tileSize);
 
-        tile.request = ajax.getImage(url, (err, img) => {
+        tile.request = ajax.getImage(this.map._transformRequest(url, ajax.ResourceType.Tile), (err, img) => {
             delete tile.request;
 
             if (tile.aborted) {
@@ -102,8 +96,8 @@ class RasterTileSource extends Evented implements Source {
                 callback(err);
             } else if (img) {
                 if (this.map._refreshExpiredTiles) tile.setExpiryData(img);
-                delete (img : any).cacheControl;
-                delete (img : any).expires;
+                delete (img: any).cacheControl;
+                delete (img: any).expires;
 
                 const gl = this.map.painter.gl;
                 tile.texture = this.map.painter.getTileTexture(img.width);
@@ -117,7 +111,7 @@ class RasterTileSource extends Evented implements Source {
                     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
                     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
                     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+                    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, (true: any));
                     if (this.map.painter.extTextureFilterAnisotropic) {
                         gl.texParameterf(gl.TEXTURE_2D, this.map.painter.extTextureFilterAnisotropic.TEXTURE_MAX_ANISOTROPY_EXT, this.map.painter.extTextureFilterAnisotropicMax);
                     }

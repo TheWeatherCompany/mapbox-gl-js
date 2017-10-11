@@ -1,11 +1,13 @@
 // @flow
 
 const createVertexArrayType = require('./vertex_array_type');
-const interpolationFactor = require('../style-spec/function').interpolationFactor;
 const packUint8ToFloat = require('../shaders/encode_attribute').packUint8ToFloat;
+const VertexBuffer = require('../gl/vertex_buffer');
 
 import type StyleLayer from '../style/style_layer';
-import type {ViewType, StructArray} from '../util/struct_array';
+import type {ViewType, StructArray, SerializedStructArray, StructArrayTypeParameters} from '../util/struct_array';
+import type Program from '../render/program';
+import type {Feature} from '../style-spec/expression';
 
 type LayoutAttribute = {
     name: string,
@@ -25,14 +27,10 @@ export type PaintPropertyStatistics = {
 
 export type ProgramInterface = {
     layoutAttributes: Array<LayoutAttribute>,
+    indexArrayType: Class<StructArray>,
     dynamicLayoutAttributes?: Array<LayoutAttribute>,
     paintAttributes?: Array<PaintAttribute>,
-    elementArrayType?: Class<StructArray>,
-    elementArrayType2?: Class<StructArray>,
-}
-
-export type Program = {
-    [string]: any
+    indexArrayType2?: Class<StructArray>
 }
 
 function packColor(color: [number, number, number, number]): [number, number] {
@@ -50,7 +48,7 @@ interface Binder {
                        statistics: PaintPropertyStatistics,
                        start: number,
                        length: number,
-                       featureProperties: Object): void;
+                       feature: Feature): void;
 
     defines(): Array<string>;
 
@@ -82,9 +80,9 @@ class ConstantBinder implements Binder {
     setUniforms(gl: WebGLRenderingContext, program: Program, layer: StyleLayer, {zoom}: { zoom: number }) {
         const value = layer.getPaintValue(this.property, { zoom: this.useIntegerZoom ? Math.floor(zoom) : zoom });
         if (this.type === 'color') {
-            gl.uniform4fv(program[`u_${this.name}`], value);
+            gl.uniform4fv(program.uniforms[`u_${this.name}`], value);
         } else {
-            gl.uniform1f(program[`u_${this.name}`], value);
+            gl.uniform1f(program.uniforms[`u_${this.name}`], value);
         }
     }
 }
@@ -109,8 +107,8 @@ class SourceFunctionBinder implements Binder {
                        statistics: PaintPropertyStatistics,
                        start: number,
                        length: number,
-                       featureProperties: Object) {
-        const value = layer.getPaintValue(this.property, undefined, featureProperties);
+                       feature: Feature) {
+        const value = layer.getPaintValue(this.property, undefined, feature);
 
         if (this.type === 'color') {
             const color = packColor(value);
@@ -131,7 +129,7 @@ class SourceFunctionBinder implements Binder {
     }
 
     setUniforms(gl: WebGLRenderingContext, program: Program) {
-        gl.uniform1f(program[`a_${this.name}_t`], 0);
+        gl.uniform1f(program.uniforms[`a_${this.name}_t`], 0);
     }
 }
 
@@ -159,9 +157,9 @@ class CompositeFunctionBinder implements Binder {
                        statistics: PaintPropertyStatistics,
                        start: number,
                        length: number,
-                       featureProperties: Object) {
-        const min = layer.getPaintValue(this.property, {zoom: this.zoom    }, featureProperties);
-        const max = layer.getPaintValue(this.property, {zoom: this.zoom + 1}, featureProperties);
+                       feature: Feature) {
+        const min = layer.getPaintValue(this.property, {zoom: this.zoom    }, feature);
+        const max = layer.getPaintValue(this.property, {zoom: this.zoom + 1}, feature);
 
         if (this.type === 'color') {
             const minColor = packColor(min);
@@ -186,10 +184,16 @@ class CompositeFunctionBinder implements Binder {
     }
 
     setUniforms(gl: WebGLRenderingContext, program: Program, layer: StyleLayer, {zoom}: { zoom: number }) {
-        const f = interpolationFactor(this.useIntegerZoom ? Math.floor(zoom) : zoom, 1, this.zoom, this.zoom + 1);
-        gl.uniform1f(program[`a_${this.name}_t`], f);
+        const f = layer.getPaintInterpolationFactor(this.property, this.useIntegerZoom ? Math.floor(zoom) : zoom, this.zoom, this.zoom + 1);
+        gl.uniform1f(program.uniforms[`a_${this.name}_t`], f);
     }
 }
+
+export type SerializedProgramConfiguration = {
+    array: SerializedStructArray,
+    type: StructArrayTypeParameters,
+    statistics: PaintPropertyStatistics
+};
 
 /**
  * ProgramConfiguration contains the logic for binding style layer properties and tile
@@ -216,6 +220,11 @@ class ProgramConfiguration {
     cacheKey: string;
     interface: ?ProgramInterface;
     PaintVertexArray: Class<StructArray>;
+
+    layer: StyleLayer;
+    paintVertexArray: StructArray;
+    paintPropertyStatistics: PaintPropertyStatistics;
+    paintVertexBuffer: ?VertexBuffer;
 
     constructor() {
         this.binders = {};
@@ -256,6 +265,7 @@ class ProgramConfiguration {
 
         self.PaintVertexArray = createVertexArrayType(attributes);
         self.interface = programInterface;
+        self.layer = layer;
 
         return self;
     }
@@ -285,20 +295,19 @@ class ProgramConfiguration {
         return paintPropertyStatistics;
     }
 
-    populatePaintArray(layer: StyleLayer,
-                       paintArray: StructArray,
-                       statistics: PaintPropertyStatistics,
-                       length: number,
-                       featureProperties: Object) {
+    populatePaintArray(length: number, feature: Feature) {
+        const paintArray = this.paintVertexArray;
+        if (paintArray.bytesPerElement === 0) return;
+
         const start = paintArray.length;
         paintArray.resize(length);
 
         for (const name in this.binders) {
             this.binders[name].populatePaintArray(
-                layer, paintArray,
-                statistics,
+                this.layer, paintArray,
+                this.paintPropertyStatistics,
                 start, length,
-                featureProperties);
+                feature);
         }
     }
 
@@ -315,6 +324,94 @@ class ProgramConfiguration {
             this.binders[name].setUniforms(gl, program, layer, globalProperties);
         }
     }
+
+    serialize(transferables?: Array<Transferable>): ?SerializedProgramConfiguration {
+        if (this.paintVertexArray.length === 0) {
+            return null;
+        }
+        return {
+            array: this.paintVertexArray.serialize(transferables),
+            type: this.paintVertexArray.constructor.serialize(),
+            statistics: this.paintPropertyStatistics
+        };
+    }
+
+    static deserialize(programInterface: ProgramInterface, layer: StyleLayer, zoom: number, serialized: ?SerializedProgramConfiguration) {
+        const self = ProgramConfiguration.createDynamic(programInterface, layer, zoom);
+        if (serialized) {
+            self.PaintVertexArray = createVertexArrayType(serialized.type.members);
+            self.paintVertexArray = new self.PaintVertexArray(serialized.array);
+            self.paintPropertyStatistics = serialized.statistics;
+        }
+        return self;
+    }
+
+    upload(gl: WebGLRenderingContext) {
+        if (this.paintVertexArray) {
+            this.paintVertexBuffer = new VertexBuffer(gl, this.paintVertexArray);
+        }
+    }
+
+    destroy() {
+        if (this.paintVertexBuffer) {
+            this.paintVertexBuffer.destroy();
+        }
+    }
 }
 
-module.exports = ProgramConfiguration;
+class ProgramConfigurationSet {
+    programConfigurations: {[string]: ProgramConfiguration};
+
+    constructor(programInterface: ProgramInterface, layers: $ReadOnlyArray<StyleLayer>, zoom: number, arrays?: {+[string]: ?SerializedProgramConfiguration}) {
+        this.programConfigurations = {};
+        if (arrays) {
+            for (const layer of layers) {
+                this.programConfigurations[layer.id] = ProgramConfiguration.deserialize(programInterface, layer, zoom, arrays[layer.id]);
+            }
+        } else {
+            for (const layer of layers) {
+                const programConfiguration = ProgramConfiguration.createDynamic(programInterface, layer, zoom);
+                programConfiguration.paintVertexArray = new programConfiguration.PaintVertexArray();
+                programConfiguration.paintPropertyStatistics = programConfiguration.createPaintPropertyStatistics();
+                this.programConfigurations[layer.id] = programConfiguration;
+            }
+        }
+    }
+
+    populatePaintArrays(length: number, feature: Feature) {
+        for (const key in this.programConfigurations) {
+            this.programConfigurations[key].populatePaintArray(length, feature);
+        }
+    }
+
+    serialize(transferables?: Array<Transferable>) {
+        const result = {};
+        for (const layerId in this.programConfigurations) {
+            const serialized = this.programConfigurations[layerId].serialize(transferables);
+            if (!serialized) continue;
+            result[layerId] = serialized;
+        }
+        return result;
+    }
+
+    get(layerId: string) {
+        return this.programConfigurations[layerId];
+    }
+
+    upload(gl: WebGLRenderingContext) {
+        for (const layerId in this.programConfigurations) {
+            this.programConfigurations[layerId].upload(gl);
+        }
+    }
+
+    destroy() {
+        for (const layerId in this.programConfigurations) {
+            this.programConfigurations[layerId].destroy();
+        }
+    }
+}
+
+module.exports = {
+    ProgramConfiguration,
+    ProgramConfigurationSet
+};

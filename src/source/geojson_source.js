@@ -4,6 +4,8 @@ const Evented = require('../util/evented');
 const util = require('../util/util');
 const window = require('../util/window');
 const EXTENT = require('../data/extent');
+const ResourceType = require('../util/ajax').ResourceType;
+const browser = require('../util/browser');
 
 import type {Source} from './source';
 import type Map from '../ui/map';
@@ -92,7 +94,7 @@ class GeoJSONSource extends Evented implements Source {
         this.dispatcher = dispatcher;
         this.setEventedParent(eventedParent);
 
-        this._data = options.data;
+        this._data = (options.data: any);
         this._options = util.extend({}, options);
 
         if (options.maxzoom !== undefined) this.maxzoom = options.maxzoom;
@@ -138,8 +140,8 @@ class GeoJSONSource extends Evented implements Source {
     }
 
     onAdd(map: Map) {
-        this.load();
         this.map = map;
+        this.load();
     }
 
     /**
@@ -170,7 +172,7 @@ class GeoJSONSource extends Evented implements Source {
         const options = util.extend({}, this.workerOptions);
         const data = this._data;
         if (typeof data === 'string') {
-            options.url = resolveURL(data);
+            options.request = this.map._transformRequest(resolveURL(data), ResourceType.Source);
         } else {
             options.data = JSON.stringify(data);
         }
@@ -185,7 +187,7 @@ class GeoJSONSource extends Evented implements Source {
     }
 
     loadTile(tile: Tile, callback: Callback<void>) {
-        const message = !tile.workerID || tile.state === 'expired' ? 'loadTile' : 'reloadTile';
+        const message = tile.workerID === undefined || tile.state === 'expired' ? 'loadTile' : 'reloadTile';
         const params = {
             type: this.type,
             uid: tile.uid,
@@ -194,6 +196,7 @@ class GeoJSONSource extends Evented implements Source {
             maxZoom: this.maxzoom,
             tileSize: this.tileSize,
             source: this.id,
+            pixelRatio: browser.devicePixelRatio,
             overscaling: tile.coord.z > this.maxzoom ? Math.pow(2, tile.coord.z - this.maxzoom) : 1,
             angle: this.map.transform.angle,
             pitch: this.map.transform.pitch,

@@ -1,7 +1,8 @@
 // @flow
 
 const util = require('../util/util');
-const Bucket = require('../data/bucket');
+const deserializeBucket = require('../data/bucket').deserialize;
+const SymbolBucket = require('../data/bucket/symbol_bucket');
 const FeatureIndex = require('../data/feature_index');
 const vt = require('@mapbox/vector-tile');
 const Protobuf = require('pbf');
@@ -10,11 +11,31 @@ const featureFilter = require('../style-spec/feature_filter');
 const CollisionTile = require('../symbol/collision_tile');
 const CollisionBoxArray = require('../symbol/collision_box');
 const Throttler = require('../util/throttler');
+const RasterBoundsArray = require('../data/raster_bounds_array');
+const TileCoord = require('./tile_coord');
+const EXTENT = require('../data/extent');
+const Point = require('@mapbox/point-geometry');
+const VertexBuffer = require('../gl/vertex_buffer');
+const IndexBuffer = require('../gl/index_buffer');
+const Texture = require('../render/texture');
+const {SegmentVector} = require('../data/segment');
+const {TriangleIndexArray} = require('../data/index_array_type');
 
 const CLOCK_SKEW_RETRY_TIMEOUT = 30000;
 
-import type TileCoord from './tile_coord';
+import type {Bucket} from '../data/bucket';
+import type StyleLayer from '../style/style_layer';
 import type {WorkerTileResult} from './worker_source';
+import type {RGBAImage, AlphaImage} from '../util/image';
+import type Mask from '../render/tile_mask';
+export type TileState =
+    | 'loading'   // Tile data is in the process of loading.
+    | 'loaded'    // Tile data has been loaded. Tile can be rendered.
+    | 'reloading' // Tile data has been loaded and is being updated. Tile can be rendered.
+    | 'unloaded'  // Tile data has been deleted.
+    | 'errored'   // Tile data was not loaded because of an error.
+    | 'expired';  /* Tile data was previously loaded, but has expired per its
+                   * HTTP headers and is in the process of refreshing. */
 
 /**
  * A tile object is the combination of a Coordinate, which defines
@@ -29,15 +50,13 @@ class Tile {
     tileSize: number;
     sourceMaxZoom: number;
     buckets: {[string]: Bucket};
+    iconAtlasImage: ?RGBAImage;
+    iconAtlasTexture: Texture;
+    glyphAtlasImage: ?AlphaImage;
+    glyphAtlasTexture: Texture;
     expirationTime: any;
     expiredRequestCount: number;
-    state: 'loading'   // Tile data is in the process of loading.
-         | 'loaded'    // Tile data has been loaded. Tile can be rendered.
-         | 'reloading' // Tile data has been loaded and is being updated. Tile can be rendered.
-         | 'unloaded'  // Tile data has been deleted.
-         | 'errored'   // Tile data was not loaded because of an error.
-         | 'expired';  /* Tile data was previously loaded, but has expired per its
-                        * HTTP headers and is in the process of refreshing. */
+    state: TileState;
     placementThrottler: any;
     timeAdded: any;
     fadeEndTime: any;
@@ -52,15 +71,15 @@ class Tile {
     cameraToTileDistance: number;
     showCollisionBoxes: boolean;
     placementSource: any;
-    workerID: number;
+    workerID: number | void;
     vtLayers: {[string]: VectorTileLayer};
-
+    mask: Mask;
     aborted: ?boolean;
-    boundsBuffer: any;
-    boundsVAO: any;
+    maskedBoundsBuffer: ?VertexBuffer;
+    maskedIndexBuffer: ?IndexBuffer;
+    segments: ?SegmentVector;
     request: any;
     texture: any;
-    sourceCache: any;
     refreshedUponExpiration: boolean;
     reloadCallback: any;
 
@@ -69,7 +88,7 @@ class Tile {
      * @param size
      * @param sourceMaxZoom
      */
-    constructor(coord: any, size: number, sourceMaxZoom: number) {
+    constructor(coord: TileCoord, size: number, sourceMaxZoom: number) {
         this.coord = coord;
         this.uid = util.uniqueId();
         this.uses = 0;
@@ -96,6 +115,10 @@ class Tile {
 
         this.fadeEndTime = fadeEndTime;
         animationLoop.set(this.fadeEndTime - Date.now());
+    }
+
+    wasRequested() {
+        return this.state === 'errored' || this.state === 'loaded' || this.state === 'reloading';
     }
 
     /**
@@ -128,7 +151,14 @@ class Tile {
         this.collisionBoxArray = new CollisionBoxArray(data.collisionBoxArray);
         this.collisionTile = CollisionTile.deserialize(data.collisionTile, this.collisionBoxArray);
         this.featureIndex = FeatureIndex.deserialize(data.featureIndex, this.rawTileData, this.collisionTile);
-        this.buckets = Bucket.deserialize(data.buckets, painter.style);
+        this.buckets = deserializeBucket(data.buckets, painter.style);
+
+        if (data.iconAtlasImage) {
+            this.iconAtlasImage = data.iconAtlasImage;
+        }
+        if (data.glyphAtlasImage) {
+            this.glyphAtlasImage = data.glyphAtlasImage;
+        }
     }
 
     /**
@@ -149,14 +179,21 @@ class Tile {
 
         for (const id in this.buckets) {
             const bucket = this.buckets[id];
-            if (bucket.layers[0].type === 'symbol') {
+            if (bucket instanceof SymbolBucket) {
                 bucket.destroy();
                 delete this.buckets[id];
             }
         }
 
         // Add new symbol buckets
-        util.extend(this.buckets, Bucket.deserialize(data.buckets, style));
+        util.extend(this.buckets, deserializeBucket(data.buckets, style));
+
+        if (data.iconAtlasImage) {
+            this.iconAtlasImage = data.iconAtlasImage;
+        }
+        if (data.glyphAtlasImage) {
+            this.glyphAtlasImage = data.glyphAtlasImage;
+        }
     }
 
     /**
@@ -169,6 +206,13 @@ class Tile {
             this.buckets[id].destroy();
         }
         this.buckets = {};
+
+        if (this.iconAtlasTexture) {
+            this.iconAtlasTexture.destroy();
+        }
+        if (this.glyphAtlasTexture) {
+            this.glyphAtlasTexture.destroy();
+        }
 
         this.collisionBoxArray = null;
         this.collisionTile = null;
@@ -191,17 +235,18 @@ class Tile {
         const cameraToTileDistance = source.map.transform.cameraToTileDistance(this);
         if (this.angle === source.map.transform.angle &&
             this.pitch === source.map.transform.pitch &&
-            this.cameraToCenterDistance === source.map.transform.cameraToCenterDistance &&
             this.showCollisionBoxes === source.map.showCollisionBoxes) {
-            if (this.cameraToTileDistance === cameraToTileDistance) {
+            if (this.cameraToTileDistance === cameraToTileDistance &&
+                this.cameraToCenterDistance === source.map.transform.cameraToCenterDistance) {
                 return;
             } else if (this.pitch < 25) {
                 // At low pitch tile distance doesn't affect placement very
                 // much, so we skip the cost of redoPlacement
                 // However, we might as well store the latest value of
-                // cameraToTileDistance in case a redoPlacement request
+                // cameraToTileDistance and cameraToCenterDistance in case a redoPlacement request
                 // is already queued.
                 this.cameraToTileDistance = cameraToTileDistance;
+                this.cameraToCenterDistance = source.map.transform.cameraToCenterDistance;
                 return;
             }
         }
@@ -228,6 +273,8 @@ class Tile {
             cameraToTileDistance: this.cameraToTileDistance,
             showCollisionBoxes: this.showCollisionBoxes
         }, (_, data) => {
+            if (this.state !== 'reloading') return;
+
             this.state = 'loaded';
             this.reloadSymbolData(data, this.placementSource.map.style);
             this.placementSource.fire('data', {tile: this, coord: this.coord, dataType: 'source'});
@@ -235,17 +282,65 @@ class Tile {
             if (this.placementSource.map) this.placementSource.map.painter.tileExtentVAO.vao = null;
 
             if (this.redoWhenDone) {
+                this.state = 'reloading';
                 this.redoWhenDone = false;
                 this._immediateRedoPlacement();
             }
         }, this.workerID);
     }
 
-    getBucket(layer: any) {
+    getBucket(layer: StyleLayer) {
         return this.buckets[layer.id];
     }
 
-    querySourceFeatures(result: any, params: any) {
+    upload(gl: WebGLRenderingContext) {
+        for (const id in this.buckets) {
+            const bucket = this.buckets[id];
+            if (!bucket.uploaded) {
+                bucket.upload(gl);
+                bucket.uploaded = true;
+            }
+        }
+
+        if (this.iconAtlasImage) {
+            this.iconAtlasTexture = new Texture(gl, this.iconAtlasImage, gl.RGBA);
+            this.iconAtlasImage = null;
+        }
+
+        if (this.glyphAtlasImage) {
+            this.glyphAtlasTexture = new Texture(gl, this.glyphAtlasImage, gl.ALPHA);
+            this.glyphAtlasImage = null;
+        }
+    }
+
+    queryRenderedFeatures(layers: {[string]: StyleLayer},
+                          queryGeometry: Array<Array<Point>>,
+                          scale: number,
+                          params: { filter: FilterSpecification, layers: Array<string> },
+                          bearing: number): {[string]: Array<{ featureIndex: number, feature: GeoJSONFeature }>} {
+        if (!this.featureIndex)
+            return {};
+
+        // Determine the additional radius needed factoring in property functions
+        let additionalRadius = 0;
+        for (const id in layers) {
+            const bucket = this.getBucket(layers[id]);
+            if (bucket) {
+                additionalRadius = Math.max(additionalRadius, layers[id].queryRadius(bucket));
+            }
+        }
+
+        return this.featureIndex.query({
+            queryGeometry,
+            bearing,
+            params,
+            scale,
+            additionalRadius,
+            tileSize: this.tileSize,
+        }, layers);
+    }
+
+    querySourceFeatures(result: Array<GeoJSONFeature>, params: any) {
         if (!this.rawTileData) return;
 
         if (!this.vtLayers) {
@@ -264,10 +359,74 @@ class Tile {
             const feature = layer.feature(i);
             if (filter(feature)) {
                 const geojsonFeature = new GeoJSONFeature(feature, this.coord.z, this.coord.x, this.coord.y);
-                geojsonFeature.tile = coord;
+                (geojsonFeature: any).tile = coord;
                 result.push(geojsonFeature);
             }
         }
+    }
+
+    clearMask() {
+        if (this.segments) {
+            this.segments.destroy();
+            delete this.segments;
+        }
+        if (this.maskedBoundsBuffer) {
+            this.maskedBoundsBuffer.destroy();
+            delete this.maskedBoundsBuffer;
+        }
+        if (this.maskedIndexBuffer) {
+            this.maskedIndexBuffer.destroy();
+            delete this.maskedIndexBuffer;
+        }
+    }
+
+    setMask(mask: Mask, gl: WebGLRenderingContext) {
+
+        // don't redo buffer work if the mask is the same;
+        if (util.deepEqual(this.mask, mask)) return;
+
+        this.mask = mask;
+        this.clearMask();
+
+        // We want to render the full tile, and keeping the segments/vertices/indices empty means
+        // using the global shared buffers for covering the entire tile.
+        if (util.deepEqual(mask, {'0': true})) return;
+
+        const maskedBoundsArray = new RasterBoundsArray();
+        const indexArray = new TriangleIndexArray();
+
+        this.segments = new SegmentVector();
+        // Create a new segment so that we will upload (empty) buffers even when there is nothing to
+        // draw for this tile.
+        this.segments.prepareSegment(0, maskedBoundsArray, indexArray);
+
+        const maskArray = Object.keys(mask);
+        for (let i = 0; i < maskArray.length; i++) {
+            const maskCoord = TileCoord.fromID(+maskArray[i]);
+            const vertexExtent = EXTENT >> maskCoord.z;
+            const tlVertex = new Point(maskCoord.x * vertexExtent, maskCoord.y * vertexExtent);
+            const brVertex = new Point(tlVertex.x + vertexExtent, tlVertex.y + vertexExtent);
+
+            // not sure why flow is complaining here because it doesn't complain at L401
+            const segment = (this.segments: any).prepareSegment(4, maskedBoundsArray, indexArray);
+
+            maskedBoundsArray.emplaceBack(tlVertex.x, tlVertex.y, tlVertex.x, tlVertex.y);
+            maskedBoundsArray.emplaceBack(brVertex.x, tlVertex.y, brVertex.x, tlVertex.y);
+            maskedBoundsArray.emplaceBack(tlVertex.x, brVertex.y, tlVertex.x, brVertex.y);
+            maskedBoundsArray.emplaceBack(brVertex.x, brVertex.y, brVertex.x, brVertex.y);
+
+            const offset = segment.vertexLength;
+            // 0, 1, 2
+            // 1, 2, 3
+            indexArray.emplaceBack(offset, offset + 1, offset + 2);
+            indexArray.emplaceBack(offset + 1, offset + 2, offset + 3);
+
+            segment.vertexLength += 4;
+            segment.primitiveLength += 2;
+        }
+
+        this.maskedBoundsBuffer = new VertexBuffer(gl, maskedBoundsArray);
+        this.maskedIndexBuffer = new IndexBuffer(gl, indexArray);
     }
 
     hasData() {

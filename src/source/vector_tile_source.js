@@ -5,6 +5,8 @@ const util = require('../util/util');
 const loadTileJSON = require('./load_tilejson');
 const normalizeURL = require('../util/mapbox').normalizeTileURL;
 const TileBounds = require('./tile_bounds');
+const ResourceType = require('../util/ajax').ResourceType;
+const browser = require('../util/browser');
 
 import type {Source} from './source';
 import type TileCoord from './tile_coord';
@@ -42,8 +44,8 @@ class VectorTileSource extends Evented implements Source {
         this.tileSize = 512;
         this.reparseOverscaled = true;
         this.isTileClipped = true;
-        util.extend(this, util.pick(options, ['url', 'scheme', 'tileSize']));
 
+        util.extend(this, util.pick(options, ['url', 'scheme', 'tileSize']));
         this._options = util.extend({ type: 'vector' }, options);
 
         if (this.tileSize !== 512) {
@@ -56,12 +58,12 @@ class VectorTileSource extends Evented implements Source {
     load() {
         this.fire('dataloading', {dataType: 'source'});
 
-        loadTileJSON(this._options, (err, tileJSON) => {
+        loadTileJSON(this._options, this.map._transformRequest, (err, tileJSON) => {
             if (err) {
                 this.fire('error', err);
             } else if (tileJSON) {
                 util.extend(this, tileJSON);
-                this.setBounds(tileJSON.bounds);
+                if (tileJSON.bounds) this.tileBounds = new TileBounds(tileJSON.bounds, this.minzoom, this.maxzoom);
 
                 // `content` is included here to prevent a race condition where `Style#_updateSources` is called
                 // before the TileJSON arrives. this makes sure the tiles needed are loaded once TileJSON arrives
@@ -72,20 +74,13 @@ class VectorTileSource extends Evented implements Source {
         });
     }
 
-    setBounds(bounds?: [number, number, number, number]) {
-        this.bounds = bounds;
-        if (bounds) {
-            this.tileBounds = new TileBounds(bounds, this.minzoom, this.maxzoom);
-        }
-    }
-
     hasTile(coord: TileCoord) {
         return !this.tileBounds || this.tileBounds.contains(coord, this.maxzoom);
     }
 
     onAdd(map: Map) {
-        this.load();
         this.map = map;
+        this.load();
     }
 
     serialize() {
@@ -94,14 +89,16 @@ class VectorTileSource extends Evented implements Source {
 
     loadTile(tile: Tile, callback: Callback<void>) {
         const overscaling = tile.coord.z > this.maxzoom ? Math.pow(2, tile.coord.z - this.maxzoom) : 1;
+        const url = normalizeURL(tile.coord.url(this.tiles, this.maxzoom, this.scheme), this.url);
         const params = {
-            url: normalizeURL(tile.coord.url(this.tiles, this.maxzoom, this.scheme), this.url),
+            request: this.map._transformRequest(url, ResourceType.Tile),
             uid: tile.uid,
             coord: tile.coord,
             zoom: tile.coord.z,
             tileSize: this.tileSize * overscaling,
             type: this.type,
             source: this.id,
+            pixelRatio: browser.devicePixelRatio,
             overscaling: overscaling,
             angle: this.map.transform.angle,
             pitch: this.map.transform.pitch,
@@ -110,7 +107,7 @@ class VectorTileSource extends Evented implements Source {
             showCollisionBoxes: this.map.showCollisionBoxes
         };
 
-        if (!tile.workerID || tile.state === 'expired') {
+        if (tile.workerID === undefined || tile.state === 'expired') {
             tile.workerID = this.dispatcher.send('loadTile', params, done.bind(this));
         } else if (tile.state === 'loading') {
             // schedule tile reloading after it has been loaded
@@ -145,12 +142,12 @@ class VectorTileSource extends Evented implements Source {
     }
 
     abortTile(tile: Tile) {
-        this.dispatcher.send('abortTile', { uid: tile.uid, type: this.type, source: this.id }, null, tile.workerID);
+        this.dispatcher.send('abortTile', { uid: tile.uid, type: this.type, source: this.id }, undefined, tile.workerID);
     }
 
     unloadTile(tile: Tile) {
         tile.unloadVectorData();
-        this.dispatcher.send('removeTile', { uid: tile.uid, type: this.type, source: this.id }, null, tile.workerID);
+        this.dispatcher.send('removeTile', { uid: tile.uid, type: this.type, source: this.id }, undefined, tile.workerID);
     }
 }
 

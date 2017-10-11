@@ -1,55 +1,65 @@
+// @flow
 
+const parseColor = require('../style-spec/util/parse_color');
+const {createExpressionWithErrorHandling, getExpectedType, getDefaultValue} = require('../style-spec/expression');
 const createFunction = require('../style-spec/function');
 const util = require('../util/util');
+const Curve = require('../style-spec/expression/definitions/curve');
+
+import type {StyleExpression, Feature} from '../style-spec/expression';
+
+function normalizeToExpression(parameters, propertySpec): StyleExpression {
+    if (typeof parameters === 'string' && propertySpec.type === 'color') {
+        const color = parseColor(parameters);
+        return {
+            result: 'success',
+            isFeatureConstant: true,
+            isZoomConstant: true,
+            evaluate() { return color; }
+        };
+    }
+
+    if (parameters === null || typeof parameters !== 'object' || Array.isArray(parameters)) {
+        return {
+            result: 'success',
+            isFeatureConstant: true,
+            isZoomConstant: true,
+            evaluate() { return parameters; }
+        };
+    }
+
+    if (parameters.expression) {
+        return createExpressionWithErrorHandling(
+            parameters.expression,
+            getExpectedType(propertySpec),
+            getDefaultValue(propertySpec));
+    } else {
+        return createFunction(parameters, propertySpec);
+    }
+}
 
 /**
  * A style property declaration
  * @private
  */
 class StyleDeclaration {
+    value: any;
+    json: mixed;
+    minimum: number;
+    expression: StyleExpression;
 
-    constructor(reference, value) {
+    constructor(reference: any, value: any) {
         this.value = util.clone(value);
-        this.isFunction = createFunction.isFunctionDefinition(value);
 
         // immutable representation of value. used for comparison
         this.json = JSON.stringify(this.value);
 
         this.minimum = reference.minimum;
-        this.function = createFunction(this.value, reference);
-        this.isFeatureConstant = this.function.isFeatureConstant;
-        this.isZoomConstant = this.function.isZoomConstant;
-
-        if (!this.isFeatureConstant && !this.isZoomConstant) {
-            this.stopZoomLevels = [];
-            const interpolationAmountStops = [];
-            for (const stop of this.value.stops) {
-                const zoom = stop[0].zoom;
-                if (this.stopZoomLevels.indexOf(zoom) < 0) {
-                    this.stopZoomLevels.push(zoom);
-                    interpolationAmountStops.push([zoom, interpolationAmountStops.length]);
-                }
-            }
-
-            this._functionInterpolationT = createFunction({
-                type: 'exponential',
-                stops: interpolationAmountStops,
-                base: value.base
-            }, {
-                type: 'number'
-            });
-        } else if (!this.isZoomConstant) {
-            this.stopZoomLevels = [];
-            for (const stop of this.value.stops) {
-                if (this.stopZoomLevels.indexOf(stop[0]) < 0) {
-                    this.stopZoomLevels.push(stop[0]);
-                }
-            }
-        }
+        this.expression = normalizeToExpression(this.value, reference);
     }
 
-    calculate(globalProperties, featureProperties) {
-        const value = this.function(globalProperties && globalProperties.zoom, featureProperties || {});
+    calculate(globalProperties: {+zoom?: number} = {}, feature?: Feature) {
+        const value = this.expression.evaluate(globalProperties, feature);
         if (this.minimum !== undefined && value < this.minimum) {
             return this.minimum;
         }
@@ -57,17 +67,20 @@ class StyleDeclaration {
     }
 
     /**
-     * Given a zoom level, calculate a possibly-fractional "index" into the
-     * composite function stops array, intended to be used for interpolating
-     * between paint values that have been evaluated at the surrounding stop
-     * values.
-     *
-     * Only valid for composite functions.
-     * @private
+     * Calculate the interpolation factor for the given zoom stops and current
+     * zoom level.
      */
-    calculateInterpolationT(globalProperties) {
-        if (this.isFeatureConstant || this.isZoomConstant) return 0;
-        return this._functionInterpolationT(globalProperties && globalProperties.zoom, {});
+    interpolationFactor(zoom: number, lower: number, upper: number) {
+        if (this.expression.isZoomConstant) {
+            return 0;
+        } else {
+            return Curve.interpolationFactor(
+                this.expression.interpolation,
+                zoom,
+                lower,
+                upper
+            );
+        }
     }
 }
 

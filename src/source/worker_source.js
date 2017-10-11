@@ -1,12 +1,14 @@
 // @flow
 
 import type TileCoord from './tile_coord';
-import type {Actor} from '../util/actor';
+import type Actor from '../util/actor';
 import type StyleLayerIndex from '../style/style_layer_index';
 import type {SerializedBucket} from '../data/bucket';
 import type {SerializedFeatureIndex} from '../data/feature_index';
 import type {SerializedCollisionTile} from '../symbol/collision_tile';
 import type {SerializedStructArray} from '../util/struct_array';
+import type {RequestParameters} from '../util/ajax';
+import type {RGBAImage, AlphaImage} from '../util/image';
 
 export type TileParameters = {
     source: string,
@@ -23,15 +25,18 @@ export type PlacementConfig = {
 
 export type WorkerTileParameters = TileParameters & {
     coord: TileCoord,
-    url: string,
+    request: RequestParameters,
     zoom: number,
     maxZoom: number,
     tileSize: number,
+    pixelRatio: number,
     overscaling: number,
 } & PlacementConfig;
 
 export type WorkerTileResult = {
     buckets: Array<SerializedBucket>,
+    iconAtlasImage: RGBAImage,
+    glyphAtlasImage: AlphaImage,
     featureIndex: SerializedFeatureIndex,
     collisionTile: SerializedCollisionTile,
     collisionBoxArray: SerializedStructArray,

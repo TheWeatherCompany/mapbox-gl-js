@@ -135,6 +135,13 @@
       "value": "string",
       "doc": "An array of one or more tile source URLs, as in the TileJSON spec."
     },
+    "bounds": {
+      "type": "array",
+      "value": "number",
+      "length": 4,
+      "default": [-180, -85.0511, 180, 85.0511],
+      "doc": "An array containing the longitude and latitude of the southwest and northeast corners of the source's bounding box in the following order: `[sw.lng, sw.lat, ne.lng, ne.lat]`. When this property is included in a source, no tiles outside of the given bounds are requested by Mapbox GL."
+    },
     "minzoom": {
       "type": "number",
       "default": 0,
@@ -295,6 +302,25 @@
       "type": "string",
       "required": true,
       "doc": "HTML ID of the canvas from which to read pixels."
+    },
+    "contextType": {
+      "required": true,
+      "type": "enum",
+      "values": {
+        "2d": {
+          "doc" : "Source canvas is associated with a `2d` drawing context."
+        },
+        "webgl": {
+          "doc": "Source canvas is associated with a `webgl` drawing context."
+        },
+        "experimental-webgl": {
+          "doc": "Source canvas is associated with an `experimental-webgl` drawing context."
+        },
+        "webgl2": {
+          "doc": "Source canvas is associated with a `webgl2` drawing context."
+        }
+      },
+      "doc": "The context identifier defining the drawing context associated to the source canvas (see HTMLCanvasElement.getContext() documentation)."
     }
   },
   "layer": {
@@ -914,7 +940,7 @@
       "function": "piecewise-constant",
       "zoom-function": true,
       "property-function": true,
-      "doc": "Name of image in sprite to use for drawing an image background. A string with {tokens} replaced, referencing the data property to pull from.",
+      "doc": "Name of image in sprite to use for drawing an image background. A string with `{tokens}` replaced, referencing the data property to pull from. (`{token}` replacement is only supported for literal `icon-image` values; not for property functions.)",
       "tokens": true,
       "sdk-support": {
         "basic functionality": {
@@ -1034,6 +1060,54 @@
         }
       }
     },
+    "icon-anchor": {
+      "type": "enum",
+      "function": "piecewise-constant",
+      "zoom-function": true,
+      "property-function": true,
+      "values": {
+        "center": {
+            "doc": "The center of the icon is placed closest to the anchor."
+        },
+        "left": {
+            "doc": "The left side of the icon is placed closest to the anchor."
+        },
+        "right": {
+            "doc": "The right side of the icon is placed closest to the anchor."
+        },
+        "top": {
+            "doc": "The top of the icon is placed closest to the anchor."
+        },
+        "bottom": {
+            "doc": "The bottom of the icon is placed closest to the anchor."
+        },
+        "top-left": {
+            "doc": "The top left corner of the icon is placed closest to the anchor."
+        },
+        "top-right": {
+            "doc": "The top right corner of the icon is placed closest to the anchor."
+        },
+        "bottom-left": {
+            "doc": "The bottom left corner of the icon is placed closest to the anchor."
+        },
+        "bottom-right": {
+            "doc": "The bottom right corner of the icon is placed closest to the anchor."
+        }
+      },
+      "default": "center",
+      "doc": "Part of the icon placed closest to the anchor.",
+      "requires": [
+        "icon-image"
+      ],
+      "sdk-support": {
+        "basic functionality": {
+          "js": "0.40.0"
+        },
+        "data-driven styling": {
+          "js": "0.40.0"
+        }
+      }
+    },
     "icon-pitch-alignment": {
       "type": "enum",
       "function": "piecewise-constant",
@@ -1140,7 +1214,7 @@
       "property-function": true,
       "default": "",
       "tokens": true,
-      "doc": "Value to use for a text label. Feature properties are specified using tokens like {field_name}.  (Token replacement is only supported for literal `text-field` values--not for property functions.)",
+      "doc": "Value to use for a text label. Feature properties are specified using tokens like `{field_name}`. (`{token}` replacement is only supported for literal `text-field` values; not for property functions.)",
       "sdk-support": {
         "basic functionality": {
           "js": "0.10.0",
@@ -1210,6 +1284,7 @@
       "units": "ems",
       "function": "interpolated",
       "zoom-function": true,
+      "property-function": true,
       "doc": "The maximum line width for text wrapping.",
       "requires": [
         "text-field"
@@ -1221,7 +1296,9 @@
           "ios": "2.0.0",
           "macos": "0.1.0"
         },
-        "data-driven styling": {}
+        "data-driven styling": {
+            "js": "0.40.0"
+        }
       }
     },
     "text-line-height": {
@@ -1250,6 +1327,7 @@
       "units": "ems",
       "function": "interpolated",
       "zoom-function": true,
+      "property-function": true,
       "doc": "Text tracking amount.",
       "requires": [
         "text-field"
@@ -1261,7 +1339,9 @@
           "ios": "2.0.0",
           "macos": "0.1.0"
         },
-        "data-driven styling": {}
+        "data-driven styling": {
+            "js": "0.40.0"
+        }
       }
     },
     "text-justify": {
@@ -1682,6 +1762,10 @@
     "doc": "The geometry type for the filter to select."
   },
   "function": {
+    "expression": {
+      "type": "expression",
+      "doc": "An expression."
+    },
     "stops": {
       "type": "array",
       "doc": "An array of stops.",
@@ -1749,6 +1833,262 @@
     ],
     "length": 2,
     "doc": "Zoom level and value pair."
+  },
+  "expression": {
+    "type": "array",
+    "value": "*",
+    "minimum": 1,
+    "doc": "An expression defines a function that can be used for data-driven style properties or feature filters."
+  },
+  "expression_name": {
+    "doc": "",
+    "type": "enum",
+    "values": {
+      "let": {
+        "doc": "Binds expressions to named variables, which can then be referenced in the result expression using [\"var\", \"variable_name\"].",
+        "group": "Variable binding"
+      },
+      "var": {
+        "doc": "References variable bound using \"let\".",
+        "group": "Variable binding"
+      },
+      "literal": {
+        "doc": "Provides a literal array or object value.",
+        "group": "Types"
+      },
+      "array": {
+        "doc": "Asserts that the input is an array (optinally with a specific item type and length).",
+        "group": "Types"
+      },
+      "at": {
+        "doc": "Retrieves an item from an array.",
+        "group": "Lookup"
+      },
+      "contains": {
+        "doc": "Tests whether a value exists in an array.",
+        "group": "Lookup"
+      },
+      "case": {
+        "doc": "Yields the value of the first output expression whose corresponding test evaluates to true.",
+        "group": "Decision"
+      },
+      "match": {
+        "doc": "Yields the output value whose label value matches the input, or the fallback value if no match is found.",
+        "group": "Decision"
+      },
+      "coalesce": {
+        "doc": "Evaluates each expression in turn until the first non-null value is obtained, and returns that value.",
+        "group": "Decision"
+      },
+      "curve": {
+        "doc": "Interpolates an output value from the given input/output pairs using the specified interpolation strategy.  The input levels must be numeric literals in strictly ascending order.",
+        "group": "Ramps, scales, curves"
+      },
+      "ln2": {
+        "doc": "Returns mathematical constant ln(2).",
+        "group": "Math"
+      },
+      "pi": {
+        "doc": "Returns the mathematical constant pi.",
+        "group": "Math"
+      },
+      "e": {
+        "doc": "Returns the mathematical constant e.",
+        "group": "Math"
+      },
+      "typeof": {
+        "doc": "Returns a string describing the type of the given value.",
+        "group": "Types"
+      },
+      "string": {
+        "doc": "Asserts that the input value is a String. If multiple values are provided, each one is evaluated in order until a String value is obtained.",
+        "group": "Types"
+      },
+      "number": {
+        "doc": "Asserts that the input value is a Number. If multiple values are provided, each one is evaluated in order until a Number value is obtained.",
+        "group": "Types"
+      },
+      "boolean": {
+        "doc": "Asserts that the input value is a Boolean. If multiple values are provided, each one is evaluated in order until a Boolean value is obtained.",
+        "group": "Types"
+      },
+      "object": {
+        "doc": "Asserts that the input value is an Objects.",
+        "group": "Types"
+      },
+      "to-string": {
+        "doc": "Coerces the input value to a String.",
+        "group": "Types"
+      },
+      "to-number": {
+        "doc": "Coerces the input value to a Number, if possible. If multiple values are provided, each one is evaluated in order until the first successful conversion is obtained.",
+        "group": "Types"
+      },
+      "to-boolean": {
+        "doc": "Coerces the input value to a Boolean.",
+        "group": "Types"
+      },
+      "to-rgba": {
+        "doc": "Returns the an array of the given color's r, g, b, a components.",
+        "group": "Color"
+      },
+      "to-color": {
+        "doc": "Coerces the input value to a Color. If multiple values are provided, each one is evaluated in order until the first successful conversion is obtained.",
+        "group": "Types"
+      },
+      "rgb": {
+        "doc": "Creates a color value from r, g, b components.",
+        "group": "Color"
+      },
+      "rgba": {
+        "doc": "Creates a color value from r, g, b, a components.",
+        "group": "Color"
+      },
+      "get": {
+        "doc": "Retrieves an the object property value.  If it's not provided, the object argument defaults to [\"properties\"].  Returns null if the requested property is missing from the object.",
+        "group": "Lookup"
+      },
+      "has": {
+        "doc": "Tests for the presence of an object property value.  If it's not provided, the object argument defaults to [\"properties\"].",
+        "group": "Lookup"
+      },
+      "length": {
+        "doc": "Gets the length of an array or string.",
+        "group": "Lookup"
+      },
+      "properties": {
+        "doc": "Gets the feature properties object.  Note that in some cases, it may be more efficient to use [\"get\", \"property_name\"] directly.",
+        "group": "Feature data"
+      },
+      "geometry-type": {
+        "doc": "Gets the feature's geometry type: Point, MultiPoint, LineString, MultiLineString, Polygon, MultiPolygon.",
+        "group": "Feature data"
+      },
+      "id": {
+        "doc": "Gets the feature's id, if it has one.",
+        "group": "Feature data"
+      },
+      "zoom": {
+        "doc": "Gets the current zoom level.  Note that in style layout and paint properties, [\"zoom\"] may only appear as the input to a top-level [\"curve\"] expression.",
+        "group": "Zoom"
+      },
+      "+": {
+        "doc": "",
+        "group": "Math"
+      },
+      "*": {
+        "doc": "",
+        "group": "Math"
+      },
+      "-": {
+        "doc": "",
+        "group": "Math"
+      },
+      "/": {
+        "doc": "",
+        "group": "Math"
+      },
+      "%": {
+        "doc": "",
+        "group": "Math"
+      },
+      "^": {
+        "doc": "",
+        "group": "Math"
+      },
+      "log10": {
+        "doc": "",
+        "group": "Math"
+      },
+      "ln": {
+        "doc": "",
+        "group": "Math"
+      },
+      "log2": {
+        "doc": "",
+        "group": "Math"
+      },
+      "sin": {
+        "doc": "",
+        "group": "Math"
+      },
+      "cos": {
+        "doc": "",
+        "group": "Math"
+      },
+      "tan": {
+        "doc": "",
+        "group": "Math"
+      },
+      "asin": {
+        "doc": "",
+        "group": "Math"
+      },
+      "acos": {
+        "doc": "",
+        "group": "Math"
+      },
+      "atan": {
+        "doc": "",
+        "group": "Math"
+      },
+      "min": {
+        "doc": "",
+        "group": "Math"
+      },
+      "max": {
+        "doc": "",
+        "group": "Math"
+      },
+      "==": {
+        "doc": "",
+        "group": "Decision"
+      },
+      "!=": {
+        "doc": "",
+        "group": "Decision"
+      },
+      ">": {
+        "doc": "",
+        "group": "Decision"
+      },
+      "<": {
+        "doc": "",
+        "group": "Decision"
+      },
+      ">=": {
+        "doc": "",
+        "group": "Decision"
+      },
+      "<=": {
+        "doc": "",
+        "group": "Decision"
+      },
+      "&&": {
+        "doc": "",
+        "group": "Decision"
+      },
+      "||": {
+        "doc": "",
+        "group": "Decision"
+      },
+      "!": {
+        "doc": "",
+        "group": "Decision"
+      },
+      "upcase": {
+        "doc": "",
+        "group": "String"
+      },
+      "downcase": {
+        "doc": "",
+        "group": "String"
+      },
+      "concat": {
+        "doc": "Concetenate the given strings.",
+        "group": "String"
+      }
+    }
   },
   "light": {
     "anchor": {
@@ -2131,7 +2471,6 @@
       "property-function": true,
       "default": 0,
       "minimum": 0,
-      "maximum": 65535,
       "units": "meters",
       "doc": "The height with which to extrude this layer.",
       "transition": true,
@@ -2157,7 +2496,6 @@
       "property-function": true,
       "default": 0,
       "minimum": 0,
-      "maximum": 65535,
       "units": "meters",
       "doc": "The height with which to extrude the base of this layer. Must be less than or equal to `fill-extrusion-height`.",
       "transition": true,

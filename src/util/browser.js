@@ -59,13 +59,16 @@ module.exports = {
         return function() { abort = true; };
     },
 
-    getImageData(img: CanvasImageSource) {
+    getImageData(img: CanvasImageSource): ImageData {
         const canvas = window.document.createElement('canvas');
         const context = canvas.getContext('2d');
+        if (!context) {
+            throw new Error('failed to create canvas 2d context');
+        }
         canvas.width = img.width;
         canvas.height = img.height;
         context.drawImage(img, 0, 0, img.width, img.height);
-        return context.getImageData(0, 0, img.width, img.height).data;
+        return context.getImageData(0, 0, img.width, img.height);
     },
 
     hardwareConcurrency: window.navigator.hardwareConcurrency || 4,

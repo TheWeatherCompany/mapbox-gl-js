@@ -7,9 +7,10 @@ const LngLat = require('../geo/lng_lat');
 const Point = require('@mapbox/point-geometry');
 const Evented = require('../util/evented');
 const ajax = require('../util/ajax');
+const browser = require('../util/browser');
 const EXTENT = require('../data/extent');
 const RasterBoundsArray = require('../data/raster_bounds_array');
-const Buffer = require('../data/buffer');
+const VertexBuffer = require('../gl/vertex_buffer');
 const VertexArrayObject = require('../render/vertex_array_object');
 
 import type {Source} from './source';
@@ -63,10 +64,12 @@ class ImageSource extends Evented implements Source {
     map: Map;
     texture: WebGLTexture;
     textureLoaded: boolean;
-    image: HTMLImageElement;
+    image: ImageData;
     centerCoord: Coordinate;
     coord: TileCoord;
-    _tileCoords: Array<Point>;
+    _boundsArray: RasterBoundsArray;
+    boundsBuffer: VertexBuffer;
+    boundsVAO: VertexArrayObject;
 
     constructor(id: string, options: ImageSourceSpecification | VideoSourceSpecification | CanvasSourceSpecification, dispatcher: Dispatcher, eventedParent: Evented) {
         super();
@@ -91,11 +94,11 @@ class ImageSource extends Evented implements Source {
 
         this.url = this.options.url;
 
-        ajax.getImage(this.options.url, (err, image) => {
+        ajax.getImage(this.map._transformRequest(this.url, ajax.ResourceType.Image), (err, image) => {
             if (err) {
                 this.fire('error', {error: err});
             } else if (image) {
-                this.image = image;
+                this.image = browser.getImageData(image);
                 this._finishLoading();
             }
         });
@@ -109,11 +112,8 @@ class ImageSource extends Evented implements Source {
     }
 
     onAdd(map: Map) {
-        this.load();
         this.map = map;
-        if (this.image) {
-            this.setCoordinates(this.coordinates);
-        }
+        this.load();
     }
 
     /**
@@ -155,38 +155,42 @@ class ImageSource extends Evented implements Source {
 
         // Transform the corner coordinates into the coordinate space of our
         // tile.
-        this._tileCoords = cornerZ0Coords.map((coord) => {
+        const tileCoords = cornerZ0Coords.map((coord) => {
             const zoomedCoord = coord.zoomTo(centerCoord.zoom);
             return new Point(
                 Math.round((zoomedCoord.column - centerCoord.column) * EXTENT),
                 Math.round((zoomedCoord.row - centerCoord.row) * EXTENT));
         });
 
+        this._boundsArray = new RasterBoundsArray();
+        this._boundsArray.emplaceBack(tileCoords[0].x, tileCoords[0].y, 0, 0);
+        this._boundsArray.emplaceBack(tileCoords[1].x, tileCoords[1].y, EXTENT, 0);
+        this._boundsArray.emplaceBack(tileCoords[3].x, tileCoords[3].y, 0, EXTENT);
+        this._boundsArray.emplaceBack(tileCoords[2].x, tileCoords[2].y, EXTENT, EXTENT);
+
+        if (this.boundsBuffer) {
+            this.boundsBuffer.destroy();
+            delete this.boundsBuffer;
+        }
+
         this.fire('data', {dataType:'source', sourceDataType: 'content'});
         return this;
     }
 
-    _setTile(tile: Tile) {
-        this.tiles[String(tile.coord.w)] = tile;
-        const maxInt16 = 32767;
-        const array = new RasterBoundsArray();
-        array.emplaceBack(this._tileCoords[0].x, this._tileCoords[0].y, 0, 0);
-        array.emplaceBack(this._tileCoords[1].x, this._tileCoords[1].y, maxInt16, 0);
-        array.emplaceBack(this._tileCoords[3].x, this._tileCoords[3].y, 0, maxInt16);
-        array.emplaceBack(this._tileCoords[2].x, this._tileCoords[2].y, maxInt16, maxInt16);
-
-        tile.buckets = {};
-
-        tile.boundsBuffer = Buffer.fromStructArray(array, Buffer.BufferType.VERTEX);
-        tile.boundsVAO = new VertexArrayObject();
-    }
-
     prepare() {
-        if (Object.keys(this.tiles).length === 0 === 0 || !this.image) return;
+        if (Object.keys(this.tiles).length === 0 || !this.image) return;
         this._prepareImage(this.map.painter.gl, this.image);
     }
 
-    _prepareImage(gl: WebGLRenderingContext, image: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, resize?: boolean) {
+    _prepareImage(gl: WebGLRenderingContext, image: TexImageSource, resize?: boolean) {
+        if (!this.boundsBuffer) {
+            this.boundsBuffer = new VertexBuffer(gl, this._boundsArray);
+        }
+
+        if (!this.boundsVAO) {
+            this.boundsVAO = new VertexArrayObject();
+        }
+
         if (!this.textureLoaded) {
             this.textureLoaded = true;
             this.texture = gl.createTexture();
@@ -198,7 +202,7 @@ class ImageSource extends Evented implements Source {
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
         } else if (resize) {
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-        } else if (image instanceof window.HTMLVideoElement || image instanceof window.ImageData || image instanceof window.HTMLCanvasElement) {
+        } else if (image instanceof window.HTMLVideoElement || image instanceof window.ImageData) {
             gl.bindTexture(gl.TEXTURE_2D, this.texture);
             gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, image);
         }
@@ -220,7 +224,8 @@ class ImageSource extends Evented implements Source {
         // If the world wraps, we may have multiple "wrapped" copies of the
         // single tile.
         if (this.coord && this.coord.toString() === tile.coord.toString()) {
-            this._setTile(tile);
+            this.tiles[String(tile.coord.w)] = tile;
+            tile.buckets = {};
             callback(null);
         } else {
             tile.state = 'errored';
@@ -231,7 +236,7 @@ class ImageSource extends Evented implements Source {
     serialize(): Object {
         return {
             type: 'image',
-            urls: this.url,
+            url: this.options.url,
             coordinates: this.coordinates
         };
     }

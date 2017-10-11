@@ -8,7 +8,10 @@ const validateStyle = require('./validate_style');
 const parseColor = require('./../style-spec/util/parse_color');
 const Evented = require('../util/evented');
 
-import type Bucket, {BucketParameters} from '../data/bucket';
+import type {Bucket, BucketParameters} from '../data/bucket';
+import type Point from '@mapbox/point-geometry';
+import type {Feature} from '../style-spec/expression';
+import type RenderTexture from '../render/render_texture';
 
 export type GlobalProperties = {
     zoom: number
@@ -34,15 +37,24 @@ class StyleLayer extends Evented {
     paint: { [string]: any };
     layout: { [string]: any };
 
+    viewportFrame: ?RenderTexture;
+
     _paintSpecifications: any;
     _layoutSpecifications: any;
-    _paintTransitions: any;
-    _paintTransitionOptions: any;
-    _paintDeclarations: any;
-    _layoutDeclarations: any;
-    _layoutFunctions: any;
+    _paintTransitions: {[string]: StyleTransition};
+    _paintTransitionOptions: {[string]: {[string]: TransitionSpecification}};
+    _paintDeclarations: {[string]: {[string]: StyleDeclaration}};
+    _layoutDeclarations: {[string]: StyleDeclaration};
+    _layoutFunctions: {[string]: boolean};
 
     +createBucket: (parameters: BucketParameters) => Bucket;
+    +queryRadius: (bucket: Bucket) => number;
+    +queryIntersectsFeature: (queryGeometry: Array<Array<Point>>,
+                              feature: VectorTileFeature,
+                              geometry: Array<Array<Point>>,
+                              zoom: number,
+                              bearing: number,
+                              pixelsToTileUnits: number) => boolean;
 
     constructor(layer: LayerSpecification) {
         super();
@@ -66,7 +78,7 @@ class StyleLayer extends Evented {
         this._layoutSpecifications = styleSpec[`layout_${this.type}`];
 
         this._paintTransitions = {}; // {[propertyName]: StyleTransition}
-        this._paintTransitionOptions = {}; // {[className]: {[propertyName]: { duration:Number, delay:Number }}}
+        this._paintTransitionOptions = {}; //
         this._paintDeclarations = {}; // {[className]: {[propertyName]: StyleDeclaration}}
         this._layoutDeclarations = {}; // {[propertyName]: StyleDeclaration}
         this._layoutFunctions = {}; // {[propertyName]: Boolean}
@@ -117,12 +129,12 @@ class StyleLayer extends Evented {
         );
     }
 
-    getLayoutValue(name: string, globalProperties?: GlobalProperties, featureProperties?: FeatureProperties) {
+    getLayoutValue(name: string, globalProperties?: GlobalProperties, feature?: Feature): any {
         const specification = this._layoutSpecifications[name];
         const declaration = this._layoutDeclarations[name];
 
         if (declaration) {
-            return declaration.calculate(globalProperties, featureProperties);
+            return declaration.calculate(globalProperties, feature);
         } else {
             return specification.default;
         }
@@ -170,12 +182,12 @@ class StyleLayer extends Evented {
         }
     }
 
-    getPaintValue(name: string, globalProperties?: GlobalProperties, featureProperties?: FeatureProperties) {
+    getPaintValue(name: string, globalProperties?: GlobalProperties, feature?: Feature): any {
         const specification = this._paintSpecifications[name];
         const transition = this._paintTransitions[name];
 
         if (transition) {
-            return transition.calculate(globalProperties, featureProperties);
+            return transition.calculate(globalProperties, feature);
         } else if (specification.type === 'color' && specification.default) {
             return parseColor(specification.default);
         } else {
@@ -183,73 +195,19 @@ class StyleLayer extends Evented {
         }
     }
 
-    getPaintValueStopZoomLevels(name: string) {
+    getPaintInterpolationFactor(name: string, input: number, lower: number, upper: number) {
         const transition = this._paintTransitions[name];
-        if (transition) {
-            return transition.declaration.stopZoomLevels;
-        } else {
-            return [];
-        }
-    }
-
-    getLayoutValueStopZoomLevels(name: string) {
-        const declaration = this._layoutDeclarations[name];
-
-        if (declaration) {
-            return declaration.stopZoomLevels;
-        } else {
-            return [];
-        }
-    }
-
-    getPaintInterpolationT(name: string, globalProperties: any) {
-        const transition = this._paintTransitions[name];
-        return transition.declaration.calculateInterpolationT(globalProperties);
-    }
-
-    getLayoutInterpolationT(name: string, globalProperties: any) {
-        const declaration = this._layoutDeclarations[name];
-        return declaration.calculateInterpolationT(globalProperties);
+        return transition.declaration.interpolationFactor(input, lower, upper);
     }
 
     isPaintValueFeatureConstant(name: string) {
         const transition = this._paintTransitions[name];
-
-        if (transition) {
-            return transition.declaration.isFeatureConstant;
-        } else {
-            return true;
-        }
-    }
-
-    isLayoutValueFeatureConstant(name: string) {
-        const declaration = this._layoutDeclarations[name];
-
-        if (declaration) {
-            return declaration.isFeatureConstant;
-        } else {
-            return true;
-        }
+        return !transition || transition.declaration.expression.isFeatureConstant;
     }
 
     isPaintValueZoomConstant(name: string) {
         const transition = this._paintTransitions[name];
-
-        if (transition) {
-            return transition.declaration.isZoomConstant;
-        } else {
-            return true;
-        }
-    }
-
-    isLayoutValueZoomConstant(name: string) {
-        const declaration = this._layoutDeclarations[name];
-
-        if (declaration) {
-            return declaration.isZoomConstant;
-        } else {
-            return true;
-        }
+        return !transition || transition.declaration.expression.isZoomConstant;
     }
 
     isHidden(zoom: number) {
@@ -350,12 +308,11 @@ class StyleLayer extends Evented {
     // update layout value if it's constant, or mark it as zoom-dependent
     _updateLayoutValue(name: string) {
         const declaration = this._layoutDeclarations[name];
-
-        if (declaration && declaration.isFunction) {
-            this._layoutFunctions[name] = true;
-        } else {
+        if (!declaration || (declaration.expression.isZoomConstant && declaration.expression.isFeatureConstant)) {
             delete this._layoutFunctions[name];
             this.layout[name] = this.getLayoutValue(name);
+        } else {
+            this._layoutFunctions[name] = true;
         }
     }
 
@@ -372,6 +329,14 @@ class StyleLayer extends Evented {
             // Workaround for https://github.com/mapbox/mapbox-gl-js/issues/2407
             style: {glyphs: true, sprite: true}
         }));
+    }
+
+    has3DPass() {
+        return false;
+    }
+
+    resize(gl: WebGLRenderingContext) { // eslint-disable-line
+        // noop
     }
 }
 
