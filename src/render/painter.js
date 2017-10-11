@@ -20,6 +20,7 @@ const updateTileMasks = require('./tile_mask');
 const draw = {
     symbol: require('./draw_symbol'),
     circle: require('./draw_circle'),
+    heatmap: require('./draw_heatmap'),
     line: require('./draw_line'),
     fill: require('./draw_fill'),
     'fill-extrusion': require('./draw_fill_extrusion'),
@@ -34,6 +35,7 @@ import type TileCoord from '../source/tile_coord';
 import type Style from '../style/style';
 import type StyleLayer from '../style/style_layer';
 import type LineAtlas from './line_atlas';
+import type Texture from './texture';
 import type ImageManager from './image_manager';
 import type GlyphManager from './glyph_manager';
 
@@ -55,7 +57,7 @@ type PainterOptions = {
 class Painter {
     gl: WebGLRenderingContext;
     transform: Transform;
-    _tileTextures: { [number]: Array<WebGLTexture> };
+    _tileTextures: { [number]: Array<Texture> };
     frameHistory: FrameHistory;
     numSublayers: number;
     depthEpsilon: number;
@@ -74,8 +76,11 @@ class Painter {
     debugVAO: VertexArrayObject;
     rasterBoundsBuffer: VertexBuffer;
     rasterBoundsVAO: VertexArrayObject;
+    viewportBuffer: VertexBuffer;
+    viewportVAO: VertexArrayObject;
     extTextureFilterAnisotropic: any;
     extTextureFilterAnisotropicMax: any;
+    extTextureHalfFloat: any;
     _tileClippingMaskIDs: { [number]: number };
     style: Style;
     options: PainterOptions;
@@ -175,6 +180,14 @@ class Painter {
         this.rasterBoundsBuffer = new VertexBuffer(gl, rasterBoundsArray);
         this.rasterBoundsVAO = new VertexArrayObject();
 
+        const viewportArray = new PosArray();
+        viewportArray.emplaceBack(0, 0);
+        viewportArray.emplaceBack(1, 0);
+        viewportArray.emplaceBack(0, 1);
+        viewportArray.emplaceBack(1, 1);
+        this.viewportBuffer = new VertexBuffer(gl, viewportArray);
+        this.viewportVAO = new VertexArrayObject();
+
         this.extTextureFilterAnisotropic = (
             gl.getExtension('EXT_texture_filter_anisotropic') ||
             gl.getExtension('MOZ_EXT_texture_filter_anisotropic') ||
@@ -182,6 +195,11 @@ class Painter {
         );
         if (this.extTextureFilterAnisotropic) {
             this.extTextureFilterAnisotropicMax = gl.getParameter(this.extTextureFilterAnisotropic.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+        }
+
+        this.extTextureHalfFloat = gl.getExtension('OES_texture_half_float');
+        if (this.extTextureHalfFloat) {
+            gl.getExtension('OES_texture_half_float_linear');
         }
     }
 
@@ -485,10 +503,10 @@ class Painter {
         return translatedMatrix;
     }
 
-    saveTileTexture(texture: WebGLTexture & { size: number }) {
-        const textures = this._tileTextures[texture.size];
+    saveTileTexture(texture: Texture) {
+        const textures = this._tileTextures[texture.size[0]];
         if (!textures) {
-            this._tileTextures[texture.size] = [texture];
+            this._tileTextures[texture.size[0]] = [texture];
         } else {
             textures.push(texture);
         }

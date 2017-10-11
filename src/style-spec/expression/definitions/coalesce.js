@@ -23,7 +23,7 @@ class Coalesce implements Expression {
             return context.error("Expectected at least one argument.");
         }
         let outputType: Type = (null: any);
-        if (context.expectedType && context.expectedType.kind !== 'Value') {
+        if (context.expectedType && context.expectedType.kind !== 'value') {
             outputType = context.expectedType;
         }
         const parsedArgs = [];
@@ -44,10 +44,6 @@ class Coalesce implements Expression {
             if (result !== null) break;
         }
         return result;
-    }
-
-    serialize() {
-        return ['coalesce'].concat(this.args.map(a => a.serialize()));
     }
 
     eachChild(fn: (Expression) => void) {

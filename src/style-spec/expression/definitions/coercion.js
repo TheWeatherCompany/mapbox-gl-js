@@ -58,7 +58,7 @@ class Coercion implements Expression {
     }
 
     evaluate(ctx: EvaluationContext) {
-        if (this.type.kind === 'Color') {
+        if (this.type.kind === 'color') {
             let input;
             let error;
             for (const arg of this.args) {
@@ -90,10 +90,6 @@ class Coercion implements Expression {
             }
             throw new RuntimeError(`Could not convert ${JSON.stringify(unwrap(value))} to number.`);
         }
-    }
-
-    serialize() {
-        return [ `to-${this.type.kind.toLowerCase()}` ].concat(this.args.map(i => i.serialize()));
     }
 
     eachChild(fn: (Expression) => void) {

@@ -108,7 +108,7 @@ class Curve implements Expression {
         const stops: Stops = [];
 
         let outputType: Type = (null: any);
-        if (context.expectedType && context.expectedType.kind !== 'Value') {
+        if (context.expectedType && context.expectedType.kind !== 'value') {
             outputType = context.expectedType;
         }
 
@@ -138,9 +138,9 @@ class Curve implements Expression {
         }
 
         if (interpolation.name !== 'step' &&
-            outputType.kind !== 'Number' &&
-            outputType.kind !== 'Color' &&
-            !(outputType.kind === 'Array' && outputType.itemType.kind === 'Number')) {
+            outputType.kind !== 'number' &&
+            outputType.kind !== 'color' &&
+            !(outputType.kind === 'array' && outputType.itemType.kind === 'number')) {
             return context.error(`Type ${toString(outputType)} is not interpolatable, and thus cannot be used as a ${interpolation.name} curve's output type.`);
         }
 
@@ -183,23 +183,6 @@ class Curve implements Expression {
         }
 
         return interpolate[type](outputLower, outputUpper, t);
-    }
-
-    serialize() {
-        const result = ['curve'];
-        const interp = [this.interpolation.name];
-        if (this.interpolation.name === 'exponential') {
-            interp.push(this.interpolation.base);
-        } else if (this.interpolation.name === 'cubic-bezier') {
-            interp.push.apply(interp, this.interpolation.controlPoints);
-        }
-        result.push(interp);
-        result.push(this.input.serialize());
-        for (let i = 0; i < this.labels.length; i++) {
-            result.push(this.labels[i]);
-            result.push(this.outputs[i].serialize());
-        }
-        return result;
     }
 
     eachChild(fn: (Expression) => void) {

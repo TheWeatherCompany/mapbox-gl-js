@@ -3,14 +3,9 @@
 const Benchmark = require('../lib/benchmark');
 const accessToken = require('../lib/access_token');
 const spec = require('../../src/style-spec/reference/latest');
-const createFunction = require('../../src/style-spec/function');
 const convertFunction = require('../../src/style-spec/function/convert');
-const {
-    isExpression,
-    createExpressionWithErrorHandling,
-    getExpectedType,
-    getDefaultValue
-} = require('../../src/style-spec/expression');
+const {isFunction, createFunction} = require('../../src/style-spec/function');
+const {createExpression} = require('../../src/style-spec/expression');
 
 import type {
     StyleExpression,
@@ -40,7 +35,10 @@ class ExpressionBenchmark extends Benchmark {
                     const expressionData = function(rawValue, propertySpec: StylePropertySpecification) {
                         const rawExpression = convertFunction(rawValue, propertySpec);
                         const compiledFunction = createFunction(rawValue, propertySpec);
-                        const compiledExpression = createExpressionWithErrorHandling(rawExpression, getExpectedType(propertySpec), getDefaultValue(propertySpec));
+                        const compiledExpression = createExpression(rawExpression, propertySpec, 'property');
+                        if (compiledExpression.result !== 'success') {
+                            throw new Error(compiledExpression.errors.map(err => `${err.key}: ${err.message}`).join(', '));
+                        }
                         return {
                             propertySpec,
                             rawValue,
@@ -51,13 +49,13 @@ class ExpressionBenchmark extends Benchmark {
                     };
 
                     for (const key in layer.paint) {
-                        if (isExpression(layer.paint[key])) {
+                        if (isFunction(layer.paint[key])) {
                             this.data.push(expressionData(layer.paint[key], spec[`paint_${layer.type}`][key]));
                         }
                     }
 
                     for (const key in layer.layout) {
-                        if (isExpression(layer.layout[key])) {
+                        if (isFunction(layer.layout[key])) {
                             this.data.push(expressionData(layer.layout[key], spec[`layout_${layer.type}`][key]));
                         }
                     }
@@ -93,7 +91,7 @@ class FunctionConvert extends ExpressionBenchmark {
 class ExpressionCreate extends ExpressionBenchmark {
     bench() {
         for (const {rawExpression, propertySpec} of this.data) {
-            createExpressionWithErrorHandling(rawExpression, getExpectedType(propertySpec), getDefaultValue(propertySpec));
+            createExpression(rawExpression, propertySpec, 'property');
         }
     }
 }

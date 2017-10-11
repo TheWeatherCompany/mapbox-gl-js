@@ -15,6 +15,8 @@ import type TileCoord from '../source/tile_coord';
 module.exports = draw;
 
 function draw(painter: Painter, source: SourceCache, layer: FillExtrusionStyleLayer, coords: Array<TileCoord>) {
+    if (layer.isOpacityZero(painter.transform.zoom)) return;
+
     if (painter.renderPass === '3d') {
         const gl = painter.gl;
 
@@ -54,7 +56,7 @@ function drawExtrusionTexture(painter, layer) {
 
     gl.uniform2f(program.uniforms.u_world, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
-    renderedTexture.vao.bind(gl, program, renderedTexture.buffer);
+    painter.viewportVAO.bind(gl, program, painter.viewportBuffer);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 

@@ -31,7 +31,7 @@ class Case implements Expression {
             return context.error(`Expected an odd number of arguments.`);
 
         let outputType: ?Type;
-        if (context.expectedType && context.expectedType.kind !== 'Value') {
+        if (context.expectedType && context.expectedType.kind !== 'value') {
             outputType = context.expectedType;
         }
 
@@ -62,16 +62,6 @@ class Case implements Expression {
             }
         }
         return this.otherwise.evaluate(ctx);
-    }
-
-    serialize() {
-        const result = ['case'];
-        for (const [test, expression] of this.branches) {
-            result.push(test.serialize());
-            result.push(expression.serialize());
-        }
-        result.push(this.otherwise.serialize());
-        return result;
     }
 
     eachChild(fn: (Expression) => void) {

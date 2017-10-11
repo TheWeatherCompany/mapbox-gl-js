@@ -5,13 +5,14 @@ const ImageSource = require('../source/image_source');
 
 import type Painter from './painter';
 import type SourceCache from '../source/source_cache';
-import type StyleLayer from '../style/style_layer';
+import type RasterStyleLayer from '../style/style_layer/raster_style_layer';
 import type TileCoord from '../source/tile_coord';
 
 module.exports = drawRaster;
 
-function drawRaster(painter: Painter, sourceCache: SourceCache, layer: StyleLayer, coords: Array<TileCoord>) {
+function drawRaster(painter: Painter, sourceCache: SourceCache, layer: RasterStyleLayer, coords: Array<TileCoord>) {
     if (painter.renderPass !== 'translucent') return;
+    if (layer.isOpacityZero(painter.transform.zoom)) return;
 
     const gl = painter.gl;
     const source = sourceCache.getSource();
@@ -51,17 +52,17 @@ function drawRaster(painter: Painter, sourceCache: SourceCache, layer: StyleLaye
         let parentScaleBy, parentTL;
 
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, tile.texture);
+        tile.texture.bind(gl.LINEAR, gl.CLAMP_TO_EDGE, gl.LINEAR_MIPMAP_NEAREST);
 
         gl.activeTexture(gl.TEXTURE1);
 
         if (parentTile) {
-            gl.bindTexture(gl.TEXTURE_2D, parentTile.texture);
+            parentTile.texture.bind(gl.LINEAR, gl.CLAMP_TO_EDGE, gl.LINEAR_MIPMAP_NEAREST);
             parentScaleBy = Math.pow(2, parentTile.coord.z - tile.coord.z);
             parentTL = [tile.coord.x * parentScaleBy % 1, tile.coord.y * parentScaleBy % 1];
 
         } else {
-            gl.bindTexture(gl.TEXTURE_2D, tile.texture);
+            tile.texture.bind(gl.LINEAR, gl.CLAMP_TO_EDGE, gl.LINEAR_MIPMAP_NEAREST);
         }
 
         // cross-fade parameters

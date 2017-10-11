@@ -2,7 +2,7 @@
 
 require('flow-remove-types/register');
 const expressionSuite = require('./integration').expression;
-const createExpression = require('../src/style-spec/expression');
+const { createExpression } = require('../src/style-spec/expression');
 const { toString } = require('../src/style-spec/expression/types');
 const { unwrap } = require('../src/style-spec/expression/values');
 
@@ -13,11 +13,11 @@ if (process.argv[1] === __filename && process.argv.length > 2) {
 }
 
 expressionSuite.run('js', {tests: tests}, (fixture) => {
-    const expression = createExpression(
-        fixture.expression,
-        fixture.expectExpressionType || null,
-        null);
+    const spec = fixture.propertySpec || {};
+    spec['function'] = true;
+    spec['property-function'] = true;
 
+    const expression = createExpression(fixture.expression, spec, 'property', {handleErrors: false});
     if (expression.result === 'error') {
         return {
             compiled: {

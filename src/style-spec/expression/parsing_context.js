@@ -72,14 +72,14 @@ class ParsingContext {
                     // Value, wrap it in a refining assertion, and when we expect
                     // a Color but have a String or Value, wrap it in "to-color"
                     // coercion.
-                    const canAssert = expected.kind === 'String' ||
-                        expected.kind === 'Number' ||
-                        expected.kind === 'Boolean';
+                    const canAssert = expected.kind === 'string' ||
+                        expected.kind === 'number' ||
+                        expected.kind === 'boolean';
 
-                    if (canAssert && actual.kind === 'Value') {
+                    if (canAssert && actual.kind === 'value') {
                         const Assertion = require('./definitions/assertion');
                         parsed = new Assertion(parsed.key, expected, [parsed]);
-                    } else if (expected.kind === 'Color' && (actual.kind === 'Value' || actual.kind === 'String')) {
+                    } else if (expected.kind === 'color' && (actual.kind === 'value' || actual.kind === 'string')) {
                         const Coercion = require('./definitions/coercion');
                         parsed = new Coercion(parsed.key, expected, [parsed]);
                     }
@@ -163,7 +163,7 @@ module.exports = ParsingContext;
 function isConstant(expression: Expression) {
     // requires within function body to workaround circular dependency
     const {CompoundExpression} = require('./compound_expression');
-    const {isZoomConstant, isFeatureConstant} = require('./is_constant');
+    const {isGlobalPropertyConstant, isFeatureConstant} = require('./is_constant');
     const Var = require('./definitions/var');
 
     if (expression instanceof Var) {
@@ -180,5 +180,6 @@ function isConstant(expression: Expression) {
         return false;
     }
 
-    return isZoomConstant(expression) && isFeatureConstant(expression);
+    return isFeatureConstant(expression) &&
+        isGlobalPropertyConstant(expression, ['zoom', 'heatmap-density']);
 }
