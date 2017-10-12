@@ -302,25 +302,6 @@
       "type": "string",
       "required": true,
       "doc": "HTML ID of the canvas from which to read pixels."
-    },
-    "contextType": {
-      "required": true,
-      "type": "enum",
-      "values": {
-        "2d": {
-          "doc" : "Source canvas is associated with a `2d` drawing context."
-        },
-        "webgl": {
-          "doc": "Source canvas is associated with a `webgl` drawing context."
-        },
-        "experimental-webgl": {
-          "doc": "Source canvas is associated with an `experimental-webgl` drawing context."
-        },
-        "webgl2": {
-          "doc": "Source canvas is associated with a `webgl2` drawing context."
-        }
-      },
-      "doc": "The context identifier defining the drawing context associated to the source canvas (see HTMLCanvasElement.getContext() documentation)."
     }
   },
   "layer": {
@@ -423,10 +404,6 @@
     "metadata": {
       "type": "*",
       "doc": "Arbitrary properties useful to track with the layer, but do not influence rendering. Properties should be prefixed to avoid collisions, like 'mapbox:'."
-    },
-    "ref": {
-      "type": "string",
-      "doc": "References another layer to copy `type`, `source`, `source-layer`, `minzoom`, `maxzoom`, `filter`, and `layout` properties from. This allows the layers to share processing and be more efficient."
     },
     "source": {
       "type": "string",
@@ -1906,7 +1883,7 @@
         "group": "Decision"
       },
       "curve": {
-        "doc": "Interpolates an output value from the given input/output pairs using the specified interpolation strategy.  The input levels must be numeric literals in strictly ascending order.",
+        "doc": "Interpolates an output value based on a set of input/output pairs using the specified interpolation strategy. A set of one input and one output value is known as a \"stop.\" Stop inputs must be numeric literals in strictly ascending order.\n\nInterpolation types:\n- `[\"step\"]`: returns the output value of the stop just less than the input , or the first input if the input is less than the first stop.\n- `[\"linear\"]`: interpolates linearly between the pair of stops just less than and just greater than the input .\n- `[\"exponential\", base]`: interpolates exponentially between the stops just less than and just greater than the input . `base` controls the rate at which the output increases: higher values make the output increase more towards the high end of the range. With values close to 1 the output increases linearly.\n- `[\"cubic-bezier\", x1, y2, x2, y2]`: interpolates using the cubic bezier curve defined by the given control points\n\nNote that interpolation types other that \"step\" are only supported when the output type is `number`, `array<number>`, or `Color`.",
         "group": "Ramps, scales, curves"
       },
       "ln2": {
