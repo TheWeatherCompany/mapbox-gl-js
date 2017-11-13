@@ -1098,8 +1098,8 @@ class Map extends Camera {
      * @see [Add a vector tile source](https://www.mapbox.com/mapbox-gl-js/example/vector-source/)
      * @see [Add a WMS source](https://www.mapbox.com/mapbox-gl-js/example/wms/)
      */
-    addLayer(layer: LayerSpecification, before?: string) {
-        this.style.addLayer(layer, before);
+    addLayer(layer: LayerSpecification, before?: string, options?: {validate?: boolean, preventUpdate?: boolean}) {
+        this.style.addLayer(layer, before, options);
         this._update(true);
         return this;
     }
