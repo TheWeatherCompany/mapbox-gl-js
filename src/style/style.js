@@ -547,7 +547,7 @@ class Style extends Evented {
      * @param {StyleLayer|Object} layer
      * @param {string=} before  ID of an existing layer to insert before
      */
-    addLayer(layerObject: LayerSpecification, before?: string, options?: {validate?: boolean}) {
+    addLayer(layerObject: LayerSpecification, before?: string, options?: {validate?: boolean, preventUpdate?: boolean}) {
         this._checkLoaded();
 
         const id = layerObject.id;
@@ -595,7 +595,11 @@ class Style extends Evented {
                 this.sourceCaches[layer.source].pause();
             }
         }
-        this._updateLayer(layer);
+
+        let preventUpdate = options.preventUpdate === undefined ? false : options.preventUpdate;
+        if (!preventUpdate) {
+            this._updateLayer(layer);
+        }
 
         if (layer.type === 'symbol') {
             this._updatedSymbolOrder = true;

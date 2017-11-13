@@ -12,10 +12,10 @@ var assign = require('lodash.assign');
  *     will be inserted. If ommitted the group is added to the bottom of the
  *     style.
  */
-function addGroup(map, id, layers, beforeId) {
+function addGroup(map, id, layers, beforeId, preventUpdate) {
     var beforeLayerId = normalizeBeforeId(map, beforeId);
     for (var i = 0; i < layers.length; i++) {
-        addLayerToGroup(map, id, layers[i], beforeLayerId, true);
+        addLayerToGroup(map, id, layers[i], beforeLayerId, preventUpdate, true);
     }
 }
 
@@ -29,8 +29,8 @@ function addGroup(map, id, layers, beforeId) {
  *     will be inserted. If ommitted the layer is added to the bottom of
  *     the group.
  */
-function addLayerToGroup(map, groupId, layer, beforeId) {
-    var ignoreBeforeIdCheck = arguments[4];
+function addLayerToGroup(map, groupId, layer, beforeId, preventUpdate) {
+    var ignoreBeforeIdCheck = arguments[5];
 
     if (beforeId && !ignoreBeforeIdCheck && (!isLayer(map, beforeId) || getLayerGroup(map, beforeId) !== groupId)) {
         throw new Error('beforeId must be the id of a layer within the same group');
@@ -39,7 +39,7 @@ function addLayerToGroup(map, groupId, layer, beforeId) {
     }
 
     var groupedLayer = assign({}, layer, {metadata: assign({}, layer.metadata || {}, {group: groupId})});
-    map.addLayer(groupedLayer, beforeId);
+    map.addLayer(groupedLayer, beforeId, { preventUpdate: preventUpdate});
 }
 
 function hasGroup(map, groupId) {
