@@ -8,6 +8,7 @@ import type StyleLayer from '../style/style_layer';
 import type {ViewType, StructArray, SerializedStructArray, StructArrayTypeParameters} from '../util/struct_array';
 import type Program from '../render/program';
 import type {Feature} from '../style-spec/expression';
+import type Color from '../style-spec/util/color';
 
 type LayoutAttribute = {
     name: string,
@@ -29,14 +30,16 @@ export type ProgramInterface = {
     layoutAttributes: Array<LayoutAttribute>,
     indexArrayType: Class<StructArray>,
     dynamicLayoutAttributes?: Array<LayoutAttribute>,
+    opacityAttributes?: Array<LayoutAttribute>,
+    collisionAttributes?: Array<LayoutAttribute>,
     paintAttributes?: Array<PaintAttribute>,
     indexArrayType2?: Class<StructArray>
 }
 
-function packColor(color: [number, number, number, number]): [number, number] {
+function packColor(color: Color): [number, number] {
     return [
-        packUint8ToFloat(255 * color[0], 255 * color[1]),
-        packUint8ToFloat(255 * color[2], 255 * color[3])
+        packUint8ToFloat(255 * color.r, 255 * color.g),
+        packUint8ToFloat(255 * color.b, 255 * color.a)
     ];
 }
 
@@ -80,7 +83,7 @@ class ConstantBinder implements Binder {
     setUniforms(gl: WebGLRenderingContext, program: Program, layer: StyleLayer, {zoom}: { zoom: number }) {
         const value = layer.getPaintValue(this.property, { zoom: this.useIntegerZoom ? Math.floor(zoom) : zoom });
         if (this.type === 'color') {
-            gl.uniform4fv(program.uniforms[`u_${this.name}`], value);
+            gl.uniform4f(program.uniforms[`u_${this.name}`], value.r, value.g, value.b, value.a);
         } else {
             gl.uniform1f(program.uniforms[`u_${this.name}`], value);
         }

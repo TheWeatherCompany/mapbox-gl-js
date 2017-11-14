@@ -26,6 +26,8 @@ const At = require('./at');
 const Match = require('./match');
 const Case = require('./case');
 const Curve = require('./curve');
+const Step = require('./step');
+const Interpolate = require('./interpolate');
 const Coalesce = require('./coalesce');
 
 import type { Expression } from '../expression';
@@ -47,6 +49,8 @@ const expressions: { [string]: Class<Expression> } = {
     'match': Match,
     'coalesce': Coalesce,
     'curve': Curve,
+    'step': Step,
+    'interpolate': Interpolate
 };
 
 function rgba(ctx, [r, g, b, a]) {
@@ -99,8 +103,7 @@ CompoundExpression.register(expressions, {
             if (v === null || type === 'string' || type === 'number' || type === 'boolean') {
                 return String(v);
             } else if (v instanceof Color) {
-                const [r, g, b, a] = v.value;
-                return `rgba(${r * 255}, ${g * 255}, ${b * 255}, ${a})`;
+                return `rgba(${v.r * 255},${v.g * 255},${v.b * 255},${v.a})`;
             } else {
                 return JSON.stringify(v);
             }
@@ -114,7 +117,10 @@ CompoundExpression.register(expressions, {
     'to-rgba': [
         array(NumberType, 4),
         [ColorType],
-        (ctx, [v]) => v.evaluate(ctx).value
+        (ctx, [v]) => {
+            const {r, g, b, a} = v.evaluate(ctx);
+            return [r, g, b, a];
+        }
     ],
     'rgb': [
         ColorType,
@@ -250,6 +256,11 @@ CompoundExpression.register(expressions, {
         NumberType,
         [NumberType, NumberType],
         (ctx, [b, e]) => Math.pow(b.evaluate(ctx), e.evaluate(ctx))
+    ],
+    'sqrt': [
+        NumberType,
+        [NumberType],
+        (ctx, [x]) => Math.sqrt(x.evaluate(ctx))
     ],
     'log10': [
         NumberType,

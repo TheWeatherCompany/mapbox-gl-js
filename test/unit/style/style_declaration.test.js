@@ -2,6 +2,7 @@
 
 const test = require('mapbox-gl-js-test').test;
 const StyleDeclaration = require('../../../src/style/style_declaration');
+const Color = require('../../../src/style-spec/util/color');
 
 test('StyleDeclaration', (t) => {
     t.test('with minimum value', (t) => {
@@ -13,8 +14,8 @@ test('StyleDeclaration', (t) => {
     t.test('number constant', (t) => {
         const d = new StyleDeclaration({type: 'number'}, 1);
 
-        t.ok(d.expression.isZoomConstant);
-        t.ok(d.expression.isFeatureConstant);
+        t.ok(d.isZoomConstant());
+        t.ok(d.isFeatureConstant());
 
         t.equal(d.calculate({zoom: 0}), 1);
         t.equal(d.calculate({zoom: 1}), 1);
@@ -26,8 +27,8 @@ test('StyleDeclaration', (t) => {
     t.test('string constant', (t) => {
         const d = new StyleDeclaration({type: 'string'}, 'mapbox');
 
-        t.ok(d.expression.isZoomConstant);
-        t.ok(d.expression.isFeatureConstant);
+        t.ok(d.isZoomConstant());
+        t.ok(d.isFeatureConstant());
 
         t.equal(d.calculate({zoom: 0}), 'mapbox');
         t.equal(d.calculate({zoom: 1}), 'mapbox');
@@ -39,12 +40,12 @@ test('StyleDeclaration', (t) => {
     t.test('color constant', (t) => {
         const d = new StyleDeclaration({type: 'color'}, 'red');
 
-        t.ok(d.expression.isZoomConstant);
-        t.ok(d.expression.isFeatureConstant);
+        t.ok(d.isZoomConstant());
+        t.ok(d.isFeatureConstant());
 
-        t.deepEqual(d.calculate({zoom: 0}), [1, 0, 0, 1]);
-        t.deepEqual(d.calculate({zoom: 1}), [1, 0, 0, 1]);
-        t.deepEqual(d.calculate({zoom: 2}), [1, 0, 0, 1]);
+        t.deepEqual(d.calculate({zoom: 0}), new Color(1, 0, 0, 1));
+        t.deepEqual(d.calculate({zoom: 1}), new Color(1, 0, 0, 1));
+        t.deepEqual(d.calculate({zoom: 2}), new Color(1, 0, 0, 1));
 
         t.end();
     });
@@ -52,8 +53,8 @@ test('StyleDeclaration', (t) => {
     t.test('array constant', (t) => {
         const d = new StyleDeclaration({type: 'array'}, [1]);
 
-        t.ok(d.expression.isZoomConstant);
-        t.ok(d.expression.isFeatureConstant);
+        t.ok(d.isZoomConstant());
+        t.ok(d.isFeatureConstant());
 
         t.deepEqual(d.calculate({zoom: 0}), [1]);
         t.deepEqual(d.calculate({zoom: 1}), [1]);

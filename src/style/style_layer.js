@@ -5,7 +5,7 @@ const StyleTransition = require('./style_transition');
 const StyleDeclaration = require('./style_declaration');
 const styleSpec = require('../style-spec/reference/latest');
 const validateStyle = require('./validate_style');
-const parseColor = require('./../style-spec/util/parse_color');
+const Color = require('./../style-spec/util/color');
 const Evented = require('../util/evented');
 
 import type {Bucket, BucketParameters} from '../data/bucket';
@@ -108,7 +108,7 @@ class StyleLayer extends Evented {
         } else {
             const key = `layers.${this.id}.layout.${name}`;
             if (this._validate(validateStyle.layoutProperty, key, name, value, options)) return;
-            this._layoutDeclarations[name] = new StyleDeclaration(this._layoutSpecifications[name], value, name);
+            this._layoutDeclarations[name] = new StyleDeclaration(this._layoutSpecifications[name], value);
         }
         this._updateLayoutValue(name);
     }
@@ -125,7 +125,7 @@ class StyleLayer extends Evented {
         const declaration = this._layoutDeclarations[name];
 
         // Avoid attempting to calculate a value for data-driven properties if `feature` is undefined.
-        if (declaration && (declaration.expression.isFeatureConstant || feature)) {
+        if (declaration && (declaration.isFeatureConstant() || feature)) {
             return declaration.calculate(globals, feature);
         } else {
             return specification.default;
@@ -146,7 +146,7 @@ class StyleLayer extends Evented {
             delete this._paintDeclarations[name];
         } else {
             if (this._validate(validateStyle.paintProperty, validateStyleKey, name, value, options)) return;
-            this._paintDeclarations[name] = new StyleDeclaration(this._paintSpecifications[name], value, name);
+            this._paintDeclarations[name] = new StyleDeclaration(this._paintSpecifications[name], value);
         }
     }
 
@@ -168,10 +168,10 @@ class StyleLayer extends Evented {
         const transition = this._paintTransitions[name];
 
         // Avoid attempting to calculate a value for data-driven properties if `feature` is undefined.
-        if (transition && (transition.declaration.expression.isFeatureConstant || feature)) {
+        if (transition && (transition.declaration.isFeatureConstant() || feature)) {
             return transition.calculate(globals, feature);
         } else if (specification.type === 'color' && specification.default) {
-            return parseColor(specification.default);
+            return Color.parse(specification.default);
         } else {
             return specification.default;
         }
@@ -184,12 +184,12 @@ class StyleLayer extends Evented {
 
     isPaintValueFeatureConstant(name: string) {
         const declaration = this._paintDeclarations[name];
-        return !declaration || declaration.expression.isFeatureConstant;
+        return !declaration || declaration.isFeatureConstant();
     }
 
     isPaintValueZoomConstant(name: string) {
         const declaration = this._paintDeclarations[name];
-        return !declaration || declaration.expression.isZoomConstant;
+        return !declaration || declaration.isZoomConstant();
     }
 
     isHidden(zoom: number) {
@@ -265,7 +265,7 @@ class StyleLayer extends Evented {
         const spec = this._paintSpecifications[name];
 
         if (declaration === null || declaration === undefined) {
-            declaration = new StyleDeclaration(spec, spec.default, name);
+            declaration = new StyleDeclaration(spec, spec.default);
         }
 
         if (oldTransition && oldTransition.declaration.json === declaration.json) return;
@@ -292,7 +292,7 @@ class StyleLayer extends Evented {
     // update layout value if it's constant, or mark it as zoom-dependent
     _updateLayoutValue(name: string) {
         const declaration = this._layoutDeclarations[name];
-        if (!declaration || (declaration.expression.isZoomConstant && declaration.expression.isFeatureConstant)) {
+        if (!declaration || (declaration.isZoomConstant() && declaration.isFeatureConstant())) {
             delete this._layoutFunctions[name];
             this.layout[name] = this.getLayoutValue(name, {zoom: 0});
         } else {

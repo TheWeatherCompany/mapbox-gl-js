@@ -1,39 +1,29 @@
 // @flow
 
-const parseColor = require('../style-spec/util/parse_color');
+const Color = require('../style-spec/util/color');
 const {isFunction, createFunction} = require('../style-spec/function');
-const {isExpression, createExpression} = require('../style-spec/expression');
+const {isExpression, createPropertyExpression} = require('../style-spec/expression');
 const util = require('../util/util');
-const Curve = require('../style-spec/expression/definitions/curve');
 
-import type {StyleDeclarationExpression, Feature, GlobalProperties} from '../style-spec/expression';
+import type {StylePropertyExpression, Feature, GlobalProperties} from '../style-spec/expression';
 
-function normalizeToExpression(parameters, propertySpec, name): StyleDeclarationExpression {
+function normalizeToExpression(parameters, propertySpec): StylePropertyExpression {
     if (isFunction(parameters)) {
-        return createFunction(parameters, propertySpec, name);
+        return createFunction(parameters, propertySpec);
     } else if (isExpression(parameters)) {
-        const expression = createExpression(parameters, propertySpec, 'property');
-        if (expression.result !== 'success') {
+        const expression = createPropertyExpression(parameters, propertySpec);
+        if (expression.result === 'error') {
             // this should have been caught in validation
-            throw new Error(expression.errors.map(err => `${err.key}: ${err.message}`).join(', '));
+            throw new Error(expression.value.map(err => `${err.key}: ${err.message}`).join(', '));
         }
-
-        if (expression.context === 'property') {
-            return expression;
-        } else {
-            throw new Error(`Incorrect expression context ${expression.context}`);
-        }
+        return expression.value;
     } else {
         if (typeof parameters === 'string' && propertySpec.type === 'color') {
-            parameters = parseColor(parameters);
+            parameters = Color.parse(parameters);
         }
-
         return {
-            result: 'success',
-            context: 'property',
-            isFeatureConstant: true,
-            isZoomConstant: true,
-            evaluate() { return parameters; }
+            kind: 'constant',
+            evaluate: () => parameters
         };
     }
 }
@@ -46,16 +36,24 @@ class StyleDeclaration {
     value: any;
     json: mixed;
     minimum: number;
-    expression: StyleDeclarationExpression;
+    expression: StylePropertyExpression;
 
-    constructor(reference: any, value: any, name: string) {
+    constructor(reference: any, value: any) {
         this.value = util.clone(value);
 
         // immutable representation of value. used for comparison
         this.json = JSON.stringify(this.value);
 
         this.minimum = reference.minimum;
-        this.expression = normalizeToExpression(this.value, reference, name);
+        this.expression = normalizeToExpression(this.value, reference);
+    }
+
+    isFeatureConstant() {
+        return this.expression.kind === 'constant' || this.expression.kind === 'camera';
+    }
+
+    isZoomConstant() {
+        return this.expression.kind === 'constant' || this.expression.kind === 'source';
     }
 
     calculate(globals: GlobalProperties, feature?: Feature) {
@@ -71,15 +69,10 @@ class StyleDeclaration {
      * zoom level.
      */
     interpolationFactor(zoom: number, lower: number, upper: number) {
-        if (this.expression.isZoomConstant) {
+        if (this.expression.kind === 'constant' || this.expression.kind === 'source') {
             return 0;
         } else {
-            return Curve.interpolationFactor(
-                this.expression.interpolation,
-                zoom,
-                lower,
-                upper
-            );
+            return this.expression.interpolationFactor(zoom, lower, upper);
         }
     }
 }
