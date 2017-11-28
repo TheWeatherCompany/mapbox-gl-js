@@ -3,12 +3,11 @@
 const util = require('../util/util');
 const browser = require('../util/browser');
 const window = require('../util/window');
-const {HTMLImageElement} = require('../util/window');
+const {HTMLImageElement, HTMLElement} = require('../util/window');
 const DOM = require('../util/dom');
 const ajax = require('../util/ajax');
 
 const Style = require('../style/style');
-const AnimationLoop = require('../style/animation_loop');
 const Painter = require('../render/painter');
 
 const Transform = require('../geo/transform');
@@ -140,8 +139,8 @@ const defaultOptions = {
  * @extends Evented
  * @param {Object} options
  * @param {HTMLElement|string} options.container The HTML element in which Mapbox GL JS will render the map, or the element's string `id`. The specified element must have no children.
- * @param {number} [options.minZoom=0] The minimum zoom level of the map (0-22).
- * @param {number} [options.maxZoom=22] The maximum zoom level of the map (0-22).
+ * @param {number} [options.minZoom=0] The minimum zoom level of the map (0-24).
+ * @param {number} [options.maxZoom=22] The maximum zoom level of the map (0-24).
  * @param {Object|string} [options.style] The map's Mapbox style. This must be an a JSON object conforming to
  * the schema described in the [Mapbox Style Specification](https://mapbox.com/mapbox-gl-style-spec/), or a URL to
  * such JSON.
@@ -216,7 +215,6 @@ const defaultOptions = {
 class Map extends Camera {
     style: Style;
     painter: Painter;
-    animationLoop: AnimationLoop;
 
     _container: HTMLElement;
     _missingCSSContainer: HTMLElement;
@@ -282,11 +280,11 @@ class Map extends Camera {
             } else {
                 this._container = container;
             }
-        } else {
+        } else if (options.container instanceof HTMLElement) {
             this._container = options.container;
+        } else {
+            throw new Error(`Invalid type: 'container' must be a String or HTMLElement.`);
         }
-
-        this.animationLoop = new AnimationLoop();
 
         if (options.maxBounds) {
             this.setMaxBounds(options.maxBounds);
@@ -479,7 +477,7 @@ class Map extends Camera {
      * If the map's current zoom level is lower than the new minimum,
      * the map will zoom to the new minimum.
      *
-     * @param {number | null | undefined} minZoom The minimum zoom level to set (0-22).
+     * @param {number | null | undefined} minZoom The minimum zoom level to set (0-24).
      *   If `null` or `undefined` is provided, the function removes the current minimum zoom (i.e. sets it to 0).
      * @returns {Map} `this`
      */
@@ -1161,7 +1159,7 @@ class Map extends Camera {
      * @see [Highlight features containing similar data](https://www.mapbox.com/mapbox-gl-js/example/query-similar-features/)
      * @see [Create a timeline animation](https://www.mapbox.com/mapbox-gl-js/example/timeline-animation/)
      */
-    setFilter(layer: string, filter: FilterSpecification) {
+    setFilter(layer: string, filter: ?FilterSpecification) {
         this.style.setFilter(layer, filter);
         this._update(true);
         return this;
@@ -1422,14 +1420,12 @@ class Map extends Camera {
      * @private
      */
     _update(updateStyle?: boolean) {
-        if (!this.style) return this;
+        if (!this.style) return;
 
         this._styleDirty = this._styleDirty || updateStyle;
         this._sourcesDirty = true;
 
         this._rerender();
-
-        return this;
     }
 
     /**
@@ -1443,6 +1439,10 @@ class Map extends Camera {
      * @private
      */
     _render() {
+        if (this.isEasing()) {
+            this._updateEase();
+        }
+
         // If the style has changed, the map is being zoomed, or a transition
         // is in progress:
         //  - Apply style changes (in a batch)
@@ -1479,22 +1479,18 @@ class Map extends Camera {
             this.fire('load');
         }
 
-        // We should set _styleDirty for ongoing animations before firing 'render',
-        // but the test suite currently assumes that it can read still images while animations are
-        // still ongoing. See https://github.com/mapbox/mapbox-gl-js/issues/3966
-        if (!this.animationLoop.stopped()) {
-            this._styleDirty = true;
-        }
-
         this._frameId = null;
 
+        if (this.style && this.style.hasTransitions()) {
+            this._styleDirty = true;
+        }
 
         // Schedule another render frame if it's needed.
         //
         // Even though `_styleDirty` and `_sourcesDirty` are reset in this
         // method, synchronous events fired during Style#update or
         // Style#_updateSources could have caused them to be set again.
-        if (this._sourcesDirty || this._repaint || this._styleDirty || this._placementDirty) {
+        if (this._sourcesDirty || this._repaint || this._styleDirty || this._placementDirty || this.isEasing()) {
             this._rerender();
         }
 

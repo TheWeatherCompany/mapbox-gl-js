@@ -1,11 +1,9 @@
 // @flow
 
-import type TileCoord from './tile_coord';
-import type {SerializedBucket} from '../data/bucket';
-import type {SerializedFeatureIndex} from '../data/feature_index';
-import type {SerializedStructArray} from '../util/struct_array';
+import type {Serialized} from '../util/web_worker_transfer';
 import type {RequestParameters} from '../util/ajax';
 import type {RGBAImage, AlphaImage} from '../util/image';
+import type {Transferable} from '../types/transferable';
 
 export type TileParameters = {
     source: string,
@@ -13,7 +11,7 @@ export type TileParameters = {
 };
 
 export type WorkerTileParameters = TileParameters & {
-    coord: TileCoord,
+    coord: { z: number, x: number, y: number, w: number },
     request: RequestParameters,
     zoom: number,
     maxZoom: number,
@@ -24,11 +22,11 @@ export type WorkerTileParameters = TileParameters & {
 };
 
 export type WorkerTileResult = {
-    buckets: Array<SerializedBucket>,
+    buckets: Array<Serialized>,
     iconAtlasImage: RGBAImage,
     glyphAtlasImage: AlphaImage,
-    featureIndex: SerializedFeatureIndex,
-    collisionBoxArray: SerializedStructArray,
+    featureIndex: Serialized,
+    collisionBoxArray: Serialized,
     rawTileData?: ArrayBuffer,
 };
 
