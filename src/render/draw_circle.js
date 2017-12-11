@@ -6,11 +6,11 @@ import type Painter from './painter';
 import type SourceCache from '../source/source_cache';
 import type CircleStyleLayer from '../style/style_layer/circle_style_layer';
 import type CircleBucket from '../data/bucket/circle_bucket';
-import type TileCoord from '../source/tile_coord';
+import type {OverscaledTileID} from '../source/tile_id';
 
 module.exports = drawCircles;
 
-function drawCircles(painter: Painter, sourceCache: SourceCache, layer: CircleStyleLayer, coords: Array<TileCoord>) {
+function drawCircles(painter: Painter, sourceCache: SourceCache, layer: CircleStyleLayer, coords: Array<OverscaledTileID>) {
     if (painter.renderPass !== 'translucent') return;
 
     const opacity = layer.paint.get('circle-opacity');
@@ -21,25 +21,26 @@ function drawCircles(painter: Painter, sourceCache: SourceCache, layer: CircleSt
         return;
     }
 
-    const gl = painter.gl;
+    const context = painter.context;
+    const gl = context.gl;
 
     painter.setDepthSublayer(0);
-    painter.depthMask(false);
+    context.depthMask.set(false);
 
     // Allow circles to be drawn across boundaries, so that
     // large circles are not clipped to tiles
-    gl.disable(gl.STENCIL_TEST);
+    context.stencilTest.set(false);
 
     for (let i = 0; i < coords.length; i++) {
         const coord = coords[i];
 
         const tile = sourceCache.getTile(coord);
-        const bucket: ?CircleBucket = (tile.getBucket(layer): any);
+        const bucket: ?CircleBucket<*> = (tile.getBucket(layer): any);
         if (!bucket) continue;
 
         const programConfiguration = bucket.programConfigurations.get(layer.id);
         const program = painter.useProgram('circle', programConfiguration);
-        programConfiguration.setUniforms(gl, program, layer.paint, {zoom: painter.transform.zoom});
+        programConfiguration.setUniforms(context, program, layer.paint, {zoom: painter.transform.zoom});
 
         gl.uniform1f(program.uniforms.u_camera_to_center_distance, painter.transform.cameraToCenterDistance);
         gl.uniform1i(program.uniforms.u_scale_with_map, layer.paint.get('circle-pitch-scale') === 'map' ? 1 : 0);
@@ -60,7 +61,7 @@ function drawCircles(painter: Painter, sourceCache: SourceCache, layer: CircleSt
         ));
 
         program.draw(
-            gl,
+            context,
             gl.TRIANGLES,
             layer.id,
             bucket.layoutVertexBuffer,

@@ -1,8 +1,6 @@
 // @flow
 
 const {SegmentVector, MAX_VERTEX_ARRAY_LENGTH} = require('../segment');
-const VertexBuffer = require('../../gl/vertex_buffer');
-const IndexBuffer = require('../../gl/index_buffer');
 const {ProgramConfigurationSet} = require('../program_configuration');
 const createVertexArrayType = require('../vertex_array_type');
 const {TriangleIndexArray} = require('../index_array_type');
@@ -21,8 +19,11 @@ import type {
     PopulateParameters
 } from '../bucket';
 import type {ProgramInterface} from '../program_configuration';
-import type StyleLayer from '../../style/style_layer';
+import type FillExtrusionStyleLayer from '../../style/style_layer/fill_extrusion_style_layer';
 import type {StructArray} from '../../util/struct_array';
+import type Context from '../../gl/context';
+import type IndexBuffer from '../../gl/index_buffer';
+import type VertexBuffer from '../../gl/vertex_buffer';
 import type Point from '@mapbox/point-geometry';
 
 const fillExtrusionInterface = {
@@ -65,7 +66,7 @@ class FillExtrusionBucket implements Bucket {
     index: number;
     zoom: number;
     overscaling: number;
-    layers: Array<StyleLayer>;
+    layers: Array<FillExtrusionStyleLayer>;
     layerIds: Array<string>;
 
     layoutVertexArray: StructArray;
@@ -74,11 +75,11 @@ class FillExtrusionBucket implements Bucket {
     indexArray: StructArray;
     indexBuffer: IndexBuffer;
 
-    programConfigurations: ProgramConfigurationSet;
+    programConfigurations: ProgramConfigurationSet<FillExtrusionStyleLayer>;
     segments: SegmentVector;
     uploaded: boolean;
 
-    constructor(options: BucketParameters) {
+    constructor(options: BucketParameters<FillExtrusionStyleLayer>) {
         this.zoom = options.zoom;
         this.overscaling = options.overscaling;
         this.layers = options.layers;
@@ -105,10 +106,10 @@ class FillExtrusionBucket implements Bucket {
         return this.layoutVertexArray.length === 0;
     }
 
-    upload(gl: WebGLRenderingContext) {
-        this.layoutVertexBuffer = new VertexBuffer(gl, this.layoutVertexArray);
-        this.indexBuffer = new IndexBuffer(gl, this.indexArray);
-        this.programConfigurations.upload(gl);
+    upload(context: Context) {
+        this.layoutVertexBuffer = context.createVertexBuffer(this.layoutVertexArray);
+        this.indexBuffer = context.createIndexBuffer(this.indexArray);
+        this.programConfigurations.upload(context);
     }
 
     destroy() {
@@ -213,7 +214,7 @@ class FillExtrusionBucket implements Bucket {
     }
 }
 
-register(FillExtrusionBucket, {omit: ['layers']});
+register('FillExtrusionBucket', FillExtrusionBucket, {omit: ['layers']});
 
 FillExtrusionBucket.programInterface = fillExtrusionInterface;
 

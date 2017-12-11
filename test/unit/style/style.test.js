@@ -329,7 +329,7 @@ test('Style#loadJSON', (t) => {
                 'source': '-source-id-',
                 'source-layer': '-source-layer-'
             });
-            style.update();
+            style.update({});
         });
 
         style.on('error', (event) => {
@@ -431,7 +431,7 @@ test('Style#update', (t) => {
             t.end();
         };
 
-        style.update();
+        style.update({});
     });
 });
 
@@ -581,7 +581,7 @@ test('Style#addSource', (t) => {
         style.once('data', t.end);
         style.on('style.load', () => {
             style.addSource('source-id', source);
-            style.update();
+            style.update({});
         });
     });
 
@@ -664,7 +664,7 @@ test('Style#removeSource', (t) => {
         style.on('style.load', () => {
             style.addSource('source-id', source);
             style.removeSource('source-id');
-            style.update();
+            style.update({});
         });
     });
 
@@ -708,8 +708,7 @@ test('Style#removeSource', (t) => {
             }]
         }));
         style.on('style.load', () => {
-            style.update();
-            style._recalculate(1);
+            style.update(1, 0);
             callback(style);
         });
         return style;
@@ -901,7 +900,7 @@ test('Style#addLayer', (t) => {
             if (e.dataType === 'source' && e.sourceDataType === 'content') {
                 style.sourceCaches['mapbox'].reload = t.end;
                 style.addLayer(layer);
-                style.update();
+                style.update({});
             }
         });
     });
@@ -937,7 +936,7 @@ test('Style#addLayer', (t) => {
                 style.sourceCaches['mapbox'].clearTiles = t.fail;
                 style.removeLayer('my-layer');
                 style.addLayer(layer);
-                style.update();
+                style.update({});
             }
         });
 
@@ -973,7 +972,7 @@ test('Style#addLayer', (t) => {
                 style.sourceCaches['mapbox'].clearTiles = t.end;
                 style.removeLayer('my-layer');
                 style.addLayer(layer);
-                style.update();
+                style.update({});
             }
         });
 
@@ -988,7 +987,7 @@ test('Style#addLayer', (t) => {
 
         style.on('style.load', () => {
             style.addLayer(layer);
-            style.update();
+            style.update({});
         });
     });
 
@@ -1065,7 +1064,7 @@ test('Style#addLayer', (t) => {
 
         style.on('style.load', () => {
             style.on('error', (error)=>{
-                t.match(error.message, /does not exist on this map/);
+                t.match(error.error, /does not exist on this map/);
                 t.end();
             });
             style.addLayer(layer, 'z');
@@ -1120,7 +1119,7 @@ test('Style#removeLayer', (t) => {
         style.on('style.load', () => {
             style.addLayer(layer);
             style.removeLayer('background');
-            style.update();
+            style.update({});
         });
     });
 
@@ -1221,7 +1220,7 @@ test('Style#moveLayer', (t) => {
         style.on('style.load', () => {
             style.addLayer(layer);
             style.moveLayer('background');
-            style.update();
+            style.update({});
         });
     });
 
@@ -1281,8 +1280,7 @@ test('Style#setPaintProperty', (t) => {
         tr.resize(512, 512);
 
         style.once('style.load', () => {
-            style.update();
-            style._recalculate(tr.zoom);
+            style.update(tr.zoom, 0);
             const sourceCache = style.sourceCaches['geojson'];
             const source = style.getSource('geojson');
 
@@ -1308,10 +1306,154 @@ test('Style#setPaintProperty', (t) => {
                     // after the next Style#update()
                     setTimeout(() => {
                         styleUpdateCalled = true;
-                        style.update();
+                        style.update({});
                     }, 50);
                 }
             }));
+        });
+    });
+
+    t.test('#5802 clones the input', (t) => {
+        const style = new Style(new StubMap());
+        style.loadJSON({
+            "version": 8,
+            "sources": {},
+            "layers": [
+                {
+                    "id": "background",
+                    "type": "background"
+                }
+            ]
+        });
+
+        style.on('style.load', () => {
+            const value = {stops: [[0, 'red'], [10, 'blue']]};
+            style.setPaintProperty('background', 'background-color', value);
+            t.notEqual(style.getPaintProperty('background', 'background-color'), value);
+            t.ok(style._changed);
+
+            style.update({});
+            t.notOk(style._changed);
+
+            value.stops[0][0] = 1;
+            style.setPaintProperty('background', 'background-color', value);
+            t.ok(style._changed);
+
+            t.end();
+        });
+    });
+
+    t.end();
+});
+
+test('Style#getPaintProperty', (t) => {
+    t.test('#5802 clones the output', (t) => {
+        const style = new Style(new StubMap());
+        style.loadJSON({
+            "version": 8,
+            "sources": {},
+            "layers": [
+                {
+                    "id": "background",
+                    "type": "background"
+                }
+            ]
+        });
+
+        style.on('style.load', () => {
+            style.setPaintProperty('background', 'background-color', {stops: [[0, 'red'], [10, 'blue']]});
+            style.update({});
+            t.notOk(style._changed);
+
+            const value = style.getPaintProperty('background', 'background-color');
+            value.stops[0][0] = 1;
+            style.setPaintProperty('background', 'background-color', value);
+            t.ok(style._changed);
+
+            t.end();
+        });
+    });
+
+    t.end();
+});
+
+test('Style#setLayoutProperty', (t) => {
+    t.test('#5802 clones the input', (t) => {
+        const style = new Style(new StubMap());
+        style.loadJSON({
+            "version": 8,
+            "sources": {
+                "geojson": {
+                    "type": "geojson",
+                    "data": {
+                        "type": "FeatureCollection",
+                        "features": []
+                    }
+                }
+            },
+            "layers": [
+                {
+                    "id": "line",
+                    "type": "line",
+                    "source": "geojson"
+                }
+            ]
+        });
+
+        style.on('style.load', () => {
+            const value = {stops: [[0, 'butt'], [10, 'round']]};
+            style.setLayoutProperty('line', 'line-cap', value);
+            t.notEqual(style.getLayoutProperty('line', 'line-cap'), value);
+            t.ok(style._changed);
+
+            style.update({});
+            t.notOk(style._changed);
+
+            value.stops[0][0] = 1;
+            style.setLayoutProperty('line', 'line-cap', value);
+            t.ok(style._changed);
+
+            t.end();
+        });
+    });
+
+    t.end();
+});
+
+test('Style#getLayoutProperty', (t) => {
+    t.test('#5802 clones the output', (t) => {
+        const style = new Style(new StubMap());
+        style.loadJSON({
+            "version": 8,
+            "sources": {
+                "geojson": {
+                    "type": "geojson",
+                    "data": {
+                        "type": "FeatureCollection",
+                        "features": []
+                    }
+                }
+            },
+            "layers": [
+                {
+                    "id": "line",
+                    "type": "line",
+                    "source": "geojson"
+                }
+            ]
+        });
+
+        style.on('style.load', () => {
+            style.setLayoutProperty('line', 'line-cap', {stops: [[0, 'butt'], [10, 'round']]});
+            style.update({});
+            t.notOk(style._changed);
+
+            const value = style.getLayoutProperty('line', 'line-cap');
+            value.stops[0][0] = 1;
+            style.setLayoutProperty('line', 'line-cap', value);
+            t.ok(style._changed);
+
+            t.end();
         });
     });
 
@@ -1352,7 +1494,7 @@ test('Style#setFilter', (t) => {
 
             style.setFilter('symbol', ['==', 'id', 1]);
             t.deepEqual(style.getFilter('symbol'), ['==', 'id', 1]);
-            style.update(); // trigger dispatcher broadcast
+            style.update({}); // trigger dispatcher broadcast
         });
     });
 
@@ -1379,7 +1521,7 @@ test('Style#setFilter', (t) => {
         style.on('style.load', () => {
             const filter = ['==', 'id', 1];
             style.setFilter('symbol', filter);
-            style.update(); // flush pending operations
+            style.update({}); // flush pending operations
 
             style.dispatcher.broadcast = function(key, value) {
                 t.equal(key, 'updateLayers');
@@ -1389,7 +1531,7 @@ test('Style#setFilter', (t) => {
             };
             filter[2] = 2;
             style.setFilter('symbol', filter);
-            style.update(); // trigger dispatcher broadcast
+            style.update({}); // trigger dispatcher broadcast
         });
     });
 
@@ -1577,8 +1719,7 @@ test('Style#queryRenderedFeatures', (t) => {
     });
 
     style.on('style.load', () => {
-        style.update();
-        style._recalculate(0);
+        style.update(0, 0);
 
         t.test('returns feature type', (t) => {
             const results = style.queryRenderedFeatures([{column: 1, row: 1, zoom: 1}], {}, 0, 0);
@@ -1661,7 +1802,7 @@ test('Style defers expensive methods', (t) => {
     }));
 
     style.on('style.load', () => {
-        style.update();
+        style.update({});
 
         // spies to track defered methods
         t.spy(style, 'fire');
@@ -1679,7 +1820,7 @@ test('Style defers expensive methods', (t) => {
         t.notOk(style._reloadSource.called, '_reloadSource is deferred');
         t.notOk(style._updateWorkerLayers.called, '_updateWorkerLayers is deferred');
 
-        style.update();
+        style.update({});
 
         t.ok(style.fire.calledWith('data'), 'a data event was fired');
 
@@ -1814,7 +1955,7 @@ test('Style#hasTransitions', (t) => {
 
         style.on('style.load', () => {
             style.setPaintProperty("background", "background-color", "blue");
-            style.update();
+            style.update({transition: { duration: 300, delay: 0 }});
             t.equal(style.hasTransitions(), true);
             t.end();
         });
@@ -1825,9 +1966,6 @@ test('Style#hasTransitions', (t) => {
         style.loadJSON({
             "version": 8,
             "sources": {},
-            "transition": {
-                "duration": 0
-            },
             "layers": [{
                 "id": "background",
                 "type": "background"
@@ -1836,7 +1974,7 @@ test('Style#hasTransitions', (t) => {
 
         style.on('style.load', () => {
             style.setPaintProperty("background", "background-color", "blue");
-            style.update();
+            style.update({transition: { duration: 0, delay: 0 }});
             t.equal(style.hasTransitions(), false);
             t.end();
         });

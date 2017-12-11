@@ -2,8 +2,6 @@
 
 const Point = require('@mapbox/point-geometry');
 const {SegmentVector} = require('../segment');
-const VertexBuffer = require('../../gl/vertex_buffer');
-const IndexBuffer = require('../../gl/index_buffer');
 const {ProgramConfigurationSet} = require('../program_configuration');
 const createVertexArrayType = require('../vertex_array_type');
 const {TriangleIndexArray, LineIndexArray} = require('../index_array_type');
@@ -30,9 +28,11 @@ import type {ProgramInterface, LayoutAttribute} from '../program_configuration';
 import type CollisionBoxArray, {CollisionBox} from '../../symbol/collision_box';
 import type { StructArray } from '../../util/struct_array';
 import type SymbolStyleLayer from '../../style/style_layer/symbol_style_layer';
+import type Context from '../../gl/context';
+import type IndexBuffer from '../../gl/index_buffer';
+import type VertexBuffer from '../../gl/vertex_buffer';
 import type {SymbolQuad} from '../../symbol/quads';
 import type {SizeData} from '../../symbol/symbol_size';
-import type {PossiblyEvaluatedPropertyValue} from '../../style/properties';
 
 export type SingleCollisionBox = {
     x1: number;
@@ -224,7 +224,7 @@ class SymbolBuffers {
     indexArray: StructArray;
     indexBuffer: IndexBuffer;
 
-    programConfigurations: ProgramConfigurationSet;
+    programConfigurations: ProgramConfigurationSet<SymbolStyleLayer>;
     segments: SegmentVector;
 
     dynamicLayoutVertexArray: StructArray;
@@ -266,23 +266,23 @@ class SymbolBuffers {
 
     }
 
-    upload(gl: WebGLRenderingContext, dynamicIndexBuffer) {
-        this.layoutVertexBuffer = new VertexBuffer(gl, this.layoutVertexArray);
-        this.indexBuffer = new IndexBuffer(gl, this.indexArray, dynamicIndexBuffer);
-        this.programConfigurations.upload(gl);
+    upload(context: Context, dynamicIndexBuffer) {
+        this.layoutVertexBuffer = context.createVertexBuffer(this.layoutVertexArray);
+        this.indexBuffer = context.createIndexBuffer(this.indexArray, dynamicIndexBuffer);
+        this.programConfigurations.upload(context);
 
         if (this.dynamicLayoutAttributes) {
-            this.dynamicLayoutVertexBuffer = new VertexBuffer(gl, this.dynamicLayoutVertexArray, true);
+            this.dynamicLayoutVertexBuffer = context.createVertexBuffer(this.dynamicLayoutVertexArray, true);
         }
         if (this.opacityAttributes) {
-            this.opacityVertexBuffer = new VertexBuffer(gl, this.opacityVertexArray, true);
+            this.opacityVertexBuffer = context.createVertexBuffer(this.opacityVertexArray, true);
             // This is a performance hack so that we can write to opacityVertexArray with uint32s
             // even though the shaders read uint8s
             this.opacityVertexBuffer.itemSize = 1;
             this.opacityVertexBuffer.attributes = shaderOpacityAttributes;
         }
         if (this.collisionAttributes) {
-            this.collisionVertexBuffer = new VertexBuffer(gl, this.collisionVertexArray, true);
+            this.collisionVertexBuffer = context.createVertexBuffer(this.collisionVertexArray, true);
         }
     }
 
@@ -304,7 +304,7 @@ class SymbolBuffers {
     }
 }
 
-register(SymbolBuffers);
+register('SymbolBuffers', SymbolBuffers);
 
 /**
  * Unlike other buckets, which simply implement #addFeature with type-specific
@@ -358,27 +358,8 @@ class SymbolBucket implements Bucket {
     sdfIcons: boolean;
     iconsNeedLinear: boolean;
 
-    // The symbol layout process needs `text-size` evaluated at up to five different zoom levels, and
-    // `icon-size` at up to three:
-    //
-    //   1. `text-size` at the zoom level of the bucket. Used to calculate a per-feature size for source `text-size`
-    //       expressions, and to calculate the box dimensions for icon-text-fit.
-    //   2. `icon-size` at the zoom level of the bucket. Used to calculate a per-feature size for source `icon-size`
-    //       expressions.
-    //   3. `text-size` and `icon-size` at the zoom level of the bucket, plus one. Used to calculate collision boxes.
-    //   4. `text-size` at zoom level 18. Used for something line-symbol-placement-related.
-    //   5.  For composite `*-size` expressions: two zoom levels of curve stops that "cover" the zoom level of the
-    //       bucket. These go into a vertex buffer and are used by the shader to interpolate the size at render time.
-    //
-    // (1) and (2) are stored in `this.layers[0].layout`. The remainder are below.
-    //
     textSizeData: SizeData;
     iconSizeData: SizeData;
-    layoutTextSize: PossiblyEvaluatedPropertyValue<number>; // (3)
-    layoutIconSize: PossiblyEvaluatedPropertyValue<number>; // (3)
-    textMaxSize: PossiblyEvaluatedPropertyValue<number>;    // (4)
-    compositeTextSizes: [PossiblyEvaluatedPropertyValue<number>, PossiblyEvaluatedPropertyValue<number>]; // (5)
-    compositeIconSizes: [PossiblyEvaluatedPropertyValue<number>, PossiblyEvaluatedPropertyValue<number>]; // (5)
 
     placedGlyphArray: StructArray;
     placedIconArray: StructArray;
@@ -399,39 +380,20 @@ class SymbolBucket implements Bucket {
     uploaded: boolean;
     collisionCircle: SymbolBuffers;
 
-    constructor(options: BucketParameters) {
+    constructor(options: BucketParameters<SymbolStyleLayer>) {
         this.collisionBoxArray = options.collisionBoxArray;
         this.zoom = options.zoom;
         this.overscaling = options.overscaling;
-        this.layers = (options.layers: any);
+        this.layers = options.layers;
         this.layerIds = this.layers.map(layer => layer.id);
         this.index = options.index;
         this.pixelRatio = options.pixelRatio;
 
-        const layer: SymbolStyleLayer = this.layers[0];
+        const layer = this.layers[0];
         const unevaluatedLayoutValues = layer._unevaluatedLayout._values;
 
         this.textSizeData = getSizeData(this.zoom, unevaluatedLayoutValues['text-size']);
-        if (this.textSizeData.functionType === 'composite') {
-            const {min, max} = this.textSizeData.zoomRange;
-            this.compositeTextSizes = [
-                unevaluatedLayoutValues['text-size'].possiblyEvaluate({zoom: min}),
-                unevaluatedLayoutValues['text-size'].possiblyEvaluate({zoom: max})
-            ];
-        }
-
         this.iconSizeData = getSizeData(this.zoom, unevaluatedLayoutValues['icon-size']);
-        if (this.iconSizeData.functionType === 'composite') {
-            const {min, max} = this.iconSizeData.zoomRange;
-            this.compositeIconSizes = [
-                unevaluatedLayoutValues['icon-size'].possiblyEvaluate({zoom: min}),
-                unevaluatedLayoutValues['icon-size'].possiblyEvaluate({zoom: max})
-            ];
-        }
-
-        this.layoutTextSize = unevaluatedLayoutValues['text-size'].possiblyEvaluate({zoom: this.zoom + 1});
-        this.layoutIconSize = unevaluatedLayoutValues['icon-size'].possiblyEvaluate({zoom: this.zoom + 1});
-        this.textMaxSize = unevaluatedLayoutValues['text-size'].possiblyEvaluate({zoom: 18});
 
         const layout = this.layers[0].layout;
         this.sortFeaturesByY = layout.get('text-allow-overlap') || layout.get('icon-allow-overlap') ||
@@ -539,11 +501,11 @@ class SymbolBucket implements Bucket {
         return this.symbolInstances.length === 0;
     }
 
-    upload(gl: WebGLRenderingContext) {
-        this.text.upload(gl, this.sortFeaturesByY);
-        this.icon.upload(gl, this.sortFeaturesByY);
-        this.collisionBox.upload(gl);
-        this.collisionCircle.upload(gl);
+    upload(context: Context) {
+        this.text.upload(context, this.sortFeaturesByY);
+        this.icon.upload(context, this.sortFeaturesByY);
+        this.collisionBox.upload(context);
+        this.collisionCircle.upload(context);
     }
 
     destroy() {
@@ -796,7 +758,7 @@ class SymbolBucket implements Bucket {
     }
 }
 
-register(SymbolBucket, {
+register('SymbolBucket', SymbolBucket, {
     omit: ['layers', 'collisionBoxArray', 'features', 'compareText'],
     shallow: ['symbolInstances']
 });

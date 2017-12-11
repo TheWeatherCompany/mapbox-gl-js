@@ -2,7 +2,7 @@
 
 const util = require('../util/util');
 const window = require('../util/window');
-const TileCoord = require('./tile_coord');
+const {CanonicalTileID} = require('./tile_id');
 const LngLat = require('../geo/lng_lat');
 const Point = require('@mapbox/point-geometry');
 const Evented = require('../util/evented');
@@ -10,7 +10,6 @@ const ajax = require('../util/ajax');
 const browser = require('../util/browser');
 const EXTENT = require('../data/extent');
 const RasterBoundsArray = require('../data/raster_bounds_array');
-const VertexBuffer = require('../gl/vertex_buffer');
 const VertexArrayObject = require('../render/vertex_array_object');
 const Texture = require('../render/texture');
 
@@ -20,6 +19,8 @@ import type Dispatcher from '../util/dispatcher';
 import type Tile from './tile';
 import type Coordinate from '../geo/coordinate';
 import type {Callback} from '../types/callback';
+import type Context from '../gl/context';
+import type VertexBuffer from '../gl/vertex_buffer';
 
 export type ImageTextureSource =
   ImageData |
@@ -74,7 +75,7 @@ class ImageSource extends Evented implements Source {
     textureLoaded: boolean;
     image: ImageData;
     centerCoord: Coordinate;
-    coord: TileCoord;
+    tileID: CanonicalTileID;
     _boundsArray: RasterBoundsArray;
     boundsBuffer: VertexBuffer;
     boundsVAO: VertexArrayObject;
@@ -154,7 +155,7 @@ class ImageSource extends Evented implements Source {
         // represent integer tile coordinates
         centerCoord.column = Math.floor(centerCoord.column);
         centerCoord.row = Math.floor(centerCoord.row);
-        this.coord = new TileCoord(centerCoord.zoom, centerCoord.column, centerCoord.row);
+        this.tileID = new CanonicalTileID(centerCoord.zoom, centerCoord.column, centerCoord.row);
 
         // Constrain min/max zoom to our tile's zoom level in order to force
         // SourceCache to request this tile (no matter what the map's zoom
@@ -187,12 +188,13 @@ class ImageSource extends Evented implements Source {
 
     prepare() {
         if (Object.keys(this.tiles).length === 0 || !this.image) return;
-        this._prepareImage(this.map.painter.gl, this.image);
+        this._prepareImage(this.map.painter.context, this.image);
     }
 
-    _prepareImage(gl: WebGLRenderingContext, image: ImageTextureSource, resize?: boolean) {
+    _prepareImage(context: Context, image: ImageTextureSource, resize?: boolean) {
+        const gl = context.gl;
         if (!this.boundsBuffer) {
-            this.boundsBuffer = new VertexBuffer(gl, this._boundsArray);
+            this.boundsBuffer = context.createVertexBuffer(this._boundsArray);
         }
 
         if (!this.boundsVAO) {
@@ -201,7 +203,7 @@ class ImageSource extends Evented implements Source {
 
         if (!this.textureLoaded) {
             this.textureLoaded = true;
-            this.texture = new Texture(gl, image, gl.RGBA);
+            this.texture = new Texture(context, image, gl.RGBA);
             this.texture.bind(gl.LINEAR, gl.CLAMP_TO_EDGE);
         } else if (resize) {
             this.texture.update(image);
@@ -220,14 +222,14 @@ class ImageSource extends Evented implements Source {
     }
 
     loadTile(tile: Tile, callback: Callback<void>) {
-        // We have a single tile -- whoose coordinates are this.coord -- that
+        // We have a single tile -- whoose coordinates are this.tileID -- that
         // covers the image we want to render.  If that's the one being
         // requested, set it up with the image; otherwise, mark the tile as
         // `errored` to indicate that we have no data for it.
         // If the world wraps, we may have multiple "wrapped" copies of the
         // single tile.
-        if (this.coord && this.coord.toString() === tile.coord.toString()) {
-            this.tiles[String(tile.coord.w)] = tile;
+        if (this.tileID && this.tileID.equals(tile.tileID.canonical)) {
+            this.tiles[String(tile.tileID.wrap)] = tile;
             tile.buckets = {};
             callback(null);
         } else {

@@ -13,14 +13,11 @@ const {
     Properties
 } = require('./properties');
 
-import type {Bucket, BucketParameters} from '../data/bucket';
+import type {Bucket} from '../data/bucket';
 import type Point from '@mapbox/point-geometry';
-import type RenderTexture from '../render/render_texture';
 import type {FeatureFilter} from '../style-spec/feature_filter';
-import type {
-    TransitionParameters,
-    EvaluationParameters
-} from './properties';
+import type {TransitionParameters} from './properties';
+import type EvaluationParameters from './evaluation_parameters';
 
 const TRANSITION_SUFFIX = '-transition';
 
@@ -44,10 +41,8 @@ class StyleLayer extends Evented {
     _transitioningPaint: Transitioning<any>;
     +paint: mixed;
 
-    viewportFrame: ?RenderTexture;
     _featureFilter: FeatureFilter;
 
-    +createBucket: (parameters: BucketParameters) => Bucket;
     +queryRadius: (bucket: Bucket) => number;
     +queryIntersectsFeature: (queryGeometry: Array<Array<Point>>,
                               feature: VectorTileFeature,
@@ -200,11 +195,11 @@ class StyleLayer extends Evented {
         }));
     }
 
-    has3DPass() {
+    hasOffscreenPass() {
         return false;
     }
 
-    resize(gl: WebGLRenderingContext) { // eslint-disable-line
+    resize() {
         // noop
     }
 }
@@ -214,6 +209,7 @@ module.exports = StyleLayer;
 const subclasses = {
     'circle': require('./style_layer/circle_style_layer'),
     'heatmap': require('./style_layer/heatmap_style_layer'),
+    'hillshade': require('./style_layer/hillshade_style_layer'),
     'fill': require('./style_layer/fill_style_layer'),
     'fill-extrusion': require('./style_layer/fill_extrusion_style_layer'),
     'line': require('./style_layer/line_style_layer'),

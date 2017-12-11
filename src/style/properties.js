@@ -1,7 +1,7 @@
 // @flow
 
 const assert = require('assert');
-const {extend, easeCubicInOut} = require('../util/util');
+const {clone, extend, easeCubicInOut} = require('../util/util');
 const interpolate = require('../style-spec/util/interpolate');
 const {normalizePropertyExpression} = require('../style-spec/expression');
 const Color = require('../style-spec/util/color');
@@ -9,7 +9,7 @@ const {register} = require('../util/web_worker_transfer');
 
 import type {StylePropertySpecification} from '../style-spec/style-spec';
 import type {CrossFaded} from './cross_faded';
-import type {ZoomHistory} from './style';
+import type EvaluationParameters from './evaluation_parameters';
 
 import type {
     Feature,
@@ -20,12 +20,6 @@ import type {
 } from '../style-spec/expression';
 
 type TimePoint = number;
-
-export type EvaluationParameters = GlobalProperties & {
-    now?: TimePoint,
-    defaultFadeDuration?: number,
-    zoomHistory?: ZoomHistory
-};
 
 /**
  * Implements a number of classes that define state and behavior for paint and layout properties, most
@@ -173,7 +167,7 @@ class Transitionable<Props: Object> {
     }
 
     getValue<S: string, T>(name: S): PropertyValueSpecification<T> | void {
-        return this._values[name].value.value;
+        return clone(this._values[name].value.value);
     }
 
     setValue<S: string, T>(name: S, value: PropertyValueSpecification<T> | void) {
@@ -182,18 +176,18 @@ class Transitionable<Props: Object> {
         }
         // Note that we do not _remove_ an own property in the case where a value is being reset
         // to the default: the transition might still be non-default.
-        this._values[name].value = new PropertyValue(this._values[name].property, value === null ? undefined : value);
+        this._values[name].value = new PropertyValue(this._values[name].property, value === null ? undefined : clone(value));
     }
 
     getTransition<S: string>(name: S): TransitionSpecification | void {
-        return this._values[name].transition;
+        return clone(this._values[name].transition);
     }
 
     setTransition<S: string>(name: S, value: TransitionSpecification | void) {
         if (!this._values.hasOwnProperty(name)) {
             this._values[name] = new TransitionablePropertyValue(this._values[name].property);
         }
-        this._values[name].transition = value || undefined;
+        this._values[name].transition = clone(value) || undefined;
     }
 
     serialize() {
@@ -256,7 +250,7 @@ class TransitioningPropertyValue<T, R> {
         this.value = value;
         this.begin = now + transition.delay || 0;
         this.end = this.begin + transition.duration || 0;
-        if (transition.delay || transition.duration) {
+        if (property.specification.transition && (transition.delay || transition.duration)) {
             this.prior = prior;
         }
     }
@@ -364,11 +358,11 @@ class Layout<Props: Object> {
     }
 
     getValue<S: string>(name: S) {
-        return this._values[name].value;
+        return clone(this._values[name].value);
     }
 
     setValue<S: string>(name: S, value: *) {
-        this._values[name] = new PropertyValue(this._values[name].property, value === null ? undefined : value);
+        this._values[name] = new PropertyValue(this._values[name].property, value === null ? undefined : clone(value));
     }
 
     serialize() {
@@ -610,11 +604,10 @@ class CrossFadedProperty<T> implements Property<T, ?CrossFaded<T>> {
         }
     }
 
-    _calculate(min: T, mid: T, max: T, parameters: any): ?CrossFaded<T> {
+    _calculate(min: T, mid: T, max: T, parameters: EvaluationParameters): ?CrossFaded<T> {
         const z = parameters.zoom;
         const fraction = z - Math.floor(z);
-        const d = parameters.defaultFadeDuration;
-        const t = d !== 0 ? Math.min((parameters.now - parameters.zoomHistory.lastIntegerZoomTime) / d, 1) : 1;
+        const t = parameters.crossFadingFactor();
         return z > parameters.zoomHistory.lastIntegerZoom ?
             { from: min, to: mid, fromScale: 2, toScale: 1, t: fraction + (1 - fraction) * t } :
             { from: max, to: mid, fromScale: 0.5, toScale: 1, t: 1 - (1 - t) * fraction };
@@ -681,11 +674,10 @@ class Properties<Props: Object> {
     }
 }
 
-register(PossiblyEvaluatedPropertyValue);
-register(DataDrivenProperty);
-register(DataConstantProperty);
-register(CrossFadedProperty);
-register(HeatmapColorProperty);
+register('DataDrivenProperty', DataDrivenProperty);
+register('DataConstantProperty', DataConstantProperty);
+register('CrossFadedProperty', CrossFadedProperty);
+register('HeatmapColorProperty', HeatmapColorProperty);
 
 module.exports = {
     PropertyValue,

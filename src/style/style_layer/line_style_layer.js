@@ -18,7 +18,7 @@ const {
 
 import type {Bucket, BucketParameters} from '../../data/bucket';
 import type {LayoutProps, PaintProps} from './line_style_layer_properties';
-import type {EvaluationParameters} from '../properties';
+import type EvaluationParameters from '../evaluation_parameters';
 
 const lineFloorwidthProperty = new DataDrivenProperty(properties.paint.properties['line-width'].specification, true);
 
@@ -41,7 +41,7 @@ class LineStyleLayer extends StyleLayer {
             lineFloorwidthProperty.possiblyEvaluate(this._transitioningPaint._values['line-width'].value, parameters);
     }
 
-    createBucket(parameters: BucketParameters) {
+    createBucket(parameters: BucketParameters<*>) {
         return new LineBucket(parameters);
     }
 

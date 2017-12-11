@@ -25,6 +25,7 @@ const deref = require('../style-spec/deref');
 const diff = require('../style-spec/diff');
 const rtlTextPlugin = require('../source/rtl_text_plugin');
 const Placement = require('./placement');
+const ZoomHistory = require('./zoom_history');
 
 import type Map from '../ui/map';
 import type Transform from '../geo/transform';
@@ -33,6 +34,7 @@ import type {StyleImage} from './style_image';
 import type {StyleGlyph} from './style_glyph';
 import type CollisionIndex from '../symbol/collision_index';
 import type {Callback} from '../types/callback';
+import type EvaluationParameters from './evaluation_parameters';
 
 const supportedDiffOperations = util.pick(diff.operations, [
     'addLayer',
@@ -62,12 +64,6 @@ export type StyleOptions = {
     localIdeographFontFamily?: string
 };
 
-export type ZoomHistory = {
-    lastIntegerZoom: number,
-    lastIntegerZoomTime: number,
-    lastZoom: number
-};
-
 /**
  * @private
  */
@@ -83,7 +79,7 @@ class Style extends Evented {
     _layers: {[string]: StyleLayer};
     _order: Array<string>;
     sourceCaches: {[string]: SourceCache};
-    zoomHistory: ZoomHistory | {};
+    zoomHistory: ZoomHistory;
     _loaded: boolean;
     _rtlTextPluginCallback: Function;
     _changed: boolean;
@@ -109,7 +105,7 @@ class Style extends Evented {
         this._layers = {};
         this._order  = [];
         this.sourceCaches = {};
-        this.zoomHistory = {};
+        this.zoomHistory = new ZoomHistory();
         this._loaded = false;
 
         this._resetUpdates();
@@ -271,32 +267,6 @@ class Style extends Evented {
         return ids.map((id) => this._layers[id].serialize());
     }
 
-    _recalculate(z: number) {
-        if (!this._loaded) return;
-
-        for (const sourceId in this.sourceCaches)
-            this.sourceCaches[sourceId].used = false;
-
-        const parameters = {
-            zoom: z,
-            now: browser.now(),
-            defaultFadeDuration: 300,
-            zoomHistory: this._updateZoomHistory(z)
-        };
-
-        for (const layerId of this._order) {
-            const layer = this._layers[layerId];
-
-            layer.recalculate(parameters);
-            if (!layer.isHidden(z) && layer.source) {
-                this.sourceCaches[layer.source].used = true;
-            }
-        }
-
-        this.light.recalculate(parameters);
-        this.z = z;
-    }
-
     hasTransitions() {
         if (this.light && this.light.hasTransition()) {
             return true;
@@ -317,32 +287,6 @@ class Style extends Evented {
         return false;
     }
 
-    _updateZoomHistory(z: number) {
-
-        const zh: ZoomHistory = (this.zoomHistory: any);
-
-        if (zh.lastIntegerZoom === undefined) {
-            // first time
-            zh.lastIntegerZoom = Math.floor(z);
-            zh.lastIntegerZoomTime = 0;
-            zh.lastZoom = z;
-        }
-
-        // check whether an integer zoom level as passed since the last frame
-        // and if yes, record it with the time. Used for transitioning patterns.
-        if (Math.floor(zh.lastZoom) < Math.floor(z)) {
-            zh.lastIntegerZoom = Math.floor(z);
-            zh.lastIntegerZoomTime = browser.now();
-
-        } else if (Math.floor(zh.lastZoom) > Math.floor(z)) {
-            zh.lastIntegerZoom = Math.floor(z + 1);
-            zh.lastIntegerZoomTime = browser.now();
-        }
-
-        zh.lastZoom = z;
-        return zh;
-    }
-
     _checkLoaded() {
         if (!this._loaded) {
             throw new Error('Style is not done loading');
@@ -350,41 +294,56 @@ class Style extends Evented {
     }
 
     /**
-     * Apply queued style updates in a batch
+     * Apply queued style updates in a batch and recalculate zoom-dependent paint properties.
      */
-    update() {
-        if (!this._changed || !this._loaded) return;
-
-        const updatedIds = Object.keys(this._updatedLayers);
-        const removedIds = Object.keys(this._removedLayers);
-
-        if (updatedIds.length || removedIds.length) {
-            this._updateWorkerLayers(updatedIds, removedIds);
+    update(parameters: EvaluationParameters) {
+        if (!this._loaded) {
+            return;
         }
-        for (const id in this._updatedSources) {
-            const action = this._updatedSources[id];
-            assert(action === 'reload' || action === 'clear');
-            if (action === 'reload') {
-                this._reloadSource(id);
-            } else if (action === 'clear') {
-                this._clearSource(id);
+
+        if (this._changed) {
+            const updatedIds = Object.keys(this._updatedLayers);
+            const removedIds = Object.keys(this._removedLayers);
+
+            if (updatedIds.length || removedIds.length) {
+                this._updateWorkerLayers(updatedIds, removedIds);
+            }
+            for (const id in this._updatedSources) {
+                const action = this._updatedSources[id];
+                assert(action === 'reload' || action === 'clear');
+                if (action === 'reload') {
+                    this._reloadSource(id);
+                } else if (action === 'clear') {
+                    this._clearSource(id);
+                }
+            }
+
+            for (const id in this._updatedPaintProps) {
+                this._layers[id].updateTransitions(parameters);
+            }
+
+            this.light.updateTransitions(parameters);
+
+            this._resetUpdates();
+
+            this.fire('data', {dataType: 'style'});
+        }
+
+        for (const sourceId in this.sourceCaches) {
+            this.sourceCaches[sourceId].used = false;
+        }
+
+        for (const layerId of this._order) {
+            const layer = this._layers[layerId];
+
+            layer.recalculate(parameters);
+            if (!layer.isHidden(parameters.zoom) && layer.source) {
+                this.sourceCaches[layer.source].used = true;
             }
         }
 
-        const parameters = {
-            now: browser.now(),
-            transition: util.extend({ duration: 300, delay: 0 }, this.stylesheet.transition)
-        };
-
-        for (const id in this._updatedPaintProps) {
-            this._layers[id].updateTransitions(parameters);
-        }
-
-        this.light.updateTransitions(parameters);
-
-        this._resetUpdates();
-
-        this.fire('data', {dataType: 'style'});
+        this.light.recalculate(parameters);
+        this.z = parameters.zoom;
     }
 
     _updateWorkerLayers(updatedIds: Array<string>, removedIds: Array<string>) {
@@ -449,15 +408,19 @@ class Style extends Evented {
     }
 
     addImage(id: string, image: StyleImage) {
-        if (this.imageManager.getImage(id)) {
+        if (this.getImage(id)) {
             return this.fire('error', {error: new Error('An image with this name already exists.')});
         }
         this.imageManager.addImage(id, image);
         this.fire('data', {dataType: 'style'});
     }
 
+    getImage(id: string): ?StyleImage {
+        return this.imageManager.getImage(id);
+    }
+
     removeImage(id: string) {
-        if (!this.imageManager.getImage(id)) {
+        if (!this.getImage(id)) {
             return this.fire('error', {error: new Error('No image with this name exists.')});
         }
         this.imageManager.removeImage(id);
@@ -548,7 +511,7 @@ class Style extends Evented {
     /**
      * Add a layer to the map style. The layer will be inserted before the layer with
      * ID `before`, or appended if `before` is omitted.
-     * @param {string=} before  ID of an existing layer to insert before
+     * @param {string} before  ID of an existing layer to insert before
      */
     addLayer(layerObject: LayerSpecification, before?: string, options?: {validate?: boolean, preventUpdate?: boolean}) {
         this._checkLoaded();
@@ -573,7 +536,7 @@ class Style extends Evented {
 
         const index = before ? this._order.indexOf(before) : this._order.length;
         if (before && index === -1) {
-            this.fire('error', { message: new Error(`Layer with id "${before}" does not exist on this map.`)});
+            this.fire('error', { error: new Error(`Layer with id "${before}" does not exist on this map.`)});
             return;
         }
 
@@ -603,9 +566,10 @@ class Style extends Evented {
     }
 
     /**
-     * Add a layer to the map style. The layer will be inserted before the layer with
+     * Moves a layer to a different z-position. The layer will be inserted before the layer with
      * ID `before`, or appended if `before` is omitted.
-     * @param {string=} before  ID of an existing layer to insert before
+     * @param {string} id  ID of the layer to move
+     * @param {string} before  ID of an existing layer to insert before
      */
     moveLayer(id: string, before?: string) {
         this._checkLoaded();
@@ -626,6 +590,10 @@ class Style extends Evented {
         this._order.splice(index, 1);
 
         const newIndex = before ? this._order.indexOf(before) : this._order.length;
+        if (before && newIndex === -1) {
+            this.fire('error', { error: new Error(`Layer with id "${before}" does not exist on this map.`)});
+            return;
+        }
         this._order.splice(newIndex, 0, id);
 
         this._layerOrderChanged = true;

@@ -8,6 +8,7 @@ const DOM = require('../util/dom');
 const ajax = require('../util/ajax');
 
 const Style = require('../style/style');
+const EvaluationParameters = require('../style/evaluation_parameters');
 const Painter = require('../render/painter');
 
 const Transform = require('../geo/transform');
@@ -22,6 +23,7 @@ const Point = require('@mapbox/point-geometry');
 const AttributionControl = require('./control/attribution_control');
 const LogoControl = require('./control/logo_control');
 const isSupported = require('mapbox-gl-supported');
+const {RGBAImage} = require('../util/image');
 
 require('./events'); // Pull in for documentation.js
 
@@ -30,7 +32,6 @@ import type {LngLatBoundsLike} from '../geo/lng_lat_bounds';
 import type {RequestParameters} from '../util/ajax';
 import type {StyleOptions} from '../style/style';
 import type {MapEvent, MapDataEvent} from './events';
-import type {RGBAImage} from '../util/image';
 
 import type ScrollZoomHandler from './handler/scroll_zoom';
 import type BoxZoomHandler from './handler/box_zoom';
@@ -124,7 +125,7 @@ const defaultOptions = {
     maxTileCacheSize: null,
 
     transformRequest: null,
-    collisionFadeDuration: 300
+    fadeDuration: 300
 };
 
 /**
@@ -241,7 +242,8 @@ class Map extends Camera {
     _refreshExpiredTiles: boolean;
     _hash: Hash;
     _delegatedListeners: any;
-    _collisionFadeDuration: number;
+    _fadeDuration: number;
+    _crossFadingFactor: number;
 
     scrollZoom: ScrollZoomHandler;
     boxZoom: BoxZoomHandler;
@@ -268,7 +270,8 @@ class Map extends Camera {
         this._trackResize = options.trackResize;
         this._bearingSnap = options.bearingSnap;
         this._refreshExpiredTiles = options.refreshExpiredTiles;
-        this._collisionFadeDuration = options.collisionFadeDuration;
+        this._fadeDuration = options.fadeDuration;
+        this._crossFadingFactor = 1;
 
         const transformRequestFn = options.transformRequest;
         this._transformRequest = transformRequestFn ?  (url, type) => transformRequestFn(url, type) || ({ url }) : (url) => ({ url });
@@ -1044,22 +1047,42 @@ class Map extends Camera {
      * @see [Add an icon to the map](https://www.mapbox.com/mapbox-gl-js/example/add-image/)
      * @see [Add a generated icon to the map](https://www.mapbox.com/mapbox-gl-js/example/add-image-generated/)
      * @param id The ID of the image.
-     * @param data The image as an `HTMLImageElement`, `ImageData`, or object with `width`, `height`, and `data`
+     * @param image The image as an `HTMLImageElement`, `ImageData`, or object with `width`, `height`, and `data`
      * properties with the same format as `ImageData`.
      * @param options
      * @param options.pixelRatio The ratio of pixels in the image to physical pixels on the screen
      * @param options.sdf Whether the image should be interpreted as an SDF image
      */
-    addImage(id: string, data: HTMLImageElement | ImageData | {width: number, height: number, data: Uint8Array | Uint8ClampedArray},
+    addImage(id: string,
+             image: HTMLImageElement | ImageData | {width: number, height: number, data: Uint8Array | Uint8ClampedArray},
              {pixelRatio = 1, sdf = false}: {pixelRatio?: number, sdf?: boolean} = {}) {
-        if (data instanceof HTMLImageElement) {
-            data = browser.getImageData(data);
-        } else if (data.width === undefined || data.height === undefined) {
+        if (image instanceof HTMLImageElement) {
+            const {width, height, data} = browser.getImageData(image);
+            this.style.addImage(id, { data: new RGBAImage({width, height}, data), pixelRatio, sdf });
+        } else if (image.width === undefined || image.height === undefined) {
             return this.fire('error', {error: new Error(
                 'Invalid arguments to map.addImage(). The second argument must be an `HTMLImageElement`, `ImageData`, ' +
                 'or object with `width`, `height`, and `data` properties with the same format as `ImageData`')});
+        } else {
+            const {width, height, data} = image;
+            this.style.addImage(id, { data: new RGBAImage({width, height}, data.slice(0)), pixelRatio, sdf });
         }
-        this.style.addImage(id, { data: ((data: any): RGBAImage), pixelRatio, sdf });
+    }
+
+    /**
+     * Define wether the image has been added or not
+     *
+     * @param id The ID of the image.
+     */
+    hasImage(id: string): boolean {
+        if (!id) {
+            this.fire('error', {
+                error: new Error('Missing required image id')
+            });
+            return false;
+        }
+
+        return !!this.style.getImage(id);
     }
 
     /**
@@ -1403,7 +1426,7 @@ class Map extends Camera {
      * @returns {boolean} A Boolean indicating whether the map is fully loaded.
      */
     loaded() {
-        if (this._styleDirty || this._sourcesDirty || this._placementDirty)
+        if (this._styleDirty || this._sourcesDirty)
             return false;
         if (!this.style || !this.style.loaded())
             return false;
@@ -1442,14 +1465,32 @@ class Map extends Camera {
             this._updateEase();
         }
 
-        // If the style has changed, the map is being zoomed, or a transition
-        // is in progress:
+        let crossFading = false;
+
+        // If the style has changed, the map is being zoomed, or a transition or fade is in progress:
         //  - Apply style changes (in a batch)
-        //  - Recalculate zoom-dependent paint properties.
+        //  - Recalculate paint properties.
         if (this.style && this._styleDirty) {
             this._styleDirty = false;
-            this.style.update();
-            this.style._recalculate(this.transform.zoom);
+
+            const zoom = this.transform.zoom;
+            const now = browser.now();
+            this.style.zoomHistory.update(zoom, now);
+
+            const parameters = new EvaluationParameters(zoom, {
+                now,
+                fadeDuration: this._fadeDuration,
+                zoomHistory: this.style.zoomHistory,
+                transition: util.extend({ duration: 300, delay: 0 }, this.style.stylesheet.transition)
+            });
+
+            const factor = parameters.crossFadingFactor();
+            if (factor !== 1 || factor !== this._crossFadingFactor) {
+                crossFading = true;
+                this._crossFadingFactor = factor;
+            }
+
+            this.style.update(parameters);
         }
 
         // If we are in _render for any reason other than an in-progress paint
@@ -1460,7 +1501,7 @@ class Map extends Camera {
             this.style._updateSources(this.transform);
         }
 
-        this._placementDirty = this.style && this.style._updatePlacement(this.painter.transform, this.showCollisionBoxes, this._collisionFadeDuration);
+        this._placementDirty = this.style && this.style._updatePlacement(this.painter.transform, this.showCollisionBoxes, this._fadeDuration);
 
         // Actually draw
         this.painter.render(this.style, {
@@ -1468,7 +1509,7 @@ class Map extends Camera {
             showOverdrawInspector: this._showOverdrawInspector,
             rotating: this.rotating,
             zooming: this.zooming,
-            collisionFadeDuration: this._collisionFadeDuration
+            fadeDuration: this._fadeDuration
         });
 
         this.fire('render');
@@ -1478,9 +1519,7 @@ class Map extends Camera {
             this.fire('load');
         }
 
-        this._frameId = null;
-
-        if (this.style && this.style.hasTransitions()) {
+        if (this.style && (this.style.hasTransitions() || crossFading)) {
             this._styleDirty = true;
         }
 
@@ -1514,7 +1553,7 @@ class Map extends Camera {
             window.removeEventListener('resize', this._onWindowResize, false);
             window.removeEventListener('online', this._onWindowOnline, false);
         }
-        const extension = this.painter.gl.getExtension('WEBGL_lose_context');
+        const extension = this.painter.context.gl.getExtension('WEBGL_lose_context');
         if (extension) extension.loseContext();
         removeNode(this._canvasContainer);
         removeNode(this._controlContainer);
@@ -1525,7 +1564,10 @@ class Map extends Camera {
 
     _rerender() {
         if (this.style && !this._frameId) {
-            this._frameId = browser.frame(this._render);
+            this._frameId = browser.frame(() => {
+                this._frameId = null;
+                this._render();
+            });
         }
     }
 

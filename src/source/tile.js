@@ -11,27 +11,30 @@ const featureFilter = require('../style-spec/feature_filter');
 const CollisionIndex = require('../symbol/collision_index');
 const CollisionBoxArray = require('../symbol/collision_box');
 const RasterBoundsArray = require('../data/raster_bounds_array');
-const TileCoord = require('./tile_coord');
 const EXTENT = require('../data/extent');
 const Point = require('@mapbox/point-geometry');
-const VertexBuffer = require('../gl/vertex_buffer');
-const IndexBuffer = require('../gl/index_buffer');
 const Texture = require('../render/texture');
 const {SegmentVector} = require('../data/segment');
 const {TriangleIndexArray} = require('../data/index_array_type');
 const projection = require('../symbol/projection');
 const {performSymbolPlacement, updateOpacities} = require('../symbol/symbol_placement');
 const pixelsToTileUnits = require('../source/pixels_to_tile_units');
-const {deserialize} = require('../util/web_worker_transfer');
+const browser = require('../util/browser');
 
 const CLOCK_SKEW_RETRY_TIMEOUT = 30000;
 
 import type {Bucket} from '../data/bucket';
 import type StyleLayer from '../style/style_layer';
 import type {WorkerTileResult} from './worker_source';
+import type {DEMData} from '../data/dem_data';
 import type {RGBAImage, AlphaImage} from '../util/image';
 import type Mask from '../render/tile_mask';
 import type CrossTileSymbolIndex from '../symbol/cross_tile_symbol_index';
+import type Context from '../gl/context';
+import type IndexBuffer from '../gl/index_buffer';
+import type VertexBuffer from '../gl/vertex_buffer';
+import type {OverscaledTileID} from './tile_id';
+import type Framebuffer from '../gl/framebuffer';
 
 export type TileState =
     | 'loading'   // Tile data is in the process of loading.
@@ -49,11 +52,10 @@ export type TileState =
  * @private
  */
 class Tile {
-    coord: TileCoord;
+    tileID: OverscaledTileID;
     uid: number;
     uses: number;
     tileSize: number;
-    sourceMaxZoom: number;
     buckets: {[string]: Bucket};
     iconAtlasImage: ?RGBAImage;
     iconAtlasTexture: Texture;
@@ -74,27 +76,31 @@ class Tile {
     workerID: number | void;
     vtLayers: {[string]: VectorTileLayer};
     mask: Mask;
+
+    neighboringTiles: ?Object;
+    dem: ?DEMData;
     aborted: ?boolean;
     maskedBoundsBuffer: ?VertexBuffer;
     maskedIndexBuffer: ?IndexBuffer;
     segments: ?SegmentVector;
+    needsHillshadePrepare: ?boolean
     request: any;
     texture: any;
+    fbo: ?Framebuffer;
+    demTexture: ?Texture;
     refreshedUponExpiration: boolean;
     reloadCallback: any;
     justReloaded: boolean;
 
     /**
-     * @param {TileCoord} coord
+     * @param {OverscaledTileID} tileID
      * @param size
-     * @param sourceMaxZoom
      */
-    constructor(coord: TileCoord, size: number, sourceMaxZoom: number) {
-        this.coord = coord;
+    constructor(tileID: OverscaledTileID, size: number) {
+        this.tileID = tileID;
         this.uid = util.uniqueId();
         this.uses = 0;
         this.tileSize = size;
-        this.sourceMaxZoom = sourceMaxZoom;
         this.buckets = {};
         this.expirationTime = null;
 
@@ -109,7 +115,7 @@ class Tile {
 
     registerFadeDuration(duration: number) {
         const fadeEndTime = duration + this.timeAdded;
-        if (fadeEndTime < Date.now()) return;
+        if (fadeEndTime < browser.now()) return;
         if (this.fadeEndTime && fadeEndTime < this.fadeEndTime) return;
 
         this.fadeEndTime = fadeEndTime;
@@ -146,17 +152,10 @@ class Tile {
             // Only vector tiles have rawTileData
             this.rawTileData = data.rawTileData;
         }
-        this.collisionBoxArray = (deserialize(data.collisionBoxArray): any);
-        this.featureIndex = (deserialize(data.featureIndex): any);
+        this.collisionBoxArray = data.collisionBoxArray;
+        this.featureIndex = data.featureIndex;
         this.featureIndex.rawTileData = this.rawTileData;
         this.buckets = deserializeBucket(data.buckets, painter.style);
-
-        if (data.iconAtlasImage) {
-            this.iconAtlasImage = data.iconAtlasImage;
-        }
-        if (data.glyphAtlasImage) {
-            this.glyphAtlasImage = data.glyphAtlasImage;
-        }
 
         if (data.iconAtlasImage) {
             this.iconAtlasImage = data.iconAtlasImage;
@@ -193,11 +192,17 @@ class Tile {
         this.state = 'unloaded';
     }
 
+    unloadDEMData() {
+        this.dem = null;
+        this.neighboringTiles = null;
+        this.state = 'unloaded';
+    }
+
     added(crossTileSymbolIndex: CrossTileSymbolIndex) {
         for (const id in this.buckets) {
             const bucket = this.buckets[id];
             if (bucket instanceof SymbolBucket) {
-                crossTileSymbolIndex.addTileLayer(id, this.coord, this.sourceMaxZoom, bucket.symbolInstances);
+                crossTileSymbolIndex.addTileLayer(id, this.tileID, bucket.symbolInstances);
             }
         }
     }
@@ -206,7 +211,7 @@ class Tile {
         for (const id in this.buckets) {
             const bucket = this.buckets[id];
             if (bucket instanceof SymbolBucket) {
-                crossTileSymbolIndex.removeTileLayer(id, this.coord, this.sourceMaxZoom);
+                crossTileSymbolIndex.removeTileLayer(id, this.tileID);
             }
         }
     }
@@ -216,14 +221,14 @@ class Tile {
         const collisionBoxArray = this.collisionBoxArray;
 
         if (bucket && bucket instanceof SymbolBucket && collisionBoxArray) {
-            const posMatrix = collisionIndex.transform.calculatePosMatrix(this.coord, this.sourceMaxZoom);
+            const posMatrix = collisionIndex.transform.calculatePosMatrix(this.tileID.toUnwrapped());
 
             const pitchWithMap = bucket.layers[0].layout.get('text-pitch-alignment') === 'map';
             const textPixelRatio = EXTENT / this.tileSize; // text size is not meant to be affected by scale
             const pixelRatio = pixelsToTileUnits(this, 1, collisionIndex.transform.zoom);
 
             const labelPlaneMatrix = projection.getLabelPlaneMatrix(posMatrix, pitchWithMap, true, collisionIndex.transform, pixelRatio);
-            performSymbolPlacement(bucket, collisionIndex, showCollisionBoxes, collisionIndex.transform.zoom, textPixelRatio, posMatrix, labelPlaneMatrix, this.coord.id, sourceID, collisionBoxArray);
+            performSymbolPlacement(bucket, collisionIndex, showCollisionBoxes, collisionIndex.transform.zoom, textPixelRatio, posMatrix, labelPlaneMatrix, this.tileID.key, sourceID, collisionBoxArray);
         }
     }
 
@@ -250,22 +255,24 @@ class Tile {
         return this.buckets[layer.id];
     }
 
-    upload(gl: WebGLRenderingContext) {
+    upload(context: Context) {
         for (const id in this.buckets) {
             const bucket = this.buckets[id];
             if (!bucket.uploaded) {
-                bucket.upload(gl);
+                bucket.upload(context);
                 bucket.uploaded = true;
             }
         }
 
+        const gl = context.gl;
+
         if (this.iconAtlasImage) {
-            this.iconAtlasTexture = new Texture(gl, this.iconAtlasImage, gl.RGBA);
+            this.iconAtlasTexture = new Texture(context, this.iconAtlasImage, gl.RGBA);
             this.iconAtlasImage = null;
         }
 
         if (this.glyphAtlasImage) {
-            this.glyphAtlasTexture = new Texture(gl, this.glyphAtlasImage, gl.ALPHA);
+            this.glyphAtlasTexture = new Texture(context, this.glyphAtlasImage, gl.ALPHA);
             this.glyphAtlasImage = null;
         }
     }
@@ -295,7 +302,6 @@ class Tile {
             bearing: bearing,
             params: params,
             additionalRadius: additionalRadius,
-            tileSourceMaxZoom: this.sourceMaxZoom,
             collisionBoxArray: this.collisionBoxArray,
             sourceID: sourceID
         }, layers);
@@ -314,12 +320,12 @@ class Tile {
         if (!layer) return;
 
         const filter = featureFilter(params && params.filter);
-        const coord = { z: this.coord.z, x: this.coord.x, y: this.coord.y };
+        const coord = { z: this.tileID.overscaledZ, x: this.tileID.canonical.x, y: this.tileID.canonical.y };
 
         for (let i = 0; i < layer.length; i++) {
             const feature = layer.feature(i);
-            if (filter({zoom: this.coord.z}, feature)) {
-                const geojsonFeature = new GeoJSONFeature(feature, this.coord.z, this.coord.x, this.coord.y);
+            if (filter({zoom: this.tileID.overscaledZ}, feature)) {
+                const geojsonFeature = new GeoJSONFeature(feature, coord.z, coord.x, coord.y);
                 (geojsonFeature: any).tile = coord;
                 result.push(geojsonFeature);
             }
@@ -341,7 +347,7 @@ class Tile {
         }
     }
 
-    setMask(mask: Mask, gl: WebGLRenderingContext) {
+    setMask(mask: Mask, context: Context) {
 
         // don't redo buffer work if the mask is the same;
         if (util.deepEqual(this.mask, mask)) return;
@@ -363,7 +369,7 @@ class Tile {
 
         const maskArray = Object.keys(mask);
         for (let i = 0; i < maskArray.length; i++) {
-            const maskCoord = TileCoord.fromID(+maskArray[i]);
+            const maskCoord = mask[maskArray[i]];
             const vertexExtent = EXTENT >> maskCoord.z;
             const tlVertex = new Point(maskCoord.x * vertexExtent, maskCoord.y * vertexExtent);
             const brVertex = new Point(tlVertex.x + vertexExtent, tlVertex.y + vertexExtent);
@@ -386,8 +392,8 @@ class Tile {
             segment.primitiveLength += 2;
         }
 
-        this.maskedBoundsBuffer = new VertexBuffer(gl, maskedBoundsArray);
-        this.maskedIndexBuffer = new IndexBuffer(gl, indexArray);
+        this.maskedBoundsBuffer = context.createVertexBuffer(maskedBoundsArray);
+        this.maskedIndexBuffer = context.createIndexBuffer(indexArray);
     }
 
     hasData() {

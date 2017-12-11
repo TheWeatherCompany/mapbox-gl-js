@@ -4,17 +4,16 @@ import type {GlobalProperties} from "../style-spec/expression/index";
 
 const createVertexArrayType = require('./vertex_array_type');
 const packUint8ToFloat = require('../shaders/encode_attribute').packUint8ToFloat;
-const VertexBuffer = require('../gl/vertex_buffer');
 const Color = require('../style-spec/util/color');
-const {deserialize, serialize, register} = require('../util/web_worker_transfer');
+const {register} = require('../util/web_worker_transfer');
 
-import type StyleLayer from '../style/style_layer';
-import type {Serialized} from '../util/web_worker_transfer';
+import type Context from '../gl/context';
+import type {TypedStyleLayer} from '../style/style_layer/typed_style_layer';
 import type {ViewType, StructArray} from '../util/struct_array';
+import type VertexBuffer from '../gl/vertex_buffer';
 import type Program from '../render/program';
 import type {Feature, SourceExpression, CompositeExpression} from '../style-spec/expression';
 import type {PossiblyEvaluated, PossiblyEvaluatedPropertyValue} from '../style/properties';
-import type {Transferable} from '../types/transferable';
 
 export type LayoutAttribute = {
     name: string,
@@ -26,10 +25,6 @@ type PaintAttribute = {
     property: string,
     name?: string,
     useIntegerZoom?: boolean
-}
-
-export type PaintPropertyStatistics = {
-    [property: string]: { max: number }
 }
 
 export type ProgramInterface = {
@@ -74,7 +69,6 @@ function packColor(color: Color): [number, number] {
  * @private
  */
 interface Binder<T> {
-    property: string;
     statistics: { max: number };
 
     populatePaintArray(paintArray: StructArray,
@@ -84,7 +78,7 @@ interface Binder<T> {
 
     defines(): Array<string>;
 
-    setUniforms(gl: WebGLRenderingContext,
+    setUniforms(context: Context,
                 program: Program,
                 globals: GlobalProperties,
                 currentValue: PossiblyEvaluatedPropertyValue<T>): void;
@@ -94,14 +88,12 @@ class ConstantBinder<T> implements Binder<T> {
     value: T;
     name: string;
     type: string;
-    property: string;
     statistics: { max: number };
 
-    constructor(value: T, name: string, type: string, property: string) {
+    constructor(value: T, name: string, type: string) {
         this.value = value;
         this.name = name;
         this.type = type;
-        this.property = property;
         this.statistics = { max: -Infinity };
     }
 
@@ -111,11 +103,12 @@ class ConstantBinder<T> implements Binder<T> {
 
     populatePaintArray() {}
 
-    setUniforms(gl: WebGLRenderingContext,
+    setUniforms(context: Context,
                 program: Program,
                 globals: GlobalProperties,
                 currentValue: PossiblyEvaluatedPropertyValue<T>) {
         const value: any = currentValue.constantOr(this.value);
+        const gl = context.gl;
         if (this.type === 'color') {
             gl.uniform4f(program.uniforms[`u_${this.name}`], value.r, value.g, value.b, value.a);
         } else {
@@ -128,14 +121,12 @@ class SourceExpressionBinder<T> implements Binder<T> {
     expression: SourceExpression;
     name: string;
     type: string;
-    property: string;
     statistics: { max: number };
 
-    constructor(expression: SourceExpression, name: string, type: string, property: string) {
+    constructor(expression: SourceExpression, name: string, type: string) {
         this.expression = expression;
         this.name = name;
         this.type = type;
-        this.property = property;
         this.statistics = { max: -Infinity };
     }
 
@@ -166,8 +157,8 @@ class SourceExpressionBinder<T> implements Binder<T> {
         }
     }
 
-    setUniforms(gl: WebGLRenderingContext, program: Program) {
-        gl.uniform1f(program.uniforms[`a_${this.name}_t`], 0);
+    setUniforms(context: Context, program: Program) {
+        context.gl.uniform1f(program.uniforms[`a_${this.name}_t`], 0);
     }
 }
 
@@ -175,16 +166,14 @@ class CompositeExpressionBinder<T> implements Binder<T> {
     expression: CompositeExpression;
     name: string;
     type: string;
-    property: string;
     useIntegerZoom: boolean;
     zoom: number;
     statistics: { max: number };
 
-    constructor(expression: CompositeExpression, name: string, type: string, property: string, useIntegerZoom: boolean, zoom: number) {
+    constructor(expression: CompositeExpression, name: string, type: string, useIntegerZoom: boolean, zoom: number) {
         this.expression = expression;
         this.name = name;
         this.type = type;
-        this.property = property;
         this.useIntegerZoom = useIntegerZoom;
         this.zoom = zoom;
         this.statistics = { max: -Infinity };
@@ -230,15 +219,10 @@ class CompositeExpressionBinder<T> implements Binder<T> {
         }
     }
 
-    setUniforms(gl: WebGLRenderingContext, program: Program, globals: GlobalProperties) {
-        gl.uniform1f(program.uniforms[`a_${this.name}_t`], this.interpolationFactor(globals.zoom));
+    setUniforms(context: Context, program: Program, globals: GlobalProperties) {
+        context.gl.uniform1f(program.uniforms[`a_${this.name}_t`], this.interpolationFactor(globals.zoom));
     }
 }
-
-export type SerializedProgramConfiguration = {
-    array: Serialized,
-    statistics: PaintPropertyStatistics
-};
 
 /**
  * ProgramConfiguration contains the logic for binding style layer properties and tile
@@ -274,22 +258,22 @@ class ProgramConfiguration {
         this.cacheKey = '';
     }
 
-    static createDynamic(programInterface: ProgramInterface, layer: StyleLayer, zoom: number) {
+    static createDynamic<Layer: TypedStyleLayer>(programInterface: ProgramInterface, layer: Layer, zoom: number) {
         const self = new ProgramConfiguration();
         const attributes = [];
 
         for (const attribute of programInterface.paintAttributes || []) {
             const property = attribute.property;
             const name = attribute.name || property.replace(`${layer.type}-`, '').replace(/-/g, '_');
-            const value: PossiblyEvaluatedPropertyValue<any> = (layer.paint: any).get(property);
+            const value: PossiblyEvaluatedPropertyValue<any> = layer.paint.get(property);
             const type = value.property.specification.type;
             const useIntegerZoom = value.property.useIntegerZoom;
 
             if (value.value.kind === 'constant') {
-                self.binders[property] = new ConstantBinder(value.value, name, type, property);
+                self.binders[property] = new ConstantBinder(value.value, name, type);
                 self.cacheKey += `/u_${name}`;
             } else if (value.value.kind === 'source') {
-                self.binders[property] = new SourceExpressionBinder(value.value, name, type, property);
+                self.binders[property] = new SourceExpressionBinder(value.value, name, type);
                 self.cacheKey += `/a_${name}`;
                 attributes.push({
                     name: `a_${name}`,
@@ -297,7 +281,7 @@ class ProgramConfiguration {
                     components: type === 'color' ? 2 : 1
                 });
             } else {
-                self.binders[property] = new CompositeExpressionBinder(value.value, name, type, property, useIntegerZoom, zoom);
+                self.binders[property] = new CompositeExpressionBinder(value.value, name, type, useIntegerZoom, zoom);
                 self.cacheKey += `/z_${name}`;
                 attributes.push({
                     name: `a_${name}`,
@@ -316,10 +300,10 @@ class ProgramConfiguration {
     static forBackgroundColor(color: Color, opacity: number) {
         const self = new ProgramConfiguration();
 
-        self.binders['background-color'] = new ConstantBinder(color, 'color', 'color', 'background-color');
+        self.binders['background-color'] = new ConstantBinder(color, 'color', 'color');
         self.cacheKey += `/u_color`;
 
-        self.binders['background-opacity'] = new ConstantBinder(opacity, 'opacity', 'number', 'background-opacity');
+        self.binders['background-opacity'] = new ConstantBinder(opacity, 'opacity', 'number');
         self.cacheKey += `/u_opacity`;
 
         return self;
@@ -328,7 +312,7 @@ class ProgramConfiguration {
     static forBackgroundPattern(opacity: number) {
         const self = new ProgramConfiguration();
 
-        self.binders['background-opacity'] = new ConstantBinder(opacity, 'opacity', 'number', 'background-opacity');
+        self.binders['background-opacity'] = new ConstantBinder(opacity, 'opacity', 'number');
         self.cacheKey += `/u_opacity`;
 
         return self;
@@ -362,16 +346,16 @@ class ProgramConfiguration {
         return result;
     }
 
-    setUniforms<Properties: Object>(gl: WebGLRenderingContext, program: Program, properties: PossiblyEvaluated<Properties>, globals: GlobalProperties) {
+    setUniforms<Properties: Object>(context: Context, program: Program, properties: PossiblyEvaluated<Properties>, globals: GlobalProperties) {
         for (const property in this.binders) {
             const binder = this.binders[property];
-            binder.setUniforms(gl, program, globals, properties.get(binder.property));
+            binder.setUniforms(context, program, globals, properties.get(property));
         }
     }
 
-    upload(gl: WebGLRenderingContext) {
+    upload(context: Context) {
         if (this.paintVertexArray) {
-            this.paintVertexBuffer = new VertexBuffer(gl, this.paintVertexArray);
+            this.paintVertexBuffer = context.createVertexBuffer(this.paintVertexArray);
         }
     }
 
@@ -382,20 +366,15 @@ class ProgramConfiguration {
     }
 }
 
-class ProgramConfigurationSet {
+class ProgramConfigurationSet<Layer: TypedStyleLayer> {
     programConfigurations: {[string]: ProgramConfiguration};
 
-    constructor(programInterface: ProgramInterface, layers: $ReadOnlyArray<StyleLayer>, zoom: number, arrays?: Serialized) {
-        if (arrays) {
-            // remove this path once Bucket classes no longer use it.
-            this.programConfigurations = (deserialize(arrays): any).programConfigurations;
-        } else {
-            this.programConfigurations = {};
-            for (const layer of layers) {
-                const programConfiguration = ProgramConfiguration.createDynamic(programInterface, layer, zoom);
-                programConfiguration.paintVertexArray = new programConfiguration.PaintVertexArray();
-                this.programConfigurations[layer.id] = programConfiguration;
-            }
+    constructor(programInterface: ProgramInterface, layers: $ReadOnlyArray<Layer>, zoom: number) {
+        this.programConfigurations = {};
+        for (const layer of layers) {
+            const programConfiguration = ProgramConfiguration.createDynamic(programInterface, layer, zoom);
+            programConfiguration.paintVertexArray = new programConfiguration.PaintVertexArray();
+            this.programConfigurations[layer.id] = programConfiguration;
         }
     }
 
@@ -405,18 +384,13 @@ class ProgramConfigurationSet {
         }
     }
 
-    // remove once Bucket no longer needs this
-    serialize(transferables?: Array<Transferable>) {
-        return serialize(this, transferables);
-    }
-
     get(layerId: string) {
         return this.programConfigurations[layerId];
     }
 
-    upload(gl: WebGLRenderingContext) {
+    upload(context: Context) {
         for (const layerId in this.programConfigurations) {
-            this.programConfigurations[layerId].upload(gl);
+            this.programConfigurations[layerId].upload(context);
         }
     }
 
@@ -427,11 +401,11 @@ class ProgramConfigurationSet {
     }
 }
 
-register(ConstantBinder);
-register(SourceExpressionBinder);
-register(CompositeExpressionBinder);
-register(ProgramConfiguration, {omit: ['PaintVertexArray']});
-register(ProgramConfigurationSet);
+register('ConstantBinder', ConstantBinder);
+register('SourceExpressionBinder', SourceExpressionBinder);
+register('CompositeExpressionBinder', CompositeExpressionBinder);
+register('ProgramConfiguration', ProgramConfiguration, {omit: ['PaintVertexArray']});
+register('ProgramConfigurationSet', ProgramConfigurationSet);
 
 module.exports = {
     ProgramConfiguration,

@@ -1,8 +1,6 @@
 // @flow
 
 const {SegmentVector} = require('../segment');
-const VertexBuffer = require('../../gl/vertex_buffer');
-const IndexBuffer = require('../../gl/index_buffer');
 const {ProgramConfigurationSet} = require('../program_configuration');
 const createVertexArrayType = require('../vertex_array_type');
 const {TriangleIndexArray} = require('../index_array_type');
@@ -17,8 +15,12 @@ import type {
     PopulateParameters
 } from '../bucket';
 import type {ProgramInterface} from '../program_configuration';
-import type StyleLayer from '../../style/style_layer';
+import type CircleStyleLayer from '../../style/style_layer/circle_style_layer';
+import type HeatmapStyleLayer from '../../style/style_layer/heatmap_style_layer';
 import type {StructArray} from '../../util/struct_array';
+import type Context from '../../gl/context';
+import type IndexBuffer from '../../gl/index_buffer';
+import type VertexBuffer from '../../gl/vertex_buffer';
 import type Point from '@mapbox/point-geometry';
 
 const circleInterface = {
@@ -53,14 +55,13 @@ const LayoutVertexArrayType = createVertexArrayType(circleInterface.layoutAttrib
  * vector that is where it points.
  * @private
  */
-class CircleBucket implements Bucket {
+class CircleBucket<Layer: CircleStyleLayer | HeatmapStyleLayer> implements Bucket {
     static programInterface: ProgramInterface;
-
     index: number;
     zoom: number;
     overscaling: number;
     layerIds: Array<string>;
-    layers: Array<StyleLayer>;
+    layers: Array<Layer>;
 
     layoutVertexArray: StructArray;
     layoutVertexBuffer: VertexBuffer;
@@ -68,11 +69,11 @@ class CircleBucket implements Bucket {
     indexArray: StructArray;
     indexBuffer: IndexBuffer;
 
-    programConfigurations: ProgramConfigurationSet;
+    programConfigurations: ProgramConfigurationSet<Layer>;
     segments: SegmentVector;
     uploaded: boolean;
 
-    constructor(options: BucketParameters) {
+    constructor(options: BucketParameters<Layer>) {
         this.zoom = options.zoom;
         this.overscaling = options.overscaling;
         this.layers = options.layers;
@@ -100,10 +101,10 @@ class CircleBucket implements Bucket {
         return this.layoutVertexArray.length === 0;
     }
 
-    upload(gl: WebGLRenderingContext) {
-        this.layoutVertexBuffer = new VertexBuffer(gl, this.layoutVertexArray);
-        this.indexBuffer = new IndexBuffer(gl, this.indexArray);
-        this.programConfigurations.upload(gl);
+    upload(context: Context) {
+        this.layoutVertexBuffer = context.createVertexBuffer(this.layoutVertexArray);
+        this.indexBuffer = context.createIndexBuffer(this.indexArray);
+        this.programConfigurations.upload(context);
     }
 
     destroy() {
@@ -152,7 +153,7 @@ class CircleBucket implements Bucket {
     }
 }
 
-register(CircleBucket, {omit: ['layers']});
+register('CircleBucket', CircleBucket, {omit: ['layers']});
 
 CircleBucket.programInterface = circleInterface;
 
