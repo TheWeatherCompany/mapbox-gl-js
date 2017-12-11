@@ -21,6 +21,9 @@ const config = require('./util/config');
 const rtlTextPlugin = require('./source/rtl_text_plugin');
 const layerGroups = require('./../shim/mapbox-gl-layer-groups');
 
+// leaflet shim
+const L = window.L || { TileLayer: {} };
+
 const mapboxgl = module.exports = window.mapboxgl = {
     version,
     supported,
