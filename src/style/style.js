@@ -90,8 +90,7 @@ class Style extends Evented {
     _updatedSources: {[string]: 'clear' | 'reload'};
     _updatedLayers: {[string]: true};
     _removedLayers: {[string]: StyleLayer};
-    _updatedPaintProps: {[layer: string]: {[class: string]: true}};
-    _updatedAllPaintProps: boolean;
+    _updatedPaintProps: {[layer: string]: true};
     _layerOrderChanged: boolean;
 
     collisionIndex: CollisionIndex;
@@ -186,8 +185,6 @@ class Style extends Evented {
         this._loaded = true;
         this.stylesheet = json;
 
-        this.updatePaintProperties();
-
         for (const id in json.sources) {
             this.addSource(id, json.sources[id], {validate: false});
         }
@@ -274,25 +271,6 @@ class Style extends Evented {
         return ids.map((id) => this._layers[id].serialize());
     }
 
-    _applyPaintPropertyUpdates(options: ?{transition?: boolean}) {
-        if (!this._loaded) return;
-
-        options = options || {transition: true};
-
-        const transition = util.extend({
-            duration: 300,
-            delay: 0
-        }, this.stylesheet.transition);
-
-        const layers = this._updatedAllPaintProps ? this._layers : this._updatedPaintProps;
-
-        for (const id in layers) {
-            this._layers[id].updatePaintTransitions(options, transition);
-        }
-
-        this.light.updateTransitions(options, transition);
-    }
-
     _recalculate(z: number) {
         if (!this._loaded) return;
 
@@ -301,7 +279,7 @@ class Style extends Evented {
 
         const parameters = {
             zoom: z,
-            now: Date.now(),
+            now: browser.now(),
             defaultFadeDuration: 300,
             zoomHistory: this._updateZoomHistory(z)
         };
@@ -354,11 +332,11 @@ class Style extends Evented {
         // and if yes, record it with the time. Used for transitioning patterns.
         if (Math.floor(zh.lastZoom) < Math.floor(z)) {
             zh.lastIntegerZoom = Math.floor(z);
-            zh.lastIntegerZoomTime = Date.now();
+            zh.lastIntegerZoomTime = browser.now();
 
         } else if (Math.floor(zh.lastZoom) > Math.floor(z)) {
             zh.lastIntegerZoom = Math.floor(z + 1);
-            zh.lastIntegerZoomTime = Date.now();
+            zh.lastIntegerZoomTime = browser.now();
         }
 
         zh.lastZoom = z;
@@ -374,8 +352,8 @@ class Style extends Evented {
     /**
      * Apply queued style updates in a batch
      */
-    update(options: ?{transition?: boolean}) {
-        if (!this._changed) return;
+    update() {
+        if (!this._changed || !this._loaded) return;
 
         const updatedIds = Object.keys(this._updatedLayers);
         const removedIds = Object.keys(this._removedLayers);
@@ -393,7 +371,17 @@ class Style extends Evented {
             }
         }
 
-        this._applyPaintPropertyUpdates(options);
+        const parameters = {
+            now: browser.now(),
+            transition: util.extend({ duration: 300, delay: 0 }, this.stylesheet.transition)
+        };
+
+        for (const id in this._updatedPaintProps) {
+            this._layers[id].updateTransitions(parameters);
+        }
+
+        this.light.updateTransitions(parameters);
+
         this._resetUpdates();
 
         this.fire('data', {dataType: 'style'});
@@ -413,9 +401,7 @@ class Style extends Evented {
         this._removedLayers = {};
 
         this._updatedSources = {};
-
         this._updatedPaintProps = {};
-        this._updatedAllPaintProps = false;
     }
 
     /**
@@ -613,11 +599,7 @@ class Style extends Evented {
                 this.sourceCaches[layer.source].pause();
             }
         }
-        // const preventUpdate = options.preventUpdate === undefined ? false : options.preventUpdate;
-        // if (!preventUpdate) {
-            this._updateLayer(layer);
-        // }
-        this.updatePaintProperties(id);
+        this._updateLayer(layer);
     }
 
     /**
@@ -814,7 +796,8 @@ class Style extends Evented {
             this._updateLayer(layer);
         }
 
-        this.updatePaintProperties(layerId, name);
+        this._changed = true;
+        this._updatedPaintProps[layerId] = true;
     }
 
     getPaintProperty(layer: string, name: string) {
@@ -824,17 +807,6 @@ class Style extends Evented {
     getTransition() {
         return util.extend({ duration: 300, delay: 0 },
             this.stylesheet && this.stylesheet.transition);
-    }
-
-    updatePaintProperties(layerId?: string, paintName?: string) {
-        this._changed = true;
-        if (!layerId) {
-            this._updatedAllPaintProps = true;
-        } else {
-            const props = this._updatedPaintProps;
-            if (!props[layerId]) props[layerId] = {};
-            props[layerId][paintName || 'all'] = true;
-        }
     }
 
     serialize() {
@@ -941,7 +913,7 @@ class Style extends Evented {
         return this.light.getLight();
     }
 
-    setLight(lightOptions: LightSpecification, options: ?{transition?: boolean}) {
+    setLight(lightOptions: LightSpecification) {
         this._checkLoaded();
 
         const light = this.light.getLight();
@@ -954,15 +926,13 @@ class Style extends Evented {
         }
         if (!_update) return;
 
-        options = options || {transition: true};
-
         const transition = util.extend({
             duration: 300,
             delay: 0
         }, this.stylesheet.transition);
 
         this.light.setLight(lightOptions);
-        this.light.updateTransitions(options, transition);
+        this.light.updateTransitions(transition);
     }
 
     _validate(validate: ({}) => void, key: string, value: any, props: any, options?: {validate?: boolean}) {
