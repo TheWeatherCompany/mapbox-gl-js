@@ -27,14 +27,14 @@ const Case = require('./case');
 const Step = require('./step');
 const Interpolate = require('./interpolate');
 const Coalesce = require('./coalesce');
-const Equals = require('./equals');
+const {Equals, NotEquals} = require('./equals');
 
-import type { Expression } from '../expression';
+import type { ExpressionRegistry } from '../expression';
 
-const expressions: { [string]: Class<Expression> } = {
+const expressions: ExpressionRegistry = {
     // special forms
-    '!=': Equals,
     '==': Equals,
+    '!=': NotEquals,
     'array': ArrayAssertion,
     'at': At,
     'boolean': Assertion,
@@ -57,10 +57,10 @@ function rgba(ctx, [r, g, b, a]) {
     r = r.evaluate(ctx);
     g = g.evaluate(ctx);
     b = b.evaluate(ctx);
-    a = a && a.evaluate(ctx);
-    const error = validateRGBA(r, g, b, a);
+    const alpha = a ? a.evaluate(ctx) : 1;
+    const error = validateRGBA(r, g, b, alpha);
     if (error) throw new RuntimeError(error);
-    return new Color(r / 255, g / 255, b / 255, a);
+    return new Color(r / 255 * alpha, g / 255 * alpha, b / 255 * alpha, alpha);
 }
 
 function has(key, obj) {
@@ -80,6 +80,20 @@ function lt(ctx, [a, b]) { return a.evaluate(ctx) < b.evaluate(ctx); }
 function gt(ctx, [a, b]) { return a.evaluate(ctx) > b.evaluate(ctx); }
 function lteq(ctx, [a, b]) { return a.evaluate(ctx) <= b.evaluate(ctx); }
 function gteq(ctx, [a, b]) { return a.evaluate(ctx) >= b.evaluate(ctx); }
+
+function binarySearch(v, a, i, j) {
+    while (i <= j) {
+        const m = (i + j) >> 1;
+        if (a[m] === v)
+            return true;
+        if (a[m] > v)
+            j = m - 1;
+        else
+            i = m + 1;
+    }
+    return false;
+}
+
 
 CompoundExpression.register(expressions, {
     'error': [
@@ -101,7 +115,7 @@ CompoundExpression.register(expressions, {
             if (v === null || type === 'string' || type === 'number' || type === 'boolean') {
                 return String(v);
             } else if (v instanceof Color) {
-                return `rgba(${v.r * 255},${v.g * 255},${v.b * 255},${v.a})`;
+                return v.toString();
             } else {
                 return JSON.stringify(v);
             }
@@ -117,7 +131,7 @@ CompoundExpression.register(expressions, {
         [ColorType],
         (ctx, [v]) => {
             const {r, g, b, a} = v.evaluate(ctx);
-            return [255 * r, 255 * g, 255 * b, a];
+            return [255 * r / a, 255 * g / a, 255 * b / a, a];
         }
     ],
     'rgb': [
@@ -314,6 +328,125 @@ CompoundExpression.register(expressions, {
         NumberType,
         varargs(NumberType),
         (ctx, args) => Math.max(...args.map(arg => arg.evaluate(ctx)))
+    ],
+    'filter-==': [
+        BooleanType,
+        [StringType, ValueType],
+        (ctx, [k, v]) => ctx.properties()[(k: any).value] === (v: any).value
+    ],
+    'filter-id-==': [
+        BooleanType,
+        [ValueType],
+        (ctx, [v]) => ctx.id() === (v: any).value
+    ],
+    'filter-type-==': [
+        BooleanType,
+        [StringType],
+        (ctx, [v]) => ctx.geometryType() === (v: any).value
+    ],
+    'filter-<': [
+        BooleanType,
+        [StringType, ValueType],
+        (ctx, [k, v]) => {
+            const a = ctx.properties()[(k: any).value];
+            const b = (v: any).value;
+            return typeof a === typeof b && a < b;
+        }
+    ],
+    'filter-id-<': [
+        BooleanType,
+        [ValueType],
+        (ctx, [v]) => {
+            const a = ctx.id();
+            const b = (v: any).value;
+            return typeof a === typeof b && a < b;
+        }
+    ],
+    'filter->': [
+        BooleanType,
+        [StringType, ValueType],
+        (ctx, [k, v]) => {
+            const a = ctx.properties()[(k: any).value];
+            const b = (v: any).value;
+            return typeof a === typeof b && a > b;
+        }
+    ],
+    'filter-id->': [
+        BooleanType,
+        [ValueType],
+        (ctx, [v]) => {
+            const a = ctx.id();
+            const b = (v: any).value;
+            return typeof a === typeof b && a > b;
+        }
+    ],
+    'filter-<=': [
+        BooleanType,
+        [StringType, ValueType],
+        (ctx, [k, v]) => {
+            const a = ctx.properties()[(k: any).value];
+            const b = (v: any).value;
+            return typeof a === typeof b && a <= b;
+        }
+    ],
+    'filter-id-<=': [
+        BooleanType,
+        [ValueType],
+        (ctx, [v]) => {
+            const a = ctx.id();
+            const b = (v: any).value;
+            return typeof a === typeof b && a <= b;
+        }
+    ],
+    'filter->=': [
+        BooleanType,
+        [StringType, ValueType],
+        (ctx, [k, v]) => {
+            const a = ctx.properties()[(k: any).value];
+            const b = (v: any).value;
+            return typeof a === typeof b && a >= b;
+        }
+    ],
+    'filter-id->=': [
+        BooleanType,
+        [ValueType],
+        (ctx, [v]) => {
+            const a = ctx.id();
+            const b = (v: any).value;
+            return typeof a === typeof b && a >= b;
+        }
+    ],
+    'filter-has': [
+        BooleanType,
+        [ValueType],
+        (ctx, [k]) => (k: any).value in ctx.properties()
+    ],
+    'filter-has-id': [
+        BooleanType,
+        [],
+        (ctx) => ctx.id() !== null
+    ],
+    'filter-type-in': [
+        BooleanType,
+        [array(StringType)],
+        (ctx, [v]) => (v: any).value.indexOf(ctx.geometryType()) >= 0
+    ],
+    'filter-id-in': [
+        BooleanType,
+        [array(ValueType)],
+        (ctx, [v]) => (v: any).value.indexOf(ctx.id()) >= 0
+    ],
+    'filter-in-small': [
+        BooleanType,
+        [StringType, array(ValueType)],
+        // assumes v is an array literal
+        (ctx, [k, v]) => (v: any).value.indexOf(ctx.properties()[(k: any).value]) >= 0
+    ],
+    'filter-in-large': [
+        BooleanType,
+        [StringType, array(ValueType)],
+        // assumes v is a array literal with values sorted in ascending order and of a single type
+        (ctx, [k, v]) => binarySearch(ctx.properties()[(k: any).value], (v: any).value, 0, (v: any).value.length - 1)
     ],
     '>': {
         type: BooleanType,

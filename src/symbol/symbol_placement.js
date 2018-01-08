@@ -8,8 +8,7 @@ const mat4 = require('@mapbox/gl-matrix').mat4;
 import type SymbolBucket, {SymbolInstance} from '../data/bucket/symbol_bucket';
 import type OpacityState from './opacity_state';
 import type CollisionIndex from './collision_index';
-import type CollisionBoxArray from './collision_box';
-import type {StructArray} from '../util/struct_array';
+import type {CollisionBoxArray, CollisionVertexArray} from '../data/array_types';
 
 module.exports = {
     updateOpacities: updateOpacities,
@@ -82,10 +81,10 @@ function updateOpacities(bucket: SymbolBucket, collisionFadeTimes: any, instant:
             const nowHidden = opacityState.opacity === 0 && opacityState.targetOpacity === 0;
             if (initialHidden !== nowHidden) {
                 for (const placedTextSymbolIndex of symbolInstance.placedTextSymbolIndices) {
-                    const placedSymbol = (bucket.placedGlyphArray.get(placedTextSymbolIndex): any);
+                    const placedSymbol = bucket.text.placedSymbolArray.get(placedTextSymbolIndex);
                     // If this label is completely faded, mark it so that we don't have to calculate
                     // its position at render time
-                    placedSymbol.hidden = nowHidden;
+                    placedSymbol.hidden = (nowHidden: any);
                 }
             }
 
@@ -120,14 +119,14 @@ function updateOpacities(bucket: SymbolBucket, collisionFadeTimes: any, instant:
 }
 
 
-function updateCollisionBox(collisionVertexArray: StructArray, placed: boolean) {
+function updateCollisionBox(collisionVertexArray: CollisionVertexArray, placed: boolean) {
     collisionVertexArray.emplaceBack(placed ? 1 : 0, 0);
     collisionVertexArray.emplaceBack(placed ? 1 : 0, 0);
     collisionVertexArray.emplaceBack(placed ? 1 : 0, 0);
     collisionVertexArray.emplaceBack(placed ? 1 : 0, 0);
 }
 
-function updateCollisionCircles(collisionVertexArray: StructArray, collisionCircles: Array<any>, placed: boolean, isDuplicate: boolean) {
+function updateCollisionCircles(collisionVertexArray: CollisionVertexArray, collisionCircles: Array<any>, placed: boolean, isDuplicate: boolean) {
     for (let k = 0; k < collisionCircles.length; k += 5) {
         const notUsed = isDuplicate || (collisionCircles[k + 4] === 0);
         collisionVertexArray.emplaceBack(placed ? 1 : 0, notUsed ? 1 : 0);
@@ -197,7 +196,7 @@ function performSymbolPlacement(bucket: SymbolBucket, collisionIndex: CollisionI
 
             const textCircles = symbolInstance.collisionArrays.textCircles;
             if (textCircles) {
-                const placedSymbol = (bucket.placedGlyphArray.get(symbolInstance.placedTextSymbolIndices[0]): any);
+                const placedSymbol = bucket.text.placedSymbolArray.get(symbolInstance.placedTextSymbolIndices[0]);
                 const fontSize = symbolSize.evaluateSizeForFeature(bucket.textSizeData, partiallyEvaluatedTextSize, placedSymbol);
                 placedGlyphCircles = collisionIndex.placeCollisionCircles(textCircles,
                     layout.get('text-allow-overlap'),
