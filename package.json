@@ -1,5 +1,5 @@
 {
-  "name": "mapbox-gl",
+  "name": "@twc/mosaic-mapbox-gl",
   "description": "A WebGL interactive maps library",
   "version": "0.42.2",
   "main": "dist/mapbox-gl.js",
@@ -79,7 +79,7 @@
     "minifyify": "^7.3.5",
     "mock-geolocation": "^1.0.11",
     "npm-run-all": "^4.0.1",
-    "nyc": "^10.1.2",
+    "nyc": "^10.3.2",
     "object.entries": "^1.0.4",
     "pngjs": "^3.0.0",
     "prismjs": "^1.8.1",
@@ -153,8 +153,7 @@
     "test-expressions": "node test/expression.test.js",
     "test-flow": "node build/generate-flow-typed-style-spec && flow .",
     "test-flow-cov": "flow-coverage-report -i 'src/**/*.js' -t html",
-    "test-cov": "nyc --require=flow-remove-types/register --reporter=text-summary --reporter=lcov --cache run-s test-unit test-expressions test-query test-render",
-    "prepublish": "in-publish && run-s build-dev build-min || not-in-publish"
+    "test-cov": "nyc --require=flow-remove-types/register --reporter=text-summary --reporter=lcov --cache run-s test-unit test-expressions test-query test-render"
   },
   "files": [
     "build/",

@@ -1018,8 +1018,8 @@ class Map extends Camera {
      * @param {string} id The ID of the source to remove.
      * @returns {Map} `this`
      */
-    removeSource(id: string) {
-        this.style.removeSource(id);
+    removeSource(id: string, force: boolean) {
+        this.style.removeSource(id, force);
         this._update(true);
         return this;
     }
