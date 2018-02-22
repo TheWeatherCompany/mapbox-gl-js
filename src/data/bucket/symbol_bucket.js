@@ -31,7 +31,6 @@ const loadGeometry = require('../load_geometry');
 const vectorTileFeatureTypes = require('@mapbox/vector-tile').VectorTileFeature.types;
 const verticalizePunctuation = require('../../util/verticalize_punctuation');
 const Anchor = require('../../symbol/anchor');
-const OpacityState = require('../../symbol/opacity_state');
 const {getSizeData} = require('../../symbol/symbol_size');
 const {register} = require('../../util/web_worker_transfer');
 
@@ -66,6 +65,17 @@ export type CollisionArrays = {
     textCircles?: Array<number>;
 };
 
+export type SymbolFeature = {|
+    text: string | void,
+    icon: string | void,
+    index: number,
+    sourceLayerIndex: number,
+    geometry: Array<Array<Point>>,
+    properties: Object,
+    type: 'Point' | 'LineString' | 'Polygon',
+    id?: any
+|};
+
 export type SymbolInstance = {
     key: string,
     textBoxStartIndex: number,
@@ -77,7 +87,7 @@ export type SymbolInstance = {
     anchor: Anchor,
     line: Array<Point>,
     featureIndex: number,
-    feature: ExpressionFeature,
+    feature: SymbolFeature,
     textCollisionFeature?: {boxStartIndex: number, boxEndIndex: number},
     iconCollisionFeature?: {boxStartIndex: number, boxEndIndex: number},
     placedTextSymbolIndices: Array<number>;
@@ -86,24 +96,12 @@ export type SymbolInstance = {
     numIconVertices: number;
     // Populated/modified on foreground during placement
     isDuplicate: boolean;
-    textOpacityState: OpacityState;
-    iconOpacityState: OpacityState;
+    crossTileID: number;
     collisionArrays?: CollisionArrays;
     placedText?: boolean;
     placedIcon?: boolean;
     hidden?: boolean;
 };
-
-export type SymbolFeature = {|
-    text: string | void,
-    icon: string | void,
-    index: number,
-    sourceLayerIndex: number,
-    geometry: Array<Array<Point>>,
-    properties: Object,
-    type: 'Point' | 'LineString' | 'Polygon',
-    id?: any
-|};
 
 // Opacity arrays are frequently updated but don't contain a lot of information, so we pack them
 // tight. Each Uint32 is actually four duplicate Uint8s for the four corners of a glyph
@@ -279,6 +277,8 @@ class SymbolBucket implements Bucket {
     index: number;
     sdfIcons: boolean;
     iconsNeedLinear: boolean;
+    bucketInstanceId: number;
+    justReloaded: boolean;
 
     textSizeData: SizeData;
     iconSizeData: SizeData;
@@ -614,6 +614,22 @@ class SymbolBucket implements Bucket {
             }
         }
         return collisionArrays;
+    }
+
+    hasTextData() {
+        return this.text.segments.get().length > 0;
+    }
+
+    hasIconData() {
+        return this.icon.segments.get().length > 0;
+    }
+
+    hasCollisionBoxData() {
+        return this.collisionBox.segments.get().length > 0;
+    }
+
+    hasCollisionCircleData() {
+        return this.collisionCircle.segments.get().length > 0;
     }
 
     sortFeatures(angle: number) {
