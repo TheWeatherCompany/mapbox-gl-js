@@ -1,15 +1,15 @@
 // @flow
 
-const ajax = require('../util/ajax');
-const perf = require('../util/performance');
-const rewind = require('geojson-rewind');
-const GeoJSONWrapper = require('./geojson_wrapper');
-const vtpbf = require('vt-pbf');
-const supercluster = require('supercluster');
-const geojsonvt = require('geojson-vt');
-const assert = require('assert');
+import { getJSON } from '../util/ajax';
 
-const VectorTileWorkerSource = require('./vector_tile_worker_source');
+import perf from '../util/performance';
+import rewind from 'geojson-rewind';
+import GeoJSONWrapper from './geojson_wrapper';
+import vtpbf from 'vt-pbf';
+import supercluster from 'supercluster';
+import geojsonvt from 'geojson-vt';
+import assert from 'assert';
+import VectorTileWorkerSource from './vector_tile_worker_source';
 
 import type {
     WorkerTileParameters,
@@ -29,6 +29,7 @@ export type LoadGeoJSONParameters = {
     request?: RequestParameters,
     data?: string,
     source: string,
+    cluster: boolean,
     superclusterOptions?: Object,
     geojsonVtOptions?: Object
 };
@@ -52,7 +53,7 @@ function loadGeoJSONTile(params: WorkerTileParameters, callback: LoadVectorDataC
 
     const geojsonWrapper = new GeoJSONWrapper(geoJSONTile.features);
 
-    // Encode the geojson-vt tile into binary vector tile form form.  This
+    // Encode the geojson-vt tile into binary vector tile form.  This
     // is a convenience that allows `FeatureIndex` to operate the same way
     // across `VectorTileSource` and `GeoJSONSource` data.
     let pbf = vtpbf(geojsonWrapper);
@@ -250,7 +251,7 @@ class GeoJSONWorkerSource extends VectorTileWorkerSource {
         // ie: /foo/bar.json or http://example.com/bar.json
         // but not ../foo/bar.json
         if (params.request) {
-            ajax.getJSON(params.request, callback);
+            getJSON(params.request, callback);
         } else if (typeof params.data === 'string') {
             try {
                 return callback(null, JSON.parse(params.data));
@@ -271,4 +272,4 @@ class GeoJSONWorkerSource extends VectorTileWorkerSource {
     }
 }
 
-module.exports = GeoJSONWorkerSource;
+export default GeoJSONWorkerSource;

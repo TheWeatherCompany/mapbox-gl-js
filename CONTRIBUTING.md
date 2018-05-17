@@ -86,9 +86,10 @@ A standalone build allows you to turn the contents of this repository into `mapb
 To create a standalone build, run
 ```bash
 yarn run build-min
+yarn run build-css
 ```
 
-Once that command finishes, you will have a standalone build at `dist/mapbox-gl.js` and `dist/mapbox-gl.css`
+Once those commands finish, you will have a standalone build at `dist/mapbox-gl.js` and `dist/mapbox-gl.css`
 
 ## Writing & Running Tests
 
@@ -112,11 +113,17 @@ See [`bench/README.md`](https://github.com/mapbox/mapbox-gl-js/blob/master/bench
   * Default parameters
   * Rest parameters
   * Destructuring
+  * Modules
 * The following ES6 features are not to be used, in order to maintain support for IE 11 and older mobile browsers. This may change in the future.
   * Spread (`...`) operator (because it requires Object.assign)
   * Iterators and generators
   * "Library" features such as `Map`, `Set`, `array.find`, etc.
-  * Modules
+
+The conventions for module exports are:
+
+* No exported "namespace objects" -- modules should export either classes or functions, with an occasional exception as needed for stubbing.
+* If a module exports something with the same name as the file name (modulo case), it should be the default export.
+* Anything else should be a named export.
 
 ### Version Control Conventions
 

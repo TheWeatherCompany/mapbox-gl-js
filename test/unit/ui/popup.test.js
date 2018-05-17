@@ -1,12 +1,10 @@
-'use strict';
-
-const test = require('mapbox-gl-js-test').test;
-const window = require('../../../src/util/window');
-const Map = require('../../../src/ui/map');
-const Popup = require('../../../src/ui/popup');
-const LngLat = require('../../../src/geo/lng_lat');
-const Point = require('@mapbox/point-geometry');
-const simulateClick = require('mapbox-gl-js-test/simulate_interaction').click;
+import { test } from 'mapbox-gl-js-test';
+import window from '../../../src/util/window';
+import Map from '../../../src/ui/map';
+import Popup from '../../../src/ui/popup';
+import LngLat from '../../../src/geo/lng_lat';
+import Point from '@mapbox/point-geometry';
+import { click as simulateClick } from 'mapbox-gl-js-test/simulate_interaction';
 
 const containerWidth = 512;
 const containerHeight = 512;
@@ -94,6 +92,21 @@ test('Popup fires close event when removed', (t) => {
         .remove();
 
     t.ok(onClose.called);
+    t.end();
+});
+
+
+test('Popup fires open event when added', (t) => {
+    const map = createMap();
+    const onOpen = t.spy();
+
+    new Popup()
+        .setText("Test")
+        .setLngLat([0, 0])
+        .on('open', onOpen)
+        .addTo(map);
+
+    t.ok(onOpen.called);
     t.end();
 });
 
@@ -431,5 +444,18 @@ test('Popup#remove is idempotent (#2395)', (t) => {
         .remove();
 
     t.equal(map.getContainer().querySelectorAll('.mapboxgl-popup').length, 0);
+    t.end();
+});
+
+test('Popup adds classes from className option', (t) => {
+    const map = createMap();
+    new Popup({className: 'some classes'})
+        .setText("Test")
+        .setLngLat([0, 0])
+        .addTo(map);
+
+    const popupContainer = map.getContainer().querySelector('.mapboxgl-popup');
+    t.ok(popupContainer.classList.contains('some'));
+    t.ok(popupContainer.classList.contains('classes'));
     t.end();
 });

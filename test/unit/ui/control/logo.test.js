@@ -1,8 +1,7 @@
-'use strict';
-const test = require('mapbox-gl-js-test').test;
-const VectorTileSource = require('../../../../src/source/vector_tile_source');
-const window = require('../../../../src/util/window');
-const Map = require('../../../../src/ui/map');
+import { test } from 'mapbox-gl-js-test';
+import VectorTileSource from '../../../../src/source/vector_tile_source';
+import window from '../../../../src/util/window';
+import Map from '../../../../src/ui/map';
 
 function createMap(logoPosition, logoRequired) {
     const container = window.document.createElement('div');
@@ -85,4 +84,19 @@ test('LogoControl is not added more than once', (t)=>{
             }
         });
     });
+});
+
+test('LogoControl appears in compact mode if container is less then 250 pixel wide', (t) => {
+    const map = createMap();
+    const container = map.getContainer();
+
+    Object.defineProperty(map.getCanvasContainer(), 'offsetWidth', {value: 255, configurable: true});
+    map.resize();
+    t.equal(container.querySelectorAll('.mapboxgl-ctrl-logo:not(.mapboxgl-compact)').length, 1);
+
+    Object.defineProperty(map.getCanvasContainer(), 'offsetWidth', {value: 245, configurable: true});
+    map.resize();
+    t.equal(container.querySelectorAll('.mapboxgl-ctrl-logo.mapboxgl-compact').length, 1);
+
+    t.end();
 });
