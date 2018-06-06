@@ -148,6 +148,9 @@ class ImageSource extends Evented implements Source {
         const centerCoord = this.centerCoord = getCoordinatesCenter(cornerZ0Coords);
         // `column` and `row` may be fractional; round them down so that they
         // represent integer tile coordinates
+        if (centerCoord.column < 0) {
+            centerCoord.column = 0;
+        }
         centerCoord.column = Math.floor(centerCoord.column);
         centerCoord.row = Math.floor(centerCoord.row);
         this.tileID = new CanonicalTileID(centerCoord.zoom, centerCoord.column, centerCoord.row);
