@@ -149,7 +149,7 @@ class SourceExpressionBinder<T> implements Binder<T> {
         const start = paintArray.length;
         paintArray.reserve(newLength);
 
-        const value = this.expression.evaluate(new EvaluationParameters(0), feature);
+        const value = this.expression.evaluate(new EvaluationParameters(0), feature, {});
 
         if (this.type === 'color') {
             const color = packColor(value);
@@ -185,7 +185,11 @@ class SourceExpressionBinder<T> implements Binder<T> {
 
     upload(context: Context) {
         if (this.paintVertexArray && this.paintVertexArray.arrayBuffer) {
-            this.paintVertexBuffer = context.createVertexBuffer(this.paintVertexArray, this.paintVertexAttributes, this.expression.isStateDependent);
+            if (this.paintVertexBuffer && this.paintVertexBuffer.buffer) {
+                this.paintVertexBuffer.updateData(this.paintVertexArray);
+            } else {
+                this.paintVertexBuffer = context.createVertexBuffer(this.paintVertexArray, this.paintVertexAttributes, this.expression.isStateDependent);
+            }
         }
     }
 
@@ -239,8 +243,8 @@ class CompositeExpressionBinder<T> implements Binder<T> {
         const start = paintArray.length;
         paintArray.reserve(newLength);
 
-        const min = this.expression.evaluate(new EvaluationParameters(this.zoom), feature);
-        const max = this.expression.evaluate(new EvaluationParameters(this.zoom + 1), feature);
+        const min = this.expression.evaluate(new EvaluationParameters(this.zoom), feature, {});
+        const max = this.expression.evaluate(new EvaluationParameters(this.zoom + 1), feature, {});
 
         if (this.type === 'color') {
             const minColor = packColor(min);
@@ -280,7 +284,11 @@ class CompositeExpressionBinder<T> implements Binder<T> {
 
     upload(context: Context) {
         if (this.paintVertexArray && this.paintVertexArray.arrayBuffer) {
-            this.paintVertexBuffer = context.createVertexBuffer(this.paintVertexArray, this.paintVertexAttributes, this.expression.isStateDependent);
+            if (this.paintVertexBuffer && this.paintVertexBuffer.buffer) {
+                this.paintVertexBuffer.updateData(this.paintVertexArray);
+            } else {
+                this.paintVertexBuffer = context.createVertexBuffer(this.paintVertexArray, this.paintVertexAttributes, this.expression.isStateDependent);
+            }
         }
     }
 

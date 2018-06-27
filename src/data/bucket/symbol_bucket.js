@@ -293,6 +293,7 @@ class SymbolBucket implements Bucket {
     collisionCircle: CollisionBuffers;
     uploaded: boolean;
     sourceLayerIndex: number;
+    sourceID: string;
 
     constructor(options: BucketParameters<SymbolStyleLayer>) {
         this.collisionBoxArray = options.collisionBoxArray;
@@ -313,6 +314,8 @@ class SymbolBucket implements Bucket {
         const layout = this.layers[0].layout;
         this.sortFeaturesByY = layout.get('text-allow-overlap') || layout.get('icon-allow-overlap') ||
             layout.get('text-ignore-placement') || layout.get('icon-ignore-placement');
+
+        this.sourceID = options.sourceID;
     }
 
     createArrays() {
@@ -387,7 +390,7 @@ class SymbolBucket implements Bucket {
             }
 
             if (text) {
-                const fontStack = textFont.evaluate(feature).join(',');
+                const fontStack = textFont.evaluate(feature, {}).join(',');
                 const stack = stacks[fontStack] = stacks[fontStack] || {};
                 const textAlongLine = layout.get('text-rotation-alignment') === 'map' && layout.get('symbol-placement') === 'line';
                 const doesAllowVerticalWritingMode = allowsVerticalWritingMode(text);

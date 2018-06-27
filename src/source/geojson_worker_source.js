@@ -2,7 +2,7 @@
 
 import { getJSON } from '../util/ajax';
 
-import perf from '../util/performance';
+import performance from '../util/performance';
 import rewind from 'geojson-rewind';
 import GeoJSONWrapper from './geojson_wrapper';
 import vtpbf from 'vt-pbf';
@@ -23,8 +23,6 @@ import type {LoadVectorDataCallback} from './vector_tile_worker_source';
 import type {RequestParameters} from '../util/ajax';
 import type { Callback } from '../types/callback';
 
-export type GeoJSON = Object;
-
 export type LoadGeoJSONParameters = {
     request?: RequestParameters,
     data?: string,
@@ -37,6 +35,12 @@ export type LoadGeoJSONParameters = {
 export type LoadGeoJSON = (params: LoadGeoJSONParameters, callback: Callback<mixed>) => void;
 
 export interface GeoJSONIndex {
+    getTile(z: number, x: number, y: number): Object;
+
+    // supercluster methods
+    getClusterExpansionZoom(clusterId: number): number;
+    getChildren(clusterId: number): Array<GeoJSONFeature>;
+    getLeaves(clusterId: number, limit: number, offset: number): Array<GeoJSONFeature>;
 }
 
 function loadGeoJSONTile(params: WorkerTileParameters, callback: LoadVectorDataCallback) {
@@ -152,6 +156,10 @@ class GeoJSONWorkerSource extends VectorTileWorkerSource {
         const params = this._pendingLoadDataParams;
         delete this._pendingCallback;
         delete this._pendingLoadDataParams;
+
+        const perf = (params && params.request && params.request.collectResourceTiming) ?
+            new performance.Performance(params.request) : false;
+
         this.loadGeoJSON(params, (err, data) => {
             if (err || !data) {
                 return callback(err);
@@ -171,8 +179,8 @@ class GeoJSONWorkerSource extends VectorTileWorkerSource {
                 this.loaded = {};
 
                 const result = {};
-                if (params.request && params.request.collectResourceTiming) {
-                    const resourceTimingData = perf.getEntriesByName(params.request.url);
+                if (perf) {
+                    const resourceTimingData = perf.finish();
                     // it's necessary to eval the result of getEntriesByName() here via parse/stringify
                     // late evaluation in the main thread causes TypeError: illegal invocation
                     if (resourceTimingData) {
@@ -269,6 +277,18 @@ class GeoJSONWorkerSource extends VectorTileWorkerSource {
             this._pendingCallback(null, { abandoned: true });
         }
         callback();
+    }
+
+    getClusterExpansionZoom(params: {clusterId: number}, callback: Callback<number>) {
+        callback(null, this._geoJSONIndex.getClusterExpansionZoom(params.clusterId));
+    }
+
+    getClusterChildren(params: {clusterId: number}, callback: Callback<Array<GeoJSONFeature>>) {
+        callback(null, this._geoJSONIndex.getChildren(params.clusterId));
+    }
+
+    getClusterLeaves(params: {clusterId: number, limit: number, offset: number}, callback: Callback<Array<GeoJSONFeature>>) {
+        callback(null, this._geoJSONIndex.getLeaves(params.clusterId, params.limit, params.offset));
     }
 }
 
