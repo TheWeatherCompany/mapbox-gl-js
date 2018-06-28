@@ -50,6 +50,7 @@ class SourceCache extends Evented {
     _cacheTimers: {[any]: TimeoutID};
     _maxTileCacheSize: ?number;
     _paused: boolean;
+    _hidden: boolean;
     _shouldReloadOnResume: boolean;
     _coveredTiles: {[any]: boolean};
     transform: Transform;
@@ -97,6 +98,7 @@ class SourceCache extends Evented {
 
         this._coveredTiles = {};
         this._state = new SourceFeatureState();
+        this._hidden = false;
     }
 
     onAdd(map: Map) {
@@ -136,10 +138,23 @@ class SourceCache extends Evented {
         this._paused = true;
     }
 
+    hide() {
+        this._hidden = true;
+    }
+
     resume() {
         if (!this._paused) return;
         const shouldReload = this._shouldReloadOnResume;
         this._paused = false;
+        this._shouldReloadOnResume = false;
+        if (shouldReload) this.reload();
+        if (this.transform) this.update(this.transform);
+    }
+
+    show() {
+        if (!this._hidden) return;
+        const shouldReload = this._shouldReloadOnResume;
+        this._hidden = false;
         this._shouldReloadOnResume = false;
         if (shouldReload) this.reload();
         if (this.transform) this.update(this.transform);
@@ -448,7 +463,7 @@ class SourceCache extends Evented {
      */
     update(transform: Transform) {
         this.transform = transform;
-        if (!this._sourceLoaded || this._paused) { return; }
+        if (!this._sourceLoaded || this._paused || this._hidden) { return; }
 
         this.updateCacheSize(transform);
         this.handleWrapJump(this.transform.center.lng);
