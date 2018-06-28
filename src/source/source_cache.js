@@ -153,9 +153,10 @@ class SourceCache extends Evented {
 
     show() {
         if (!this._hidden) return;
+        const shouldReload = this._shouldReloadOnResume;
         this._hidden = false;
         this._shouldReloadOnResume = false;
-        this.reload();
+        if (shouldReload) this.reload();
         if (this.transform) this.update(this.transform);
     }
 
