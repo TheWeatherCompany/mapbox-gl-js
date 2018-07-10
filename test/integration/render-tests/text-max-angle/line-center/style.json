@@ -9,8 +9,7 @@
     13.418056,
     52.499167
   ],
-  "zoom": 17,
-  "pitch": 60,
+  "zoom": 14,
   "sources": {
     "mapbox": {
       "type": "vector",
@@ -20,7 +19,7 @@
       ]
     }
   },
-  "sprite": "local://sprites/emerald",
+  "glyphs": "local://glyphs/{fontstack}/{range}.pbf",
   "layers": [
     {
       "id": "background",
@@ -30,14 +29,23 @@
       }
     },
     {
-      "id": "road",
-      "type": "line",
+      "id": "literal",
+      "type": "symbol",
       "source": "mapbox",
       "source-layer": "road",
+      "layout": {
+        "symbol-placement": "line-center",
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+        "text-field": "{class} {class}",
+        "text-font": [
+          "Open Sans Semibold",
+          "Arial Unicode MS Bold"
+        ],
+        "text-max-angle": 60
+      },
       "paint": {
-        "line-width": 20,
-        "line-pattern": "generic_icon",
-        "line-opacity": 0.5
+        "text-opacity": 1
       }
     }
   ]
