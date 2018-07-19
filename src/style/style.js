@@ -801,6 +801,10 @@ class Style extends Evented {
             this.fire(new ErrorEvent(new Error(`The sourceLayer parameter must be provided for vector source types.`)));
             return;
         }
+        if (feature.id == null || feature.id === "") {
+            this.fire(new ErrorEvent(new Error(`The feature id parameter must be provided.`)));
+            return;
+        }
 
         sourceCache.setFeatureState(sourceLayer, feature.id, state);
     }
@@ -1037,7 +1041,7 @@ class Style extends Evented {
 
             if (!layerTiles[styleLayer.source]) {
                 const sourceCache = this.sourceCaches[styleLayer.source];
-                layerTiles[styleLayer.source] = sourceCache.getRenderableIds()
+                layerTiles[styleLayer.source] = sourceCache.getRenderableIds(true)
                     .map((id) => sourceCache.getTileByID(id))
                     .sort((a, b) => (b.tileID.overscaledZ - a.tileID.overscaledZ) || (a.tileID.isLessThan(b.tileID) ? -1 : 1));
             }
@@ -1091,6 +1095,12 @@ class Style extends Evented {
         // needsRender is false when we have just finished a placement that didn't change the visibility of any symbols
         const needsRerender = !this.pauseablePlacement.isDone() || this.placement.hasTransitions(browser.now());
         return needsRerender;
+    }
+
+    _releaseSymbolFadeTiles() {
+        for (const id in this.sourceCaches) {
+            this.sourceCaches[id].releaseSymbolFadeTiles();
+        }
     }
 
     // Callbacks from web workers

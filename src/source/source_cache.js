@@ -55,6 +55,7 @@ class SourceCache extends Evented {
     _coveredTiles: {[any]: boolean};
     transform: Transform;
     _isIdRenderable: (id: number) => boolean;
+    _isIdRenderableForSymbols: (id: number) => boolean;
     used: boolean;
     _state: SourceFeatureState
 
@@ -95,6 +96,7 @@ class SourceCache extends Evented {
         this._maxTileCacheSize = null;
 
         this._isIdRenderable = this._isIdRenderable.bind(this);
+        this._isIdRenderableForSymbols = this._isIdRenderableForSymbols.bind(this);
 
         this._coveredTiles = {};
         this._state = new SourceFeatureState();
@@ -205,8 +207,10 @@ class SourceCache extends Evented {
         return Object.keys(this._tiles).map(Number).sort(compareKeyZoom);
     }
 
-    getRenderableIds() {
-        return this.getIds().filter(this._isIdRenderable);
+    getRenderableIds(symbolLayer?: boolean) {
+        return symbolLayer ?
+            this.getIds().filter(this._isIdRenderableForSymbols) :
+            this.getIds().filter(this._isIdRenderable);
     }
 
     hasRenderableParent(tileID: OverscaledTileID) {
@@ -218,6 +222,10 @@ class SourceCache extends Evented {
     }
 
     _isIdRenderable(id: number) {
+        return this._tiles[id] && this._tiles[id].hasData() && !this._coveredTiles[id] && !this._tiles[id].holdingForFade();
+    }
+
+    _isIdRenderableForSymbols(id: number) {
         return this._tiles[id] && this._tiles[id].hasData() && !this._coveredTiles[id];
     }
 
@@ -539,10 +547,29 @@ class SourceCache extends Evented {
         for (fadedParent in parentsForFading) {
             retain[fadedParent] = parentsForFading[fadedParent];
         }
+        for (const retainedId in retain) {
+            // Make sure retained tiles always clear any existing fade holds
+            // so that if they're removed again their fade timer starts fresh.
+            this._tiles[retainedId].clearFadeHold();
+        }
         // Remove the tiles we don't need anymore.
         const remove = keysDifference(this._tiles, retain);
         for (let i = 0; i < remove.length; i++) {
-            this._removeTile(remove[i]);
+            const tileID = remove[i];
+            const tile = this._tiles[tileID];
+            if (tile.hasSymbolBuckets && !tile.holdingForFade()) {
+                tile.setHoldDuration(this.map._fadeDuration);
+            } else if (!tile.hasSymbolBuckets || tile.symbolFadeFinished()) {
+                this._removeTile(tileID);
+            }
+        }
+    }
+
+    releaseSymbolFadeTiles() {
+        for (const id in this._tiles) {
+            if (this._tiles[id].holdingForFade()) {
+                this._removeTile(id);
+            }
         }
     }
 
@@ -749,6 +776,10 @@ class SourceCache extends Evented {
 
         for (let i = 0; i < ids.length; i++) {
             const tile = this._tiles[ids[i]];
+            if (tile.holdingForFade()) {
+                // Tiles held for fading are covered by tiles that are closer to ideal
+                continue;
+            }
             const tileID = tile.tileID;
             const scale = Math.pow(2, this.transform.zoom - tile.tileID.overscaledZ);
             const queryPadding = maxPitchScaleFactor * tile.queryPadding * EXTENT / tile.tileSize / scale;
@@ -778,8 +809,8 @@ class SourceCache extends Evented {
         return tileResults;
     }
 
-    getVisibleCoordinates() {
-        const coords = this.getRenderableIds().map((id) => this._tiles[id].tileID);
+    getVisibleCoordinates(symbolLayer?: boolean) {
+        const coords = this.getRenderableIds(symbolLayer).map((id) => this._tiles[id].tileID);
         for (const coord of coords) {
             coord.posMatrix = this.transform.calculatePosMatrix(coord.toUnwrapped());
         }
@@ -842,4 +873,3 @@ function isRasterType(type) {
 }
 
 export default SourceCache;
-

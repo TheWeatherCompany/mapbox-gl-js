@@ -3,20 +3,22 @@
   "metadata": {
     "test": {
       "collisionDebug": true,
-      "height": 512
+      "description": "This test looks pretty boring -- what it does is make sure that a label without collision boxes won't get drawn.",
+      "height": 256,
+      "width": 1024
     }
   },
   "center": [
-    13.418056,
-    52.499167
+    -73,
+    15
   ],
-  "zoom": 15,
+  "zoom": 4.5,
   "sources": {
     "mapbox": {
       "type": "vector",
       "maxzoom": 14,
       "tiles": [
-        "local://tiles/{z}-{x}-{y}.mvt"
+        "local://tiles/mapbox.mapbox-streets-v7/{z}-{x}-{y}.mvt"
       ]
     }
   },
@@ -33,10 +35,13 @@
       "id": "line-center",
       "type": "symbol",
       "source": "mapbox",
-      "source-layer": "road_label",
+      "source-layer": "marine_label",
       "layout": {
-        "text-field": ".",
+        "text-field": "{name_en}",
         "symbol-placement": "line-center",
+        "text-allow-overlap": true,
+        "text-size": 40,
+        "text-letter-spacing": 0.5,
         "text-font": [
           "Open Sans Semibold",
           "Arial Unicode MS Bold"
@@ -44,26 +49,12 @@
       }
     },
     {
-      "id": "road",
+      "id": "line",
       "type": "line",
       "source": "mapbox",
-      "source-layer": "road_label",
+      "source-layer": "marine_label",
       "paint": {
-        "line-width": 1,
-        "line-color": ["match",
-            ["%", ["to-number", ["id"]], 10],
-            0, ["to-color", "red"],
-            1, ["to-color", "blue"],
-            2, ["to-color", "yellow"],
-            3, ["to-color", "black"],
-            4, ["to-color", "grey"],
-            5, ["to-color", "purple"],
-            6, ["to-color", "green"],
-            7, ["to-color", "orange"],
-            8, ["to-color", "brown"],
-            9, ["to-color", "lime"],
-            ["to-color", "magenta"]
-        ]
+        "line-width": 1
       }
     }
   ]
