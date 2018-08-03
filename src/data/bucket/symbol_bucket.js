@@ -311,9 +311,8 @@ class SymbolBucket implements Bucket {
         this.textSizeData = getSizeData(this.zoom, unevaluatedLayoutValues['text-size']);
         this.iconSizeData = getSizeData(this.zoom, unevaluatedLayoutValues['icon-size']);
 
-        const layout = this.layers[0].layout;
-        this.sortFeaturesByY = layout.get('text-allow-overlap') || layout.get('icon-allow-overlap') ||
-            layout.get('text-ignore-placement') || layout.get('icon-ignore-placement');
+        //const layout = this.layers[0].layout;
+        //this.sortFeaturesByY = layout.get('text-allow-overlap') || layout.get('icon-allow-overlap') || layout.get('text-ignore-placement') || layout.get('icon-ignore-placement');
 
         this.sourceID = options.sourceID;
     }
