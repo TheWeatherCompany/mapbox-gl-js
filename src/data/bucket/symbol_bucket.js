@@ -292,10 +292,10 @@ class SymbolBucket implements Bucket {
 
         //const layout = this.layers[0].layout;
         //this.sortFeaturesByY = layout.get('text-allow-overlap') || layout.get('icon-allow-overlap') || layout.get('text-ignore-placement') || layout.get('icon-ignore-placement');
-        const layout = this.layers[0].layout;
-        const zOrderByViewportY = layout.get('symbol-z-order') === 'viewport-y';
-        this.sortFeaturesByY = zOrderByViewportY && (layout.get('text-allow-overlap') || layout.get('icon-allow-overlap') ||
-            layout.get('text-ignore-placement') || layout.get('icon-ignore-placement'));
+        // const layout = this.layers[0].layout;
+        // const zOrderByViewportY = layout.get('symbol-z-order') === 'viewport-y';
+        // this.sortFeaturesByY = zOrderByViewportY && (layout.get('text-allow-overlap') || layout.get('icon-allow-overlap') ||
+        //     layout.get('text-ignore-placement') || layout.get('icon-ignore-placement'));
 
         this.sourceID = options.sourceID;
     }
