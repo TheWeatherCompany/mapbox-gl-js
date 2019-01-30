@@ -6,16 +6,16 @@ var assign = require('lodash.assign');
  * Add a layer group to the map.
  *
  * @param {Map} map
- * @param {string} id The id of the new group
+ * @param {string} groupId The id of the new group
  * @param {Array<Object>} layers The Mapbox style spec layers of the new group
  * @param {string} [beforeId] The layer id or group id after which the group
  *     will be inserted. If ommitted the group is added to the bottom of the
  *     style.
  */
-function addGroup(map, id, layers, beforeId, preventUpdate) {
+function addGroup(map, groupId, layers, beforeId, preventUpdate) {
     var beforeLayerId = normalizeBeforeId(map, beforeId);
     for (var i = 0; i < layers.length; i++) {
-        addLayerToGroup(map, id, layers[i], beforeLayerId, preventUpdate, true);
+        addLayerToGroup(map, groupId, layers[i], beforeLayerId, preventUpdate, true);
     }
 }
 
@@ -42,6 +42,22 @@ function addLayerToGroup(map, groupId, layer, beforeId, preventUpdate) {
     map.addLayer(groupedLayer, beforeId, { preventUpdate: preventUpdate});
 }
 
+function moveLayerToGroup(map, groupId, layerId) {
+    var layer = map.getLayer(layerId);
+    if (layer) {
+        if (!layer.metadata) { 
+            layer.metadata = {};
+        }
+        layer.metadata.group = groupId;
+    }
+}
+function removeLayerFromGroup(map, groupId, layerId) {
+    var layer = map.getLayer(layerId);
+    if (layer && layer.metadata && layer.metadata.group === groupId) {
+        layer.metadata.group = undefined;
+    }
+}
+
 function hasGroup(map, groupId) {
     return (getGroupFirstLayerIndex(map, groupId) >= 0);
 }
@@ -50,14 +66,14 @@ function hasGroup(map, groupId) {
  * Remove a layer group and all of its layers from the map.
  *
  * @param {Map} map
- * @param {string} id The id of the group to be removed.
+ * @param {string} groupId The id of the group to be removed.
  */
-function removeGroup(map, id) {
+function removeGroup(map, groupId) {
     var layers = map.getStyle().layers;
     for (var i = 0; i < layers.length; i++) {
         var layer = layers[i];
         if (getLayerGroup(map, layer.id)) {
-            if (layer.metadata.group === id) {
+            if (layer.metadata.group === groupId) {
                 map.removeLayer(layer.id);
             }
         }
@@ -68,16 +84,16 @@ function removeGroup(map, id) {
  * Remove a layer group and all of its layers from the map.
  *
  * @param {Map} map
- * @param {string} id The id of the group to be removed.
+ * @param {string} groupId The id of the group to be removed.
  */
-function moveGroup(map, id, beforeId) {
+function moveGroup(map, groupId, beforeId) {
     var beforeLayerId = normalizeBeforeId(map, beforeId);
 
     var layers = map.getStyle().layers;
     for (var i = 0; i < layers.length; i++) {
         var layer = layers[i];
         if (getLayerGroup(map, layer.id)) {
-            if (layer.metadata.group === id) {
+            if (layer.metadata.group === groupId) {
                 map.moveLayer(layer.id, beforeLayerId);
             }
         }
@@ -88,40 +104,40 @@ function moveGroup(map, id, beforeId) {
  * Get the id of the first layer in a group.
  *
  * @param {Map} map
- * @param {string} id The id of the group.
+ * @param {string} groupId The id of the group.
  * @returns {string}
  */
-function getGroupFirstLayerId(map, id) {
-    return getLayerIdFromIndex(map, getGroupFirstLayerIndex(map, id));
+function getGroupFirstLayerId(map, groupId) {
+    return getLayerIdFromIndex(map, getGroupFirstLayerIndex(map, groupId));
 }
 
 /**
  * Get the id of the last layer in a group.
  *
  * @param {Map} map
- * @param {string} id The id of the group.
+ * @param {string} groupId The id of the group.
  * @returns {string}
  */
-function getGroupLastLayerId(map, id) {
-    return getLayerIdFromIndex(map, getGroupLastLayerIndex(map, id));
+function getGroupLastLayerId(map, groupId) {
+    return getLayerIdFromIndex(map, getGroupLastLayerIndex(map, groupId));
 }
 
-function getGroupFirstLayerIndex(map, id) {
+function getGroupFirstLayerIndex(map, groupId) {
     var layers = map.getStyle().layers;
     for (var i = 0; i < layers.length; i++) {
         var layer = layers[i];
-        if (layer.metadata && layer.metadata.group === id) {
+        if (layer.metadata && layer.metadata.group === groupId) {
             return i;
         }
     }
     return -1;
 }
 
-function getGroupLastLayerIndex(map, id) {
+function getGroupLastLayerIndex(map, groupId) {
     var layers = map.getStyle().layers;
-    var i = getGroupFirstLayerIndex(map, id);
+    var i = getGroupFirstLayerIndex(map, groupId);
     if (i === -1) return -1;
-    while (i < layers.length && (layers[i].id === id || (layers[i].metadata && layers[i].metadata.group === id))) i++;
+    while (i < layers.length && (layers[i].id === groupId || (layers[i].metadata && layers[i].metadata.group === groupId))) i++;
     return i - 1;
 }
 
@@ -131,13 +147,13 @@ function getLayerIdFromIndex(map, index) {
     return layers[index] && layers[index].id;
 }
 
-function getLayerGroup(map, id) {
-    var layer = map.getLayer(id);
+function getLayerGroup(map, layerId) {
+    var layer = map.getLayer(layerId);
     if (layer && layer.metadata && layer.metadata.group) return layer.metadata.group;
 }
 
-function isLayer(map, id) {
-    return !!map.getLayer(id);
+function isLayer(map, layerId) {
+    return !!map.getLayer(layerId);
 }
 
 function normalizeBeforeId(map, beforeId) {
@@ -160,5 +176,7 @@ module.exports = {
     getGroupFirstLayerIndex,
     getGroupLastLayerIndex,
     getLayerGroup,
-    hasGroup
+    hasGroup,
+    removeLayerFromGroup,
+    moveLayerToGroup
 };
