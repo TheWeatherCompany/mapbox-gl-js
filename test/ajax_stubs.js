@@ -67,6 +67,8 @@ export const getArrayBuffer = function({ url }, callback) {
     });
 };
 
+export const makeRequest = getArrayBuffer;
+
 export const postData = function({ url, body }, callback) {
     return request.post(url, body, (error, response, body) => {
         if (!error && response.statusCode >= 200 && response.statusCode < 300) {
@@ -105,8 +107,8 @@ export const getVideo = function(urls, callback) {
                 if (err) return callback(err);
                 callback(null, {
                     readyState: 4, // HAVE_ENOUGH_DATA
-                    addEventListener: function() {},
-                    play: function() {},
+                    addEventListener() {},
+                    play() {},
                     width: png.width,
                     height: png.height,
                     data: png.data

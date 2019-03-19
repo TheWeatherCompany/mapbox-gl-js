@@ -57,6 +57,7 @@ class FillExtrusionBucket implements Bucket {
     layers: Array<FillExtrusionStyleLayer>;
     layerIds: Array<string>;
     stateDependentLayers: Array<FillExtrusionStyleLayer>;
+    stateDependentLayerIds: Array<string>;
 
     layoutVertexArray: FillExtrusionLayoutArray;
     layoutVertexBuffer: VertexBuffer;
@@ -82,6 +83,8 @@ class FillExtrusionBucket implements Bucket {
         this.indexArray = new TriangleIndexArray();
         this.programConfigurations = new ProgramConfigurationSet(layoutAttributes, options.layers, options.zoom);
         this.segments = new SegmentVector();
+        this.stateDependentLayerIds = this.layers.filter((l) => l.isStateDependent()).map((l) => l.id);
+
     }
 
     populate(features: Array<IndexedFeature>, options: PopulateParameters) {
@@ -94,9 +97,9 @@ class FillExtrusionBucket implements Bucket {
             const geometry = loadGeometry(feature);
 
             const patternFeature: BucketFeature = {
-                sourceLayerIndex: sourceLayerIndex,
-                index: index,
-                geometry: geometry,
+                sourceLayerIndex,
+                index,
+                geometry,
                 properties: feature.properties,
                 type: feature.type,
                 patterns: {}
@@ -112,7 +115,7 @@ class FillExtrusionBucket implements Bucket {
                 this.addFeature(patternFeature, geometry, index, {});
             }
 
-            options.featureIndex.insert(feature, geometry, index, sourceLayerIndex, this.index);
+            options.featureIndex.insert(feature, geometry, index, sourceLayerIndex, this.index, true);
         }
     }
 

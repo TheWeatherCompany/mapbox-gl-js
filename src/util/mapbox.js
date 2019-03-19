@@ -3,15 +3,17 @@
 import config from './config';
 
 import browser from './browser';
+import webpSupported from './webp_supported';
 import window from './window';
 import { version } from '../../package.json';
-import { uuid, validateUuid, storageAvailable, warnOnce, extend } from './util';
+import { uuid, validateUuid, storageAvailable, b64DecodeUnicode, b64EncodeUnicode, warnOnce, extend } from './util';
 import { postData } from './ajax';
 
 import type { RequestParameters } from './ajax';
 import type { Cancelable } from '../types/cancelable';
+import type {TileJSON} from '../types/tilejson';
 
-const help = 'See https://www.mapbox.com/api-documentation/#access-tokens';
+const help = 'See https://www.mapbox.com/api-documentation/#access-tokens-and-token-scopes';
 const telemEventKey = 'mapbox.eventData';
 
 type UrlObject = {|
@@ -88,6 +90,8 @@ export const normalizeSpriteURL = function(url: string, format: string, extensio
 };
 
 const imageExtensionRe = /(\.(png|jpg)\d*)(?=$)/;
+// matches any file extension specified by a dot and one or more alphanumeric characters
+const extensionRe = /\.[\w]+$/;
 
 export const normalizeTileURL = function(tileURL: string, sourceURL?: ?string, tileSize?: ?number): string {
     if (!sourceURL || !isMapboxURL(sourceURL)) return tileURL;
@@ -98,20 +102,42 @@ export const normalizeTileURL = function(tileURL: string, sourceURL?: ?string, t
     // is appended to the tile URL. If `tileSize: 512` is specified for
     // a Mapbox raster source force the @2x suffix even if a non hidpi device.
     const suffix = browser.devicePixelRatio >= 2 || tileSize === 512 ? '@2x' : '';
-    const extension = browser.supportsWebp ? '.webp' : '$1';
+    const extension = webpSupported.supported ? '.webp' : '$1';
     urlObject.path = urlObject.path.replace(imageExtensionRe, `${suffix}${extension}`);
+    urlObject.path = `/v4${urlObject.path}`;
 
-    replaceTempAccessToken(urlObject.params);
-    return formatUrl(urlObject);
+    return makeAPIURL(urlObject);
 };
 
-function replaceTempAccessToken(params: Array<string>) {
-    for (let i = 0; i < params.length; i++) {
-        if (params[i].indexOf('access_token=tk.') === 0) {
-            params[i] = `access_token=${config.ACCESS_TOKEN || ''}`;
-        }
+export const canonicalizeTileURL = function(url: string) {
+    const version = "/v4/";
+
+    const urlObject = parseUrl(url);
+    // Make sure that we are dealing with a valid Mapbox tile URL.
+    // Has to begin with /v4/, with a valid filename + extension
+    if (!urlObject.path.match(/(^\/v4\/)/) || !urlObject.path.match(extensionRe)) {
+        // Not a proper Mapbox tile URL.
+        return url;
     }
-}
+    // Reassemble the canonical URL from the parts we've parsed before.
+    let result = "mapbox://tiles/";
+    result +=  urlObject.path.replace(version, '');
+
+    // Append the query string, minus the access token parameter.
+    const params = urlObject.params.filter(p => !p.match(/^access_token=/));
+    if (params.length) result += `?${params.join('&')}`;
+    return result;
+};
+
+export const canonicalizeTileset = function(tileJSON: TileJSON, sourceURL: string) {
+    if (!isMapboxURL(sourceURL)) return tileJSON.tiles || [];
+    const canonical = [];
+    for (const url of tileJSON.tiles) {
+        const canonicalUrl = canonicalizeTileURL(url);
+        canonical.push(canonicalUrl);
+    }
+    return canonical;
+};
 
 const urlRe = /^(\w+):\/\/([^/?]*)(\/[^?]+)?\??(.+)?/;
 
@@ -133,10 +159,28 @@ function formatUrl(obj: UrlObject): string {
     return `${obj.protocol}://${obj.authority}${obj.path}${params}`;
 }
 
+function parseAccessToken(accessToken: ?string) {
+    if (!accessToken) {
+        return null;
+    }
+
+    const parts = accessToken.split('.');
+    if (!parts || parts.length !== 3) {
+        return null;
+    }
+
+    try {
+        const jsonData = JSON.parse(b64DecodeUnicode(parts[1]));
+        return jsonData;
+    } catch (e) {
+        return null;
+    }
+}
+
 type TelemetryEventType = 'appUserTurnstile' | 'map.load';
 
 class TelemetryEvent {
-    eventData: { lastSuccess: ?number, accessToken: ?string};
+    eventData: any;
     anonId: ?string;
     queue: Array<any>;
     type: TelemetryEventType;
@@ -145,15 +189,28 @@ class TelemetryEvent {
     constructor(type: TelemetryEventType) {
         this.type = type;
         this.anonId = null;
-        this.eventData = {lastSuccess: null, accessToken: config.ACCESS_TOKEN};
+        this.eventData = {};
         this.queue = [];
         this.pendingRequest = null;
     }
 
+    getStorageKey(domain: ?string) {
+        const tokenData = parseAccessToken(config.ACCESS_TOKEN);
+        let u = '';
+        if (tokenData && tokenData['u']) {
+            u = b64EncodeUnicode(tokenData['u']);
+        } else {
+            u = config.ACCESS_TOKEN || '';
+        }
+        return domain ?
+            `${telemEventKey}.${domain}:${u}` :
+            `${telemEventKey}:${u}`;
+    }
+
     fetchEventData() {
         const isLocalStorageAvailable = storageAvailable('localStorage');
-        const storageKey = `${telemEventKey}:${config.ACCESS_TOKEN || ''}`;
-        const uuidKey = `${telemEventKey}.uuid:${config.ACCESS_TOKEN || ''}`;
+        const storageKey = this.getStorageKey();
+        const uuidKey = this.getStorageKey('uuid');
 
         if (isLocalStorageAvailable) {
             //Retrieve cached data
@@ -173,12 +230,12 @@ class TelemetryEvent {
 
     saveEventData() {
         const isLocalStorageAvailable = storageAvailable('localStorage');
-        const storageKey = `${telemEventKey}:${config.ACCESS_TOKEN || ''}`;
-        const uuidKey = `${telemEventKey}.uuid:${config.ACCESS_TOKEN || ''}`;
+        const storageKey =  this.getStorageKey();
+        const uuidKey = this.getStorageKey('uuid');
         if (isLocalStorageAvailable) {
             try {
                 window.localStorage.setItem(uuidKey, this.anonId);
-                if (this.eventData.lastSuccess) {
+                if (Object.keys(this.eventData).length >= 1) {
                     window.localStorage.setItem(storageKey, JSON.stringify(this.eventData));
                 }
             } catch (e) {
@@ -196,6 +253,7 @@ class TelemetryEvent {
     * to TelemetryEvent#saveData
     */
     postEvent(timestamp: number, additionalPayload: {[string]: any}, callback: (err: ?Error) => void) {
+        if (!config.EVENTS_URL) return;
         const eventsUrlObject: UrlObject = parseUrl(config.EVENTS_URL);
         eventsUrlObject.params.push(`access_token=${config.ACCESS_TOKEN || ''}`);
         const payload: Object = {
@@ -240,9 +298,10 @@ export class MapLoadEvent extends TelemetryEvent {
     postMapLoadEvent(tileUrls: Array<string>, mapId: number) {
         //Enabled only when Mapbox Access Token is set and a source uses
         // mapbox tiles.
-        if (config.ACCESS_TOKEN &&
+        if (config.EVENTS_URL &&
+            config.ACCESS_TOKEN &&
             Array.isArray(tileUrls) &&
-            tileUrls.some(url => isMapboxHTTPURL(url))) {
+            tileUrls.some(url => isMapboxURL(url) || isMapboxHTTPURL(url))) {
             this.queueRequest({id: mapId, timestamp: Date.now()});
         }
     }
@@ -279,9 +338,10 @@ export class TurnstileEvent extends TelemetryEvent {
     postTurnstileEvent(tileUrls: Array<string>) {
         //Enabled only when Mapbox Access Token is set and a source uses
         // mapbox tiles.
-        if (config.ACCESS_TOKEN &&
+        if (config.EVENTS_URL &&
+            config.ACCESS_TOKEN &&
             Array.isArray(tileUrls) &&
-            tileUrls.some(url => isMapboxHTTPURL(url))) {
+            tileUrls.some(url => isMapboxURL(url) || isMapboxHTTPURL(url))) {
             this.queueRequest(Date.now());
         }
     }
@@ -292,15 +352,15 @@ export class TurnstileEvent extends TelemetryEvent {
             return;
         }
 
-        let dueForEvent = this.eventData.accessToken ? (this.eventData.accessToken !== config.ACCESS_TOKEN) : false;
-        //Reset event data cache if the access token changed.
-        if (dueForEvent) {
-            this.anonId = this.eventData.lastSuccess = null;
-        }
-        if (!this.anonId || !this.eventData.lastSuccess) {
+        if (!this.anonId || !this.eventData.lastSuccess || !this.eventData.tokenU) {
             //Retrieve cached data
             this.fetchEventData();
         }
+
+        const tokenData = parseAccessToken(config.ACCESS_TOKEN);
+        const tokenU = tokenData ? tokenData['u'] : config.ACCESS_TOKEN;
+        //Reset event data cache if the access token owner changed.
+        let dueForEvent = tokenU !== this.eventData.tokenU;
 
         if (!validateUuid(this.anonId)) {
             this.anonId = uuid();
@@ -322,10 +382,10 @@ export class TurnstileEvent extends TelemetryEvent {
             return this.processRequests();
         }
 
-        this.postEvent(nextUpdate, {"enabled.telemetry": false}, (err)=> {
+        this.postEvent(nextUpdate, {"enabled.telemetry": false}, (err) => {
             if (!err) {
                 this.eventData.lastSuccess = nextUpdate;
-                this.eventData.accessToken = config.ACCESS_TOKEN;
+                this.eventData.tokenU = tokenU;
             }
         });
     }
