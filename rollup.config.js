@@ -41,7 +41,7 @@ const config = [{
         sourcemap: production ? true : 'inline',
         indent: false,
         intro: fs.readFileSync(require.resolve('./rollup/bundle_prelude.js'), 'utf8'),
-        banner: `/* Mapbox GL JS is licensed under the 3-Clause BSD License. Full text of license: https://github.com/mapbox/mapbox-gl-js/blob/v${version}/LICENSE.txt */`
+        banner: `/* Mapbox GL JS is licensed under the 3-Clause BSD License. Full text of license: https://github.com/mapbox/mapbox-gl-js/blob/master/LICENSE.txt */`
     },
     treeshake: false,
     plugins: [
