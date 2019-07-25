@@ -5,9 +5,11 @@ import { extend, pick } from '../util/util';
 import { getImage, ResourceType } from '../util/ajax';
 import { Event, ErrorEvent, Evented } from '../util/evented';
 import loadTileJSON from './load_tilejson';
-import { normalizeTileURL as normalizeURL, postTurnstileEvent, postMapLoadEvent } from '../util/mapbox';
+import { postTurnstileEvent, postMapLoadEvent } from '../util/mapbox';
 import TileBounds from './tile_bounds';
 import Texture from '../render/texture';
+
+import { cacheEntryPossiblyAdded } from '../util/tile_request_cache';
 
 import type {Source} from './source';
 import type {OverscaledTileID} from './tile_id';
@@ -61,7 +63,7 @@ class RasterTileSource extends Evented implements Source {
 
     load() {
         this.fire(new Event('dataloading', {dataType: 'source'}));
-        this._tileJSONRequest = loadTileJSON(this._options, this.map._transformRequest, (err, tileJSON) => {
+        this._tileJSONRequest = loadTileJSON(this._options, this.map._requestManager, (err, tileJSON) => {
             this._tileJSONRequest = null;
             if (err) {
                 this.fire(new ErrorEvent(err));
@@ -70,7 +72,7 @@ class RasterTileSource extends Evented implements Source {
                 if (tileJSON.bounds) this.tileBounds = new TileBounds(tileJSON.bounds, this.minzoom, this.maxzoom);
 
                 postTurnstileEvent(tileJSON.tiles);
-                postMapLoadEvent(tileJSON.tiles, this.map._getMapId());
+                postMapLoadEvent(tileJSON.tiles, this.map._getMapId(), this.map._requestManager._skuToken);
 
                 // `content` is included here to prevent a race condition where `Style#_updateSources` is called
                 // before the TileJSON arrives. this makes sure the tiles needed are loaded once TileJSON arrives
@@ -102,8 +104,8 @@ class RasterTileSource extends Evented implements Source {
     }
 
     loadTile(tile: Tile, callback: Callback<void>) {
-        const url = normalizeURL(tile.tileID.canonical.url(this.tiles, this.scheme), this.url, this.tileSize);
-        tile.request = getImage(this.map._transformRequest(url, ResourceType.Tile), (err, img) => {
+        const url = this.map._requestManager.normalizeTileURL(tile.tileID.canonical.url(this.tiles, this.scheme), this.url, this.tileSize);
+        tile.request = getImage(this.map._requestManager.transformRequest(url, ResourceType.Tile), (err, img) => {
             delete tile.request;
 
             if (tile.aborted) {
@@ -132,6 +134,8 @@ class RasterTileSource extends Evented implements Source {
                 }
 
                 tile.state = 'loaded';
+
+                cacheEntryPossiblyAdded(this.dispatcher);
 
                 callback(null);
             }

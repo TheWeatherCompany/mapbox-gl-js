@@ -112,6 +112,18 @@ const exported = {
         config.MAX_PARALLEL_IMAGE_REQUESTS = numRequests;
     },
 
+    /**
+     * Clears browser storage used by this library. Using this method flushes the tile
+     * cache that is managed by this library. Tiles may still be cached by the browser
+     * in some cases.
+     *
+     * @function clearStorage
+     * @param {Function} callback Called with an error argument if there is an error.
+     */
+    clearStorage(callback?: (err: ?Error) => void) {
+        clearTileCache(callback);
+    },
+
     workerUrl: ''
 };
 
@@ -146,7 +158,7 @@ window['mapboxgl'].noConflict = function() {
 
 /**
  * Sets the map's [RTL text plugin](https://www.mapbox.com/mapbox-gl-js/plugins/#mapbox-gl-rtl-text).
- * Necessary for supporting languages like Arabic and Hebrew that are written right-to-left.
+ * Necessary for supporting the Arabic and Hebrew languages, which are written right-to-left. Mapbox Studio loads this plugin by default.
  *
  * @function setRTLTextPlugin
  * @param {string} pluginURL URL pointing to the Mapbox RTL text plugin source.

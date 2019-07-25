@@ -1,3 +1,18 @@
+## 13.7.1
+
+### 🐛 Bug fixes
+* Fix format expression options validation ([#8339](https://github.com/mapbox/mapbox-gl-js/pull/8339))
+* Fix SDK support information for style properties added in v13.7.0: ([#8384](https://github.com/mapbox/mapbox-gl-js/pull/8384))
+    * Add missing SDK support section for `text-radial-offset` property
+    * Assign SDK versions for `text-variable-anchor` and `text-justify: auto`
+
+## 13.7.0
+
+### ✨ Features and improvements
+* Add `text-radial-offset` style property ([#7596](https://github.com/mapbox/mapbox-gl-js/pull/7596))
+* Add `text-variable-anchor` style property ([#7596](https://github.com/mapbox/mapbox-gl-js/pull/7596))
+* Add `auto` value to `text-justify` style property ([#7596](https://github.com/mapbox/mapbox-gl-js/pull/7596))
+
 ## 13.6.0
 
 ### ✨ Features and improvements
