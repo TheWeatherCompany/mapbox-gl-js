@@ -18,6 +18,11 @@ export default drawRaster;
 
 function drawRaster(painter: Painter, sourceCache: SourceCache, layer: RasterStyleLayer, coords: Array<OverscaledTileID>) {
     if (painter.renderPass !== 'translucent') return;
+    
+    //#region Added
+    if (!layer.paint) return;
+    //#endregion
+    
     if (layer.paint.get('raster-opacity') === 0) return;
 
     const context = painter.context;

@@ -92,7 +92,11 @@ export type StyleOptions = {
 };
 
 export type StyleSetterOptions = {
-    validate?: boolean
+    validate?: boolean,
+
+    //#region Added
+    preventUpdate?: boolean
+    //#endregion
 };
 /**
  * @private
@@ -507,6 +511,7 @@ class Style extends Evented {
         if (this.map && this.map._collectResourceTiming) (source: any).collectResourceTiming = true;
         const sourceCache = this.sourceCaches[id] = new SourceCache(id, source, this.dispatcher);
         sourceCache.style = this;
+        sourceCache.options = source;
         sourceCache.setEventedParent(this, () => ({
             isSourceLoaded: this.loaded(),
             source: sourceCache.serialize(),
@@ -522,17 +527,26 @@ class Style extends Evented {
      * @param {string} id id of the source to remove
      * @throws {Error} if no source is found with the given ID
      */
-    removeSource(id: string) {
+    removeSource(id: string, force: boolean) {
         this._checkLoaded();
+
+        //#region Added
+        if (force === undefined){ force = false; }
+        //#endregion
 
         if (this.sourceCaches[id] === undefined) {
             throw new Error('There is no source with this ID');
         }
-        for (const layerId in this._layers) {
-            if (this._layers[layerId].source === id) {
-                return this.fire(new ErrorEvent(new Error(`Source "${id}" cannot be removed while layer "${layerId}" is using it.`)));
+
+        //#region Modified
+        if (!force) {
+            for (const layerId in this._layers) {
+                if (this._layers[layerId].source === id) {
+                    return this.fire(new ErrorEvent(new Error(`Source "${id}" cannot be removed while layer "${layerId}" is using it.`)));
+                }
             }
         }
+        //#endregion
 
         const sourceCache = this.sourceCaches[id];
         delete this.sourceCaches[id];
@@ -637,7 +651,14 @@ class Style extends Evented {
                 this.sourceCaches[layer.source].pause();
             }
         }
-        this._updateLayer(layer);
+
+        //#region Modified
+        let preventUpdate = options.preventUpdate === undefined ? false : options.preventUpdate;
+        if (!preventUpdate) {
+            this._updateLayer(layer);
+        }
+        //#endregion
+        
 
         if (layer.onAdd) {
             layer.onAdd(this.map);

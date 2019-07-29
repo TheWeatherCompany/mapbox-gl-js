@@ -23,6 +23,14 @@ import {setRTLTextPlugin} from './source/rtl_text_plugin';
 import WorkerPool from './util/worker_pool';
 import {clearTileCache} from './util/tile_request_cache';
 
+//#region Added
+import layerGroups  from './../shim/mapbox-gl-layer-groups';
+import window from './util/browser/window';
+
+const L = window.L || { TileLayer: {} };
+const oldMapboxgl = window['mapboxgl'];
+//#endregion
+
 const exported = {
     version,
     supported,
@@ -42,6 +50,7 @@ const exported = {
     MercatorCoordinate,
     Evented,
     config,
+    layerGroups,
 
     /**
      * Gets and sets the map's [access token](https://www.mapbox.com/help/define-access-token/).
@@ -121,6 +130,14 @@ const exported = {
 
     workerUrl: ''
 };
+
+//#region Added
+window['mapboxgl'] = exported;
+window['mapboxgl'].noConflict = function() {
+    window['mapboxgl'] = oldMapboxgl;
+    return this;
+};
+//#endregion
 
 /**
  * The version of Mapbox GL JS in use as specified in `package.json`,

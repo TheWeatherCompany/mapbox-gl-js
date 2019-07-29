@@ -270,6 +270,10 @@ class Map extends Camera {
     _localIdeographFontFamily: string;
     _requestManager: RequestManager;
 
+    //#region Added
+    _options: MapOptions;
+    //#endregion
+
     /**
      * The map's {@link ScrollZoomHandler}, which implements zooming in and out with a scroll wheel or trackpad.
      */
@@ -317,6 +321,9 @@ class Map extends Camera {
         const transform = new Transform(options.minZoom, options.maxZoom, options.renderWorldCopies);
         super(transform, options);
 
+        //#region Added
+        this._options = options;
+        //#endregion
         this._interactive = options.interactive;
         this._maxTileCacheSize = options.maxTileCacheSize;
         this._failIfMajorPerformanceCaveat = options.failIfMajorPerformanceCaveat;
@@ -1115,8 +1122,12 @@ class Map extends Camera {
      * @param {string} id The ID of the source to remove.
      * @returns {Map} `this`
      */
-    removeSource(id: string) {
-        this.style.removeSource(id);
+    removeSource(id: string, force: boolean) {
+        
+        //#region Modified
+        this.style.removeSource(id, force);
+        //#endregion
+        
         return this._update(true);
     }
 
@@ -1277,8 +1288,11 @@ class Map extends Camera {
      * @see [Add a vector tile source](https://www.mapbox.com/mapbox-gl-js/example/vector-source/)
      * @see [Add a WMS source](https://www.mapbox.com/mapbox-gl-js/example/wms/)
      */
-    addLayer(layer: LayerSpecification | CustomLayerInterface, beforeId?: string) {
-        this.style.addLayer(layer, beforeId);
+    addLayer(layer: LayerSpecification | CustomLayerInterface, beforeId?: string, options: StyleSetterOptions = {}) {
+        
+        //#region Modified
+        this.style.addLayer(layer, beforeId, options);
+        //#endregion
         return this._update(true);
     }
 
@@ -1556,13 +1570,15 @@ class Map extends Camera {
     }
 
     _detectMissingCSS(): void {
-        const computedColor = window.getComputedStyle(this._missingCSSCanary).getPropertyValue('background-color');
-        if (computedColor !== 'rgb(250, 128, 114)') {
-            warnOnce('This page appears to be missing CSS declarations for ' +
-                'Mapbox GL JS, which may cause the map to display incorrectly. ' +
-                'Please ensure your page includes mapbox-gl.css, as described ' +
-                'in https://www.mapbox.com/mapbox-gl-js/api/.');
-        }
+        //#region Modified
+        // const computedColor = window.getComputedStyle(this._missingCSSCanary).getPropertyValue('background-color');
+        // if (computedColor !== 'rgb(250, 128, 114)') {
+        //     warnOnce('This page appears to be missing CSS declarations for ' +
+        //         'Mapbox GL JS, which may cause the map to display incorrectly. ' +
+        //         'Please ensure your page includes mapbox-gl.css, as described ' +
+        //         'in https://www.mapbox.com/mapbox-gl-js/api/.');
+        // }
+        //#endregion
     }
 
     _setupContainer() {
