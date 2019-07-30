@@ -202,13 +202,15 @@ export default class Popup extends Evented {
     setLngLat(lnglat: LngLatLike) {
         this._lngLat = LngLat.convert(lnglat);
         this._pos = null;
-
-        if (this._map) {
+        
+        //#region Remove
+        /* if (this._map) {
             this._map.on('move', this._update);
             this._map.off('mousemove');
             this._container.classList.remove('mapboxgl-popup-track-pointer');
             this._map._canvasContainer.classList.remove('mapboxgl-track-pointer');
-        }
+        } */
+        //#endregion
 
         this._trackPointer = false;
 
@@ -225,13 +227,15 @@ export default class Popup extends Evented {
         this._trackPointer = true;
         this._pos = null;
 
-        if (this._map) {
+        //#region Remove
+        /* if (this._map) {
             this._map.off('move', this._update);
             this._map.on('mousemove', (e) => { this._update(e.point); });
             this._map.on('drag', (e) => { this._update(e.point); });
             this._container.classList.add('mapboxgl-popup-track-pointer');
             this._map._canvasContainer.classList.add('mapboxgl-track-pointer');
-        }
+        } */
+        //#endregion
 
         return this;
 
