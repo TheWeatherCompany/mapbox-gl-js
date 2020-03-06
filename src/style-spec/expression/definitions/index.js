@@ -14,7 +14,7 @@ import {
     toString as typeToString
 } from '../types';
 
-import { typeOf, Color, validateRGBA, toString as valueToString } from '../values';
+import {typeOf, Color, validateRGBA, toString as valueToString} from '../values';
 import CompoundExpression from '../compound_expression';
 import RuntimeError from '../runtime_error';
 import Let from './let';
@@ -23,6 +23,7 @@ import Literal from './literal';
 import Assertion from './assertion';
 import Coercion from './coercion';
 import At from './at';
+import In from './in';
 import Match from './match';
 import Case from './case';
 import Step from './step';
@@ -39,10 +40,11 @@ import {
 import CollatorExpression from './collator';
 import NumberFormat from './number_format';
 import FormatExpression from './format';
+import ImageExpression from './image';
 import Length from './length';
 
-import type { Varargs } from '../compound_expression';
-import type { ExpressionRegistry } from '../expression';
+import type {Varargs} from '../compound_expression';
+import type {ExpressionRegistry} from '../expression';
 
 const expressions: ExpressionRegistry = {
     // special forms
@@ -59,6 +61,8 @@ const expressions: ExpressionRegistry = {
     'coalesce': Coalesce,
     'collator': CollatorExpression,
     'format': FormatExpression,
+    'image': ImageExpression,
+    'in': In,
     'interpolate': Interpolate,
     'interpolate-hcl': Interpolate,
     'interpolate-lab': Interpolate,
@@ -111,7 +115,7 @@ function binarySearch(v, a, i, j) {
 }
 
 function varargs(type: Type): Varargs {
-    return { type };
+    return {type};
 }
 
 CompoundExpression.register(expressions, {

@@ -1,4 +1,4 @@
-import { test } from '../../../util/test';
+import {test} from '../../../util/test';
 import window from '../../../../src/util/window';
 import Map from '../../../../src/ui/map';
 import DOM from '../../../../src/util/dom';
@@ -6,7 +6,7 @@ import simulate from '../../../util/simulate_interaction';
 
 function createMap(t) {
     t.stub(Map.prototype, '_detectMissingCSS');
-    return new Map({ container: DOM.create('div', '', window.document.body) });
+    return new Map({container: DOM.create('div', '', window.document.body)});
 }
 
 test('TouchZoomRotateHandler fires zoomstart, zoom, and zoomend events at appropriate times in response to a pinch-zoom gesture', (t) => {
@@ -40,8 +40,9 @@ test('TouchZoomRotateHandler fires zoomstart, zoom, and zoomend events at approp
 
     simulate.touchend(map.getCanvas(), {touches: []});
     map._renderTaskQueue.run();
-    t.equal(zoomstart.callCount, 1);
-    t.equal(zoom.callCount, 2);
+    // incremented because inertia starts a second zoom
+    t.equal(zoomstart.callCount, 2);
+    t.equal(zoom.callCount, 3);
     t.equal(zoomend.callCount, 1);
 
     map.remove();
@@ -142,8 +143,9 @@ test('TouchZoomRotateHandler starts zoom immediately when rotation disabled', (t
 
     simulate.touchend(map.getCanvas(), {touches: []});
     map._renderTaskQueue.run();
-    t.equal(zoomstart.callCount, 1);
-    t.equal(zoom.callCount, 2);
+    // incremented because inertia starts a second zoom
+    t.equal(zoomstart.callCount, 2);
+    t.equal(zoom.callCount, 3);
     t.equal(zoomend.callCount, 1);
 
     map.remove();

@@ -1,6 +1,6 @@
 "use strict";
 
-var assign = require('lodash.assign');
+// var assign = require('lodash.assign');
 
 /**
  * Add a layer group to the map.
@@ -38,7 +38,7 @@ function addLayerToGroup(map, groupId, layer, beforeId, preventUpdate) {
         beforeId = getLayerIdFromIndex(map, getGroupFirstLayerId(map, groupId) - 1);
     }
 
-    var groupedLayer = assign({}, layer, {metadata: assign({}, layer.metadata || {}, {group: groupId})});
+    var groupedLayer = Object.assign({}, layer, {metadata: Object.assign({}, layer.metadata || {}, {group: groupId})});
     map.addLayer(groupedLayer, beforeId, { preventUpdate: preventUpdate});
 }
 

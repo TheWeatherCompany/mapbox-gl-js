@@ -1,13 +1,13 @@
 // @flow
 
-import { extend, bindAll } from '../util/util';
-import { Event, Evented } from '../util/evented';
+import {extend, bindAll} from '../util/util';
+import {Event, Evented} from '../util/evented';
 import DOM from '../util/dom';
 import LngLat from '../geo/lng_lat';
 import Point from '@mapbox/point-geometry';
 import window from '../util/window';
 import smartWrap from '../util/smart_wrap';
-import { type Anchor, anchorTranslate, applyAnchorClass } from './anchor';
+import {type Anchor, anchorTranslate, applyAnchorClass} from './anchor';
 
 import type Map from './map';
 import type {LngLatLike} from '../geo/lng_lat';
@@ -25,6 +25,7 @@ export type Offset = number | PointLike | {[Anchor]: PointLike};
 export type PopupOptions = {
     closeButton?: boolean,
     closeOnClick?: boolean,
+    closeOnMove?: boolean,
     anchor?: Anchor,
     offset?: Offset,
     className?: string,
@@ -39,6 +40,8 @@ export type PopupOptions = {
  *   top right corner of the popup.
  * @param {boolean} [options.closeOnClick=true] If `true`, the popup will closed when the
  *   map is clicked.
+ * @param {boolean} [options.closeOnMove=false] If `true`, the popup will closed when the
+ *   map moves.
  * @param {string} [options.anchor] - A string indicating the part of the Popup that should
  *   be positioned closest to the coordinate set via {@link Popup#setLngLat}.
  *   Options are `'center'`, `'top'`, `'bottom'`, `'left'`, `'right'`, `'top-left'`,
@@ -92,7 +95,7 @@ export default class Popup extends Evented {
     constructor(options: PopupOptions) {
         super();
         this.options = extend(Object.create(defaultOptions), options);
-        bindAll(['_update', '_onClickClose', 'remove'], this);
+        bindAll(['_update', '_onClose', 'remove'], this);
     }
 
     /**
@@ -104,7 +107,11 @@ export default class Popup extends Evented {
     addTo(map: Map) {
         this._map = map;
         if (this.options.closeOnClick) {
-            this._map.on('click', this._onClickClose);
+            this._map.on('click', this._onClose);
+        }
+
+        if (this.options.closeOnMove) {
+            this._map.on('move', this._onClose);
         }
 
         this._map.on('remove', this.remove);
@@ -113,7 +120,9 @@ export default class Popup extends Evented {
         if (this._trackPointer) {
             this._map.on('mousemove', (e) => { this._update(e.point); });
             this._map.on('mouseup', (e) => { this._update(e.point); });
-            this._container.classList.add('mapboxgl-popup-track-pointer');
+            if (this._container) {
+                this._container.classList.add('mapboxgl-popup-track-pointer');
+            }
             this._map._canvasContainer.classList.add('mapboxgl-track-pointer');
         } else {
             this._map.on('move', this._update);
@@ -160,7 +169,8 @@ export default class Popup extends Evented {
 
         if (this._map) {
             this._map.off('move', this._update);
-            this._map.off('click', this._onClickClose);
+            this._map.off('move', this._onClose);
+            this._map.off('click', this._onClose);
             this._map.off('remove', this.remove);
             this._map.off('mousemove');
             delete this._map;
@@ -202,19 +212,25 @@ export default class Popup extends Evented {
     setLngLat(lnglat: LngLatLike) {
         this._lngLat = LngLat.convert(lnglat);
         this._pos = null;
-        
+
+        //#region v1.8.1
+        this._trackPointer = false;
+
+        this._update();
+        //#endregion
+
         //#region Remove
-        /* if (this._map) {
+        /* 
+        if (this._map) {
             this._map.on('move', this._update);
             this._map.off('mousemove');
-            this._container.classList.remove('mapboxgl-popup-track-pointer');
+            if (this._container) {
+                this._container.classList.remove('mapboxgl-popup-track-pointer');
+            }
             this._map._canvasContainer.classList.remove('mapboxgl-track-pointer');
         } */
         //#endregion
 
-        this._trackPointer = false;
-
-        this._update();
         return this;
     }
 
@@ -226,13 +242,15 @@ export default class Popup extends Evented {
     trackPointer() {
         this._trackPointer = true;
         this._pos = null;
-
+        this._update();
         //#region Remove
         /* if (this._map) {
             this._map.off('move', this._update);
             this._map.on('mousemove', (e) => { this._update(e.point); });
             this._map.on('drag', (e) => { this._update(e.point); });
-            this._container.classList.add('mapboxgl-popup-track-pointer');
+            if (this._container) {
+                this._container.classList.add('mapboxgl-popup-track-pointer');
+            }
             this._map._canvasContainer.classList.add('mapboxgl-track-pointer');
         } */
         //#endregion
@@ -335,6 +353,47 @@ export default class Popup extends Evented {
         return this;
     }
 
+    /**
+     * Adds a CSS class to the popup container element.
+     *
+     * @param {string} className Non-empty string with CSS class name to add to popup container
+     *
+     * @example
+     * let popup = new mapboxgl.Popup()
+     * popup.addClassName('some-class')
+     */
+    addClassName(className: string) {
+        this._container.classList.add(className);
+    }
+
+    /**
+     * Removes a CSS class from the popup container element.
+     *
+     * @param {string} className Non-empty string with CSS class name to remove from popup container
+     *
+     * @example
+     * let popup = new mapboxgl.Popup()
+     * popup.removeClassName('some-class')
+     */
+    removeClassName(className: string) {
+        this._container.classList.remove(className);
+    }
+
+    /**
+     * Add or remove the given CSS class on the popup container, depending on whether the container currently has that class.
+     *
+     * @param {string} className Non-empty string with CSS class name to add/remove
+     *
+     * @returns {boolean} if the class was removed return false, if class was added, then return true
+     *
+     * @example
+     * let popup = new mapboxgl.Popup()
+     * popup.toggleClassName('toggleClass')
+     */
+    toggleClassName(className: string) {
+        return this._container.classList.toggle(className);
+    }
+
     _createContent() {
         if (this._content) {
             DOM.remove(this._content);
@@ -346,13 +405,12 @@ export default class Popup extends Evented {
             this._closeButton.type = 'button';
             this._closeButton.setAttribute('aria-label', 'Close popup');
             this._closeButton.innerHTML = '&#215;';
-            this._closeButton.addEventListener('click', this._onClickClose);
+            this._closeButton.addEventListener('click', this._onClose);
         }
 
     }
 
     _update(cursor: PointLike) {
-
         const hasPosition = this._lngLat || this._trackPointer;
 
         if (!this._map || !hasPosition || !this._content) { return; }
@@ -366,8 +424,10 @@ export default class Popup extends Evented {
                     this._container.classList.add(name));
             }
 
+            if (this._trackPointer) {
+                this._container.classList.add('mapboxgl-popup-track-pointer');
+            }
         }
-
 
         if (this.options.maxWidth && this._container.style.maxWidth !== this.options.maxWidth) {
             this._container.style.maxWidth = this.options.maxWidth;
@@ -415,7 +475,7 @@ export default class Popup extends Evented {
         applyAnchorClass(this._container, anchor, 'popup');
     }
 
-    _onClickClose() {
+    _onClose() {
         this.remove();
     }
 }

@@ -1,19 +1,20 @@
 // @flow
 
-import { Event, ErrorEvent, Evented } from '../util/evented';
+import {Event, ErrorEvent, Evented} from '../util/evented';
 
-import { extend } from '../util/util';
+import {extend} from '../util/util';
 import EXTENT from '../data/extent';
-import { ResourceType } from '../util/ajax';
+import {ResourceType} from '../util/ajax';
 import browser from '../util/browser';
 
 import type {Source} from './source';
 import type Map from '../ui/map';
 import type Dispatcher from '../util/dispatcher';
 import type Tile from './tile';
+import type Actor from '../util/actor';
 import type {Callback} from '../types/callback';
 import type {GeoJSON, GeoJSONFeature} from '@mapbox/geojson-types';
-import type {GeoJSONSourceSpecification} from '../style-spec/types';
+import type {GeoJSONSourceSpecification, PromoteIdSpecification} from '../style-spec/types';
 
 /**
  * A source containing GeoJSON.
@@ -68,15 +69,15 @@ class GeoJSONSource extends Evented implements Source {
     maxzoom: number;
     tileSize: number;
     attribution: string;
+    promoteId: ?PromoteIdSpecification;
 
     isTileClipped: boolean;
     reparseOverscaled: boolean;
     _data: GeoJSON | string;
     _options: any;
     workerOptions: any;
-    dispatcher: Dispatcher;
     map: Map;
-    workerID: number;
+    actor: Actor;
     _loaded: boolean;
     _collectResourceTiming: boolean;
     _resourceTiming: Array<PerformanceResourceTiming>;
@@ -100,8 +101,9 @@ class GeoJSONSource extends Evented implements Source {
         this.isTileClipped = true;
         this.reparseOverscaled = true;
         this._removed = false;
+        this._loaded = false;
 
-        this.dispatcher = dispatcher;
+        this.actor = dispatcher.getActor();
         this.setEventedParent(eventedParent);
 
         this._data = (options.data: any);
@@ -113,6 +115,7 @@ class GeoJSONSource extends Evented implements Source {
         if (options.maxzoom !== undefined) this.maxzoom = options.maxzoom;
         if (options.type) this.type = options.type;
         if (options.attribution) this.attribution = options.attribution;
+        this.promoteId = options.promoteId;
 
         const scale = EXTENT / this.tileSize;
 
@@ -137,7 +140,8 @@ class GeoJSONSource extends Evented implements Source {
                     (this.maxzoom - 1),
                 extent: EXTENT,
                 radius: (options.clusterRadius || 50) * scale,
-                log: false
+                log: false,
+                generateId: options.generateId || false
             },
             clusterProperties: options.clusterProperties
         }, options.workerOptions);
@@ -151,7 +155,7 @@ class GeoJSONSource extends Evented implements Source {
                 return;
             }
 
-            const data: Object = { dataType: 'source', sourceDataType: 'metadata' };
+            const data: Object = {dataType: 'source', sourceDataType: 'metadata'};
             if (this._collectResourceTiming && this._resourceTiming && (this._resourceTiming.length > 0)) {
                 data.resourceTiming = this._resourceTiming;
                 this._resourceTiming = [];
@@ -183,7 +187,7 @@ class GeoJSONSource extends Evented implements Source {
                 return;
             }
 
-            const data: Object = { dataType: 'source', sourceDataType: 'content' };
+            const data: Object = {dataType: 'source', sourceDataType: 'content'};
             if (this._collectResourceTiming && this._resourceTiming && (this._resourceTiming.length > 0)) {
                 data.resourceTiming = this._resourceTiming;
                 this._resourceTiming = [];
@@ -202,7 +206,7 @@ class GeoJSONSource extends Evented implements Source {
      * @returns {GeoJSONSource} this
      */
     getClusterExpansionZoom(clusterId: number, callback: Callback<number>) {
-        this.dispatcher.send('geojson.getClusterExpansionZoom', { clusterId, source: this.id }, callback, this.workerID);
+        this.actor.send('geojson.getClusterExpansionZoom', {clusterId, source: this.id}, callback);
         return this;
     }
 
@@ -214,7 +218,7 @@ class GeoJSONSource extends Evented implements Source {
      * @returns {GeoJSONSource} this
      */
     getClusterChildren(clusterId: number, callback: Callback<Array<GeoJSONFeature>>) {
-        this.dispatcher.send('geojson.getClusterChildren', { clusterId, source: this.id }, callback, this.workerID);
+        this.actor.send('geojson.getClusterChildren', {clusterId, source: this.id}, callback);
         return this;
     }
 
@@ -228,12 +232,12 @@ class GeoJSONSource extends Evented implements Source {
      * @returns {GeoJSONSource} this
      */
     getClusterLeaves(clusterId: number, limit: number, offset: number, callback: Callback<Array<GeoJSONFeature>>) {
-        this.dispatcher.send('geojson.getClusterLeaves', {
+        this.actor.send('geojson.getClusterLeaves', {
             source: this.id,
             clusterId,
             limit,
             offset
-        }, callback, this.workerID);
+        }, callback);
         return this;
     }
 
@@ -243,6 +247,7 @@ class GeoJSONSource extends Evented implements Source {
      * using geojson-vt or supercluster as appropriate.
      */
     _updateWorkerData(callback: Callback<void>) {
+        this._loaded = false;
         const options = extend({}, this.workerOptions);
         const data = this._data;
         if (typeof data === 'string') {
@@ -255,7 +260,7 @@ class GeoJSONSource extends Evented implements Source {
         // target {this.type}.loadData rather than literally geojson.loadData,
         // so that other geojson-like source types can easily reuse this
         // implementation
-        this.workerID = this.dispatcher.send(`${this.type}.loadData`, options, (err, result) => {
+        this.actor.send(`${this.type}.loadData`, options, (err, result) => {
             if (this._removed || (result && result.abandoned)) {
                 return;
             }
@@ -271,14 +276,18 @@ class GeoJSONSource extends Evented implements Source {
             // message queue. Waiting instead for the 'coalesce' to round-trip
             // through the foreground just means we're throttling the worker
             // to run at a little less than full-throttle.
-            this.dispatcher.send(`${this.type}.coalesce`, { source: options.source }, null, this.workerID);
+            this.actor.send(`${this.type}.coalesce`, {source: options.source}, null);
             callback(err);
+        });
+    }
 
-        }, this.workerID);
+    loaded(): boolean {
+        return this._loaded;
     }
 
     loadTile(tile: Tile, callback: Callback<void>) {
-        const message = tile.workerID === undefined ? 'loadTile' : 'reloadTile';
+        const message = !tile.actor ? 'loadTile' : 'reloadTile';
+        tile.actor = this.actor;
         const params = {
             type: this.type,
             uid: tile.uid,
@@ -288,10 +297,12 @@ class GeoJSONSource extends Evented implements Source {
             tileSize: this.tileSize,
             source: this.id,
             pixelRatio: browser.devicePixelRatio,
-            showCollisionBoxes: this.map.showCollisionBoxes
+            showCollisionBoxes: this.map.showCollisionBoxes,
+            promoteId: this.promoteId
         };
 
-        tile.workerID = this.dispatcher.send(message, params, (err, data) => {
+        tile.request = this.actor.send(message, params, (err, data) => {
+            delete tile.request;
             tile.unloadVectorData();
 
             if (tile.aborted) {
@@ -305,21 +316,25 @@ class GeoJSONSource extends Evented implements Source {
             tile.loadVectorData(data, this.map.painter, message === 'reloadTile');
 
             return callback(null);
-        }, this.workerID);
+        });
     }
 
     abortTile(tile: Tile) {
+        if (tile.request) {
+            tile.request.cancel();
+            delete tile.request;
+        }
         tile.aborted = true;
     }
 
     unloadTile(tile: Tile) {
         tile.unloadVectorData();
-        this.dispatcher.send('removeTile', { uid: tile.uid, type: this.type, source: this.id }, null, tile.workerID);
+        this.actor.send('removeTile', {uid: tile.uid, type: this.type, source: this.id});
     }
 
     onRemove() {
         this._removed = true;
-        this.dispatcher.send('removeSource', { type: this.type, source: this.id }, null, this.workerID);
+        this.actor.send('removeSource', {type: this.type, source: this.id});
     }
 
     serialize() {

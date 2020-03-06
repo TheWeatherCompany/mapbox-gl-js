@@ -7,14 +7,15 @@ import {
     warnOnce,
     clamp,
     wrap,
-    ease as defaultEasing
+    ease as defaultEasing,
+    pick
 } from '../util/util';
-import { number as interpolate } from '../style-spec/util/interpolate';
+import {number as interpolate} from '../style-spec/util/interpolate';
 import browser from '../util/browser';
 import LngLat from '../geo/lng_lat';
 import LngLatBounds from '../geo/lng_lat_bounds';
 import Point from '@mapbox/point-geometry';
-import { Event, Evented } from '../util/evented';
+import {Event, Evented} from '../util/evented';
 
 import type Transform from '../geo/transform';
 import type {LngLatLike} from '../geo/lng_lat';
@@ -54,12 +55,15 @@ export type CameraOptions = {
  *   the initial state and 1 is the final state.
  * @property {PointLike} offset of the target center relative to real map container center at the end of animation.
  * @property {boolean} animate If `false`, no animation will occur.
+ * @property {boolean} essential If `true`, then the animation is considered essential and will not be affected by
+ *   [`prefers-reduced-motion`](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion).
  */
 export type AnimationOptions = {
     duration?: number,
     easing?: (number) => number,
     offset?: PointLike,
-    animate?: boolean
+    animate?: boolean,
+    essential?: boolean
 };
 
 /**
@@ -310,6 +314,25 @@ class Camera extends Evented {
      */
     resetNorth(options?: AnimationOptions, eventData?: Object) {
         this.rotateTo(0, extend({duration: 1000}, options), eventData);
+        return this;
+    }
+
+    /**
+     * Rotates and pitches the map so that north is up (0° bearing) and pitch is 0°, with an animated transition.
+     *
+     * @memberof Map#
+     * @param options
+     * @param eventData Additional properties to be added to event objects of events triggered by this method.
+     * @fires movestart
+     * @fires moveend
+     * @returns {Map} `this`
+     */
+    resetNorthPitch(options?: AnimationOptions, eventData?: Object) {
+        this.easeTo(extend({
+            bearing: 0,
+            pitch: 0,
+            duration: 1000
+        }, options), eventData);
         return this;
     }
 
@@ -634,6 +657,10 @@ class Camera extends Evented {
      * between old and new values. The map will retain its current values for any
      * details not specified in `options`.
      *
+     * Note: The transition will happen instantly if the user has enabled
+     * the `reduced motion` accesibility feature enabled in their operating system,
+     * unless 'options' includes `essential: true`.
+     *
      * @memberof Map#
      * @param options Options describing the destination and animation of the transition.
      *            Accepts {@link CameraOptions} and {@link AnimationOptions}.
@@ -660,7 +687,7 @@ class Camera extends Evented {
             easing: defaultEasing
         }, options);
 
-        if (options.animate === false) options.duration = 0;
+        if (options.animate === false || (!options.essential && browser.prefersReducedMotion)) options.duration = 0;
 
         const tr = this.transform,
             startZoom = this.getZoom(),
@@ -787,6 +814,10 @@ class Camera extends Evented {
      * evokes flight. The animation seamlessly incorporates zooming and panning to help
      * the user maintain her bearings even after traversing a great distance.
      *
+     * Note: The animation will be skipped, and this will behave equivalently to `jumpTo`
+     * if the user has the `reduced motion` accesibility feature enabled in their operating system,
+     * unless 'options' includes `essential: true`.
+     *
      * @memberof Map#
      * @param {Object} options Options describing the destination and animation of the transition.
      *     Accepts {@link CameraOptions}, {@link AnimationOptions},
@@ -838,6 +869,12 @@ class Camera extends Evented {
      * @see [Fly to a location based on scroll position](https://www.mapbox.com/mapbox-gl-js/example/scroll-fly-to/)
      */
     flyTo(options: Object, eventData?: Object) {
+        // Fall through to jumpTo if user has set prefers-reduced-motion
+        if (!options.essential && browser.prefersReducedMotion) {
+            const coercedOptions = (pick(options, ['center', 'zoom', 'bearing', 'pitch', 'around']): CameraOptions);
+            return this.jumpTo(coercedOptions, eventData);
+        }
+
         // This method implements an “optimal path” animation, as detailed in:
         //
         // Van Wijk, Jarke J.; Nuij, Wim A. A. “Smooth and efficient zooming and panning.” INFOVIS

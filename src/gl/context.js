@@ -7,9 +7,8 @@ import DepthMode from './depth_mode';
 import StencilMode from './stencil_mode';
 import ColorMode from './color_mode';
 import CullFaceMode from './cull_face_mode';
-import { deepEqual } from '../util/util';
-import { ClearColor, ClearDepth, ClearStencil, ColorMask, DepthMask, StencilMask, StencilFunc, StencilOp, StencilTest, DepthRange, DepthTest, DepthFunc, Blend, BlendFunc, BlendColor, BlendEquation, CullFace, CullFaceSide, FrontFace, Program, ActiveTextureUnit, Viewport, BindFramebuffer, BindRenderbuffer, BindTexture, BindVertexBuffer, BindElementBuffer, BindVertexArrayOES, PixelStoreUnpack, PixelStoreUnpackPremultiplyAlpha, PixelStoreUnpackFlipY } from './value';
-
+import {deepEqual} from '../util/util';
+import {ClearColor, ClearDepth, ClearStencil, ColorMask, DepthMask, StencilMask, StencilFunc, StencilOp, StencilTest, DepthRange, DepthTest, DepthFunc, Blend, BlendFunc, BlendColor, BlendEquation, CullFace, CullFaceSide, FrontFace, Program, ActiveTextureUnit, Viewport, BindFramebuffer, BindRenderbuffer, BindTexture, BindVertexBuffer, BindElementBuffer, BindVertexArrayOES, PixelStoreUnpack, PixelStoreUnpackPremultiplyAlpha, PixelStoreUnpackFlipY} from './value';
 
 import type {TriangleIndexArray, LineIndexArray, LineStripIndexArray} from '../data/index_array_type';
 import type {
@@ -23,7 +22,6 @@ type ClearArgs = {
     depth?: number,
     stencil?: number
 };
-
 
 class Context {
     gl: WebGLRenderingContext;
@@ -65,6 +63,7 @@ class Context {
     extTextureFilterAnisotropic: any;
     extTextureFilterAnisotropicMax: any;
     extTextureHalfFloat: any;
+    extTimerQuery: any;
 
     constructor(gl: WebGLRenderingContext) {
         this.gl = gl;
@@ -115,6 +114,8 @@ class Context {
         if (this.extTextureHalfFloat) {
             gl.getExtension('OES_texture_half_float_linear');
         }
+
+        this.extTimerQuery = gl.getExtension('EXT_disjoint_timer_query');
     }
 
     setDefault() {

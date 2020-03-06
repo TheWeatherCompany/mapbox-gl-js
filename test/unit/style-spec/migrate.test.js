@@ -1,4 +1,4 @@
-import { test } from '../../util/test';
+import {test} from '../../util/test';
 import fs from 'fs';
 import glob from 'glob';
 import path from 'path';
@@ -69,7 +69,7 @@ test('converts stop functions to expressions', (t) => {
     }, spec.latest.$version);
     t.deepEqual(migrated.layers[0].paint['background-opacity'], [
         'interpolate',
-        ['exponential', 1],
+        ['linear'],
         ['zoom'],
         0,
         1,
@@ -78,7 +78,7 @@ test('converts stop functions to expressions', (t) => {
     ]);
     t.deepEqual(migrated.layers[1].paint['background-opacity'], [
         'interpolate',
-        ['exponential', 1],
+        ['linear'],
         ['zoom'],
         0,
         ['literal', [1, 2]],

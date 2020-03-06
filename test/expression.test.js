@@ -1,8 +1,8 @@
-import { run } from './integration/lib/expression';
-import { createPropertyExpression } from '../src/style-spec/expression';
-import { isFunction } from '../src/style-spec/function';
+import {run} from './integration/lib/expression';
+import {createPropertyExpression} from '../src/style-spec/expression';
+import {isFunction} from '../src/style-spec/function';
 import convertFunction from '../src/style-spec/function/convert';
-import { toString } from '../src/style-spec/expression/types';
+import {toString} from '../src/style-spec/expression/types';
 import ignores from './ignores.json';
 
 let tests;
@@ -11,8 +11,9 @@ if (process.argv[1] === __filename && process.argv.length > 2) {
     tests = process.argv.slice(2);
 }
 
-run('js', { ignores, tests }, (fixture) => {
+run('js', {ignores, tests}, (fixture) => {
     const spec = Object.assign({}, fixture.propertySpec);
+    let availableImages;
 
     if (!spec['property-type']) {
         spec['property-type'] = 'data-driven';
@@ -47,23 +48,25 @@ run('js', { ignores, tests }, (fixture) => {
 
         for (const input of fixture.inputs || []) {
             try {
-                const feature = { properties: input[1].properties || {} };
+                const feature = {properties: input[1].properties || {}};
+                availableImages = input[0].availableImages || [];
+
                 if ('id' in input[1]) {
                     feature.id = input[1].id;
                 }
                 if ('geometry' in input[1]) {
                     feature.type = input[1].geometry.type;
                 }
-                let value = expression.evaluateWithoutErrorHandling(input[0], feature);
+                let value = expression.evaluateWithoutErrorHandling(input[0], feature, {}, availableImages);
                 if (type.kind === 'color') {
                     value = [value.r, value.g, value.b, value.a];
                 }
                 evaluationResult.push(value);
             } catch (error) {
                 if (error.name === 'ExpressionEvaluationError') {
-                    evaluationResult.push({ error: error.toJSON() });
+                    evaluationResult.push({error: error.toJSON()});
                 } else {
-                    evaluationResult.push({ error: error.message });
+                    evaluationResult.push({error: error.message});
                 }
             }
         }
@@ -73,7 +76,7 @@ run('js', { ignores, tests }, (fixture) => {
         }
     };
 
-    const result = { compiled: {}, recompiled: {} };
+    const result = {compiled: {}, recompiled: {}};
     const expression = (() => {
         if (isFunction(fixture.expression)) {
             return createPropertyExpression(convertFunction(fixture.expression, spec), spec);
@@ -82,7 +85,7 @@ run('js', { ignores, tests }, (fixture) => {
         }
     })();
 
-    result.outputs = evaluateExpression(expression, result.compiled);
+    result.outputs = evaluateExpression(expression, result.compiled, {}, availableImages);
     if (expression.result === 'success') {
         result.serialized = expression.value._styleExpression.expression.serialize();
         result.roundTripOutputs = evaluateExpression(
