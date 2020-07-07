@@ -1,8 +1,8 @@
 {
   "name": "@twc/pangea-mapbox-gl",
   "description": "MapboxGLJS SDK",
-  "upstreamVersion": "1.8.1",
-  "version": "1.1.0",
+  "upstreamVersion": "1.11.1",
+  "version": "1.4.0",
   "main": "dist/mapbox-gl.js",
   "style": "dist/mapbox-gl.css",
   "license": "SEE LICENSE IN LICENSE.txt",
@@ -150,7 +150,6 @@
     "test-expressions": "build/run-node test/expression.test.js",
     "test-flow": "build/run-node build/generate-flow-typed-style-spec && flow .",
     "test-cov": "nyc --require=@mapbox/flow-remove-types/register --reporter=text-summary --reporter=lcov --cache run-s test-unit test-expressions test-query test-render",
-    "prepublishOnly": "run-s build-flow-types build-dev build-prod-min build-prod build-csp build-css build-style-spec test-build",
     "print-release-url": "node build/print-release-url.js",
     "codegen": "build/run-node build/generate-style-code.js && build/run-node build/generate-struct-arrays.js"
   },

@@ -1,3 +1,44 @@
+<<<<<<< HEAD
+=======
+## 13.16.0
+
+### ✨ Features and improvements
+* Added `volatile` source property to control storing the tiles in local storage. ([9702](https://github.com/mapbox/mapbox-gl-js/pull/9702))
+
+* Added `clusterMinPoints` option for clustered GeoJSON sources that defines the minimum number of points to form a cluster. ([#9748](https://github.com/mapbox/mapbox-gl-js/pull/9748))
+
+## 13.15.0
+
+### ✨ Features and improvements
+* Add `distance` expression to `style-spec`. This expression returns the shortest distance between a feature and an input geometry ([#9655](https://github.com/mapbox/mapbox-gl-js/pull/9655))
+
+## 13.14.0
+
+### ✨ Features and improvements
+* Add `index-of` and `slice` expressions to search arrays and strings for the first occurrence of a specified value and return a section of the original array or string ([#9450](https://github.com/mapbox/mapbox-gl-js/pull/9450)) (h/t [lbutler](https://github.com/lbutler))
+
+## 13.13.1
+
+### ✨ Features and improvements
+* Expose `expression.isExpressionFilter(..)` from the bundle. ([#9530](https://github.com/mapbox/mapbox-gl-js/pull/9530))
+
+### 🐛 Bug fixes
+* Fix a broken module import where the `style-spec` package was importing files from `mapbox-gl-js`, it's parent repo, causing downstream build systems to break. ([#9522](https://github.com/mapbox/mapbox-gl-js/pull/9522))
+
+## 13.13.0
+
+### ✨ Features and improvements
+* Add `within` expression for testing whether an evaluated feature lies within a given GeoJSON object ([#9352](https://github.com/mapbox/mapbox-gl-js/pull/9352)). For example:<br>
+`"icon-opacity": ["case", ["==", ["within", "some-polygon"], true], 1,
+["==", ["within", "some-polygon"], false], 0]`
+* Improve scaling of patterns used in `line-pattern` on all device resolutions and pixel ratios ([#9266](https://github.com/mapbox/mapbox-gl-js/pull/9266))
+
+### 🐛 Bug fixes
+* Allow needle argument to `in` expression to be false ([#9295](https://github.com/mapbox/mapbox-gl-js/pull/9295))
+* Fix a bug where `icon-image` expression that evaluates to an empty string (`''`) produced a warning ([#9380](https://github.com/mapbox/mapbox-gl-js/pull/9380))
+* Prevent exception resulting from `line-dash-array` of empty length ([#9385](https://github.com/mapbox/mapbox-gl-js/pull/9385))
+
+>>>>>>> 8b15cfe79... Updating the changelog (#9856)
 ## 13.12.0
 
 * Update `image` expression SDK support table ([#9228](https://github.com/mapbox/mapbox-gl-js/pull/9228))

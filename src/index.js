@@ -27,6 +27,8 @@ import {clearTileCache} from './util/tile_request_cache';
 import {PerformanceUtils} from './util/performance';
 
 //#region Added
+import {OverscaledTileID} from './source/tile_id';
+import Tile from './source/tile';
 import layerGroups from './../shim/mapbox-gl-layer-groups';
 import window from './util/browser/window';
 
@@ -40,6 +42,8 @@ const exported = {
     setRTLTextPlugin,
     getRTLTextPluginStatus,
     Map,
+    OverscaledTileID,
+    Tile,
     NavigationControl,
     GeolocateControl,
     AttributionControl,
