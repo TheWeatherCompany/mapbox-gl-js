@@ -52,7 +52,8 @@ class SourceCache extends Evented {
     _maxTileCacheSize: ?number;
     _paused: boolean;
     //#region Added
-    _hidden: boolean;
+		_hidden: boolean;
+		_shouldReloadOnShow: boolean;
     //#endregion
     _shouldReloadOnResume: boolean;
     _coveredTiles: {[_: string]: boolean};
@@ -143,13 +144,13 @@ class SourceCache extends Evented {
 
     //#region Added
     hide() {
-        this._hidden;
+        this._hidden = true;
     }
     show() {
         if (!this._hidden) return;
-        const shouldReload = this._shouldReloadOnResume;
+        const shouldReload = this._shouldReloadOnShow;
         this._hidden = false;
-        this._shouldReloadOnResume = false;
+        this._shouldReloadOnShow = false;
         if (shouldReload) this.reload();
         if (this.transform) this.update(this.transform);
     }
@@ -242,7 +243,11 @@ class SourceCache extends Evented {
         if (this._paused) {
             this._shouldReloadOnResume = true;
             return;
-        }
+				}
+				if (this._hidden) {
+					this._shouldReloadOnShow = true;
+					return;
+				}
 
         this._cache.reset();
 
@@ -800,7 +805,8 @@ class SourceCache extends Evented {
      * Remove all tiles from this pyramid
      */
     clearTiles() {
-        this._shouldReloadOnResume = false;
+				this._shouldReloadOnResume = false;
+				this._shouldReloadOnShow = false;
         this._paused = false;
 
         for (const id in this._tiles)
