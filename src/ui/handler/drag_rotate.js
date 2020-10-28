@@ -326,7 +326,7 @@ class DragRotateHandler {
             finish();
             return;
         }
-
+ 
         const first = inertia[0],
             last = inertia[inertia.length - 1],
             previous = inertia[inertia.length - 2];
