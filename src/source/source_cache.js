@@ -143,7 +143,7 @@ class SourceCache extends Evented {
 
     //#region Added
     hide() {
-        this._hidden;
+        this._hidden = true;
     }
     show() {
         if (!this._hidden) return;
