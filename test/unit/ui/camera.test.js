@@ -316,6 +316,45 @@ test('camera', (t) => {
         t.end();
     });
 
+    t.test('#setPadding', (t) => {
+        t.test('sets padding', (t) => {
+            const camera = createCamera();
+            const padding = {left: 300, top: 100, right: 50, bottom: 10};
+            camera.setPadding(padding);
+            t.deepEqual(camera.getPadding(), padding);
+            t.end();
+        });
+
+        t.test('existing padding is retained if no new values are passed in', (t) => {
+            const camera = createCamera();
+            const padding = {left: 300, top: 100, right: 50, bottom: 10};
+            camera.setPadding(padding);
+            camera.setPadding({});
+
+            const currentPadding = camera.getPadding();
+            t.deepEqual(currentPadding, padding);
+            t.end();
+        });
+
+        t.test('doesnt change padding thats already present if new value isnt passed in', (t) => {
+            const camera = createCamera();
+            const padding = {left: 300, top: 100, right: 50, bottom: 10};
+            camera.setPadding(padding);
+            const padding1 = {right: 100};
+            camera.setPadding(padding1);
+
+            const currentPadding = camera.getPadding();
+            t.equal(currentPadding.left, padding.left);
+            t.equal(currentPadding.top, padding.top);
+            // padding1 here
+            t.equal(currentPadding.right, padding1.right);
+            t.equal(currentPadding.bottom, padding.bottom);
+            t.end();
+        });
+
+        t.end();
+    });
+
     t.test('#panBy', (t) => {
         t.test('pans by specified amount', (t) => {
             const camera = createCamera();
@@ -352,6 +391,9 @@ test('camera', (t) => {
         t.test('supresses movestart if noMoveStart option is true', (t) => {
             const camera = createCamera();
             let started;
+
+            // fire once in advance to satisfy assertions that moveend only comes after movestart
+            camera.fire('movestart');
 
             camera
                 .on('movestart', () => { started = true; })
@@ -417,6 +459,9 @@ test('camera', (t) => {
         t.test('supresses movestart if noMoveStart option is true', (t) => {
             const camera = createCamera();
             let started;
+
+            // fire once in advance to satisfy assertions that moveend only comes after movestart
+            camera.fire('movestart');
 
             camera
                 .on('movestart', () => { started = true; })
@@ -1847,6 +1892,21 @@ test('camera', (t) => {
 
             camera.fitBounds(bb, {padding: {top: 10, right: 75, bottom: 50, left: 25}, duration:0});
             t.deepEqual(fixedLngLat(camera.getCenter(), 4), {lng: -96.5558, lat: 32.0833}, 'pans to coordinates based on fitBounds with padding option as object applied');
+            t.end();
+        });
+
+        t.test('padding does not get propagated to transform.padding', (t) => {
+            const camera = createCamera();
+            const bb = [[-133, 16], [-68, 50]];
+
+            camera.fitBounds(bb, {padding: {top: 10, right: 75, bottom: 50, left: 25}, duration:0});
+            const padding = camera.transform.padding;
+            t.deepEqual(padding, {
+                left: 0,
+                right: 0,
+                top: 0,
+                bottom: 0
+            });
             t.end();
         });
 

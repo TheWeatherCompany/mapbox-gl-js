@@ -1,5 +1,10 @@
-<<<<<<< HEAD
 =======
+=======
+## 13.17.0
+
+### ✨ Features and improvements
+* Add a `filter` option for GeoJSON sources to filter out features prior to processing (e.g. before clustering). [#9864](https://github.com/mapbox/mapbox-gl-js/pull/9864)
+
 ## 13.16.0
 
 ### ✨ Features and improvements
@@ -38,7 +43,7 @@
 * Fix a bug where `icon-image` expression that evaluates to an empty string (`''`) produced a warning ([#9380](https://github.com/mapbox/mapbox-gl-js/pull/9380))
 * Prevent exception resulting from `line-dash-array` of empty length ([#9385](https://github.com/mapbox/mapbox-gl-js/pull/9385))
 
->>>>>>> 8b15cfe79... Updating the changelog (#9856)
+=======
 ## 13.12.0
 
 * Update `image` expression SDK support table ([#9228](https://github.com/mapbox/mapbox-gl-js/pull/9228))
